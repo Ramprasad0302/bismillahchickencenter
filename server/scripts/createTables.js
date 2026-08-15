@@ -423,6 +423,7 @@ const createTables = async () => {
     // DEFAULT DATA
     // ============================================
 
+<<<<<<< HEAD
     // Admin user.
     // The old version inserted the literal string '$2a$10$YourHashedPasswordHere'
     // as the password hash. bcrypt.compare() can never match that, so the
@@ -447,6 +448,18 @@ const createTables = async () => {
       }
     } else {
       console.log('✅ Admin user already exists');
+=======
+    // Check if admin user exists before inserting
+    const [adminCheck] = await pool.query(`SELECT id FROM users WHERE phone = '9999999999'`);
+    if (adminCheck.length === 0) {
+      await pool.query(`
+        INSERT INTO users (name, phone, password, role, status) 
+        VALUES ('Mohammed Admin', '9999999999', '$2a$10$YourHashedPasswordHere', 'admin', 'active')
+      `);
+      console.log('✅ Default admin user created');
+    } else {
+      console.log('✅ Default admin user already exists');
+>>>>>>> 41200f985f941827fe20e4c08fe95b2338d412de
     }
 
     // Insert default global pricing

@@ -1,6 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
+<<<<<<< HEAD
   "description": "Bismilla Chicken Center - API server",
   "main": "server.js",
   "scripts": {
@@ -12,6 +13,14 @@
     "create:admin": "node scripts/createAdmin.js",
     "stripe:listen": "stripe listen --forward-to localhost:5000/api/payments/webhook",
     "db:reconcile": "node scripts/updateOutstanding.js"
+=======
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+>>>>>>> 41200f985f941827fe20e4c08fe95b2338d412de
   },
   "keywords": [],
   "author": "",
@@ -25,8 +34,12 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
+<<<<<<< HEAD
     "mysql2": "^3.23.1",
     "stripe": "^18.5.0"
+=======
+    "mysql2": "^3.23.1"
+>>>>>>> 41200f985f941827fe20e4c08fe95b2338d412de
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
