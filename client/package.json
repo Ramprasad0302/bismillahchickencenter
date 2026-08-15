@@ -12,10 +12,6 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "axios": "^1.18.1",
-<<<<<<< HEAD
-=======
-    "cors": "^2.8.6",
->>>>>>> 41200f985f941827fe20e4c08fe95b2338d412de
     "framer-motion": "^12.42.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

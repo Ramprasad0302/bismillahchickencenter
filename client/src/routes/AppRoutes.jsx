@@ -27,10 +27,7 @@ import RetailerPlaceOrder from '../pages/retailer/RetailerPlaceOrder';
 import RetailerOrders from '../pages/retailer/RetailerOrders';
 import RetailerOrderDetails from '../pages/retailer/RetailerOrderDetails';
 import RetailerPayments from '../pages/retailer/RetailerPayments';
-<<<<<<< HEAD
 import PaymentResult from '../pages/retailer/PaymentResult';
-=======
->>>>>>> 41200f985f941827fe20e4c08fe95b2338d412de
 import RetailerProfile from '../pages/retailer/RetailerProfile';
 
 // Driver Pages
@@ -91,10 +88,7 @@ const AppRoutes = () => {
             <Route path="/retailer/orders" element={<RetailerOrders />} />
             <Route path="/retailer/orders/:id" element={<RetailerOrderDetails />} />
             <Route path="/retailer/payments" element={<RetailerPayments />} />
-<<<<<<< HEAD
             <Route path="/retailer/payment/result" element={<PaymentResult />} />
-=======
->>>>>>> 41200f985f941827fe20e4c08fe95b2338d412de
             <Route path="/retailer/profile" element={<RetailerProfile />} />
           </Route>
         </Route>
