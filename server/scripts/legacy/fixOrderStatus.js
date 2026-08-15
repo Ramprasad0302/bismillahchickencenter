@@ -1,4 +1,4 @@
-const pool = require('./config/db'); // Make sure this path matches your DB connection
+const pool = require('../../config/db'); // Make sure this path matches your DB connection
 
 const fixOrderStatus = async () => {
     try {

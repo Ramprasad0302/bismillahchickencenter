@@ -54,6 +54,7 @@ const getPaymentSummary = async (req, res) => {
 // ============================================
 // GET /api/payments
 // Payment history. Retailers see their own, admins see everyone's.
+// (The React app was already calling this and swallowing the 404.)
 // ============================================
 const getPayments = async (req, res) => {
   try {
@@ -132,7 +133,8 @@ const createCheckout = async (req, res) => {
     const gateway = getGateway();
     const reference = await paymentService.generateReference();
 
-    // Record the intent BEFORE talking to the gateway.
+    // Record the intent BEFORE talking to the gateway, so a webhook that
+    // arrives while we're still awaiting the response has a row to find.
     await pool.query(
       `INSERT INTO payment_transactions
          (reference, retailer_id, order_id, provider, amount, currency, status)
@@ -196,7 +198,8 @@ const createCheckout = async (req, res) => {
 
 // ============================================
 // GET /api/payments/status/:reference
-// The return page polls this.
+// The return page polls this. If the webhook hasn't landed yet (very common in
+// local dev), it asks the gateway directly and settles from that.
 // ============================================
 const getTransactionStatus = async (req, res) => {
   try {
@@ -268,7 +271,8 @@ const getTransactionStatus = async (req, res) => {
 
 // ============================================
 // POST /api/payments/webhook
-// No auth middleware. Trust comes from the signature.
+// No auth middleware. Trust comes from the signature, and req.body must be a
+// raw Buffer here (see the express.raw mount in server.js).
 // ============================================
 const handleWebhook = async (req, res) => {
   const gateway = getGateway();
@@ -283,6 +287,8 @@ const handleWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${error.message}`);
   }
 
+  // Acknowledge fast. If our own processing throws, the gateway retrying
+  // is fine — settleTransaction is idempotent.
   try {
     if (event.type === 'succeeded' && event.reference) {
       const result = await paymentService.settleTransaction({

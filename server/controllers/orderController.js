@@ -1,5 +1,9 @@
 const pool = require('../config/db');
 
+// createTables.js creates `ledger`; the old recordPayment inserted into
+// `ledgers`, which does not exist — every admin payment threw and rolled back.
+const LEDGER_TABLE = process.env.LEDGER_TABLE || 'ledger';
+
 // ============================================
 // CREATE ORDER
 // ============================================
@@ -81,62 +85,100 @@ const createOrder = async (req, res) => {
         });
 
         // GENERATE ORDER NUMBER
-        const [countResult] = await pool.query(
-            'SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) = CURDATE()'
-        );
-        const orderCount = countResult[0].count + 1;
+        // COUNT(*) + 1 collided whenever two orders were placed in the same
+        // second: both got the same number and the UNIQUE constraint made the
+        // second insert fail. Reading the highest number already issued today
+        // and retrying on a duplicate handles the race.
         const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
-        const order_number = `BIS-${dateStr}-${String(orderCount).padStart(4, '0')}`;
-        console.log('📋 Order Number Generated:', order_number);
+        const nextOrderNumber = async () => {
+            const [rows] = await pool.query(
+                `SELECT order_number FROM orders
+                  WHERE order_number LIKE ?
+                  ORDER BY order_number DESC LIMIT 1`,
+                [`BIS-${dateStr}-%`]
+            );
+            const lastSeq = rows.length
+                ? parseInt(rows[0].order_number.split('-').pop(), 10) || 0
+                : 0;
+            return `BIS-${dateStr}-${String(lastSeq + 1).padStart(4, '0')}`;
+        };
 
         // GET CONNECTION FOR TRANSACTION
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        // INSERT ORDER
+        // INSERT ORDER (retry on duplicate order_number)
         console.log('💾 Inserting order into database...');
 
-        const [result] = await connection.query(
-            `INSERT INTO orders (
-                order_number,
-                retailer_id,
-                kg_ordered,
-                rate_per_kg,
-                subtotal,
-                discount,
-                delivery_charge,
-                total_amount,
-                paid_amount,
-                balance,
-                payment_method,
-                payment_status,
-                order_status,
-                delivery_address,
-                notes,
-                order_date,
-                created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [
-                order_number,
-                retailerId,
-                kg_ordered,
-                rate_per_kg,
-                subtotal,
-                discount,
-                delivery_charge,
-                total_amount,
-                paid_amount,
-                balance,
-                payment_method,
-                'pending',
-                'pending',
-                delivery_address,
-                notes,
-                order_date
-            ]
-        );
+        let result;
+        let order_number;
+        const MAX_ATTEMPTS = 5;
 
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            order_number = await nextOrderNumber();
+            try {
+                [result] = await connection.query(
+                    `INSERT INTO orders (
+                        order_number,
+                        retailer_id,
+                        kg_ordered,
+                        rate_per_kg,
+                        subtotal,
+                        discount,
+                        delivery_charge,
+                        total_amount,
+                        paid_amount,
+                        balance,
+                        payment_method,
+                        payment_status,
+                        order_status,
+                        delivery_address,
+                        notes,
+                        order_date,
+                        created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                    [
+                        order_number,
+                        retailerId,
+                        kg_ordered,
+                        rate_per_kg,
+                        subtotal,
+                        discount,
+                        delivery_charge,
+                        total_amount,
+                        paid_amount,
+                        balance,
+                        payment_method,
+                        'pending',
+                        'pending',
+                        delivery_address,
+                        notes,
+                        order_date
+                    ]
+                );
+                break;
+            } catch (insertError) {
+                if (insertError.code === 'ER_DUP_ENTRY' && attempt < MAX_ATTEMPTS) {
+                    console.warn(`⚠️  ${order_number} was taken, retrying (${attempt}/${MAX_ATTEMPTS})`);
+                    continue;
+                }
+                throw insertError;
+            }
+        }
+
+        console.log('📋 Order Number:', order_number);
         console.log('✅ Order inserted with ID:', result.insertId);
+
+        // Keep the retailer's running outstanding in step with the new bill.
+        await connection.query(
+            `UPDATE retailers
+                SET outstanding = (
+                    SELECT COALESCE(SUM(balance), 0) FROM orders
+                     WHERE retailer_id = ? AND order_status != 'cancelled'
+                )
+              WHERE id = ?`,
+            [retailerId, retailerId]
+        );
 
         await connection.commit();
 
@@ -162,21 +204,8 @@ const createOrder = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('=================================');
-        console.error('❌ DATABASE ERROR - DETAILED REPORT');
-        console.error('=================================');
-        console.error('Error Message:', error.message);
-        console.error('Error Code:', error.code);
-        
-        // This prints the exact SQL that failed!
-        if (error.sql) {
-            console.error('🔴 FAILED SQL QUERY:', error.sql);
-        }
-
-        if (error.sqlMessage) {
-            console.error('🔴 SQL ERROR MESSAGE:', error.sqlMessage);
-        }
-        
+        console.error('❌ ERROR in createOrder:', error);
+        console.error('❌ Error Message:', error.message);
         console.log('=================================');
         
         if (connection) {
@@ -578,6 +607,12 @@ const getOrderStats = async (req, res) => {
 // NEW: RECORD A PAYMENT (Admin only)
 // ============================================
 const recordPayment = async (req, res) => {
+    // Fixes vs. the previous version:
+    //   * wrote to `ledgers`; the table createTables.js makes is `ledger`
+    //   * called connection.rollback()/release() even when getConnection() failed
+    //   * never updated orders.payment_status, so paid bills still read "pending"
+    //   * decremented retailers.outstanding instead of recalculating it, so the
+    //     figure drifted permanently after any double-post or edited order
     let connection;
     try {
         if (req.user.role !== 'admin') {
@@ -587,73 +622,130 @@ const recordPayment = async (req, res) => {
             });
         }
 
-        const { 
-            retailer_id, 
-            amount, 
-            payment_method, 
-            bill_allocations 
+        const {
+            retailer_id,
+            amount,
+            payment_method,
+            bill_allocations
         } = req.body;
 
-        if (!retailer_id || !amount || amount <= 0 || !bill_allocations || bill_allocations.length === 0) {
+        const paymentAmount = parseFloat(amount);
+
+        if (!retailer_id || !paymentAmount || paymentAmount <= 0 ||
+            !Array.isArray(bill_allocations) || bill_allocations.length === 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Invalid payment data.'
             });
         }
 
+        const allowedMethods = ['cash', 'upi', 'bank_transfer', 'cheque'];
+        const method = allowedMethods.includes(payment_method) ? payment_method : 'cash';
+
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
         const [retailerRows] = await connection.query(
-            'SELECT outstanding FROM retailers WHERE id = ?',
+            'SELECT id FROM retailers WHERE id = ? FOR UPDATE',
             [retailer_id]
         );
-        
-        if (retailerRows.length === 0) throw new Error('Retailer not found');
+        if (retailerRows.length === 0) {
+            const err = new Error('Retailer not found');
+            err.status = 404;
+            throw err;
+        }
 
-        const currentOutstanding = parseFloat(retailerRows[0].outstanding) || 0;
-        const newOutstanding = Math.max(0, currentOutstanding - amount);
-
+        // ---- Apply against the named bills ----
         let processedAmount = 0;
         let lastUpdatedOrderId = null;
-        
+        const applied = [];
+
         for (const alloc of bill_allocations) {
-            if (!alloc.bill_id || alloc.amount_paid <= 0) continue;
+            const allocAmount = parseFloat(alloc.amount_paid);
+            if (!alloc.bill_id || !allocAmount || allocAmount <= 0) continue;
 
             const [orderRows] = await connection.query(
-                'SELECT id, balance, paid_amount FROM orders WHERE order_number = ? AND retailer_id = ?',
+                `SELECT id, balance, paid_amount FROM orders
+                  WHERE order_number = ? AND retailer_id = ? FOR UPDATE`,
                 [alloc.bill_id, retailer_id]
             );
-
             if (orderRows.length === 0) continue;
 
             const order = orderRows[0];
-            const currentBillBalance = parseFloat(order.balance) || 0;
-            const payAmount = Math.min(alloc.amount_paid, currentBillBalance);
+            const currentBalance = parseFloat(order.balance) || 0;
+            const payAmount = parseFloat(Math.min(allocAmount, currentBalance).toFixed(2));
+            if (payAmount <= 0) continue;
 
-            if (payAmount > 0) {
-                await connection.query(
-                    `UPDATE orders SET balance = balance - ?, paid_amount = paid_amount + ? WHERE id = ?`,
-                    [payAmount, payAmount, order.id]
-                );
-                
-                lastUpdatedOrderId = order.id; 
-                processedAmount += payAmount;
-            }
+            const newBalance = parseFloat((currentBalance - payAmount).toFixed(2));
+            const newPaid = parseFloat(((parseFloat(order.paid_amount) || 0) + payAmount).toFixed(2));
+            const paymentStatus = newBalance <= 0 ? 'paid' : newPaid > 0 ? 'partial' : 'pending';
+
+            await connection.query(
+                `UPDATE orders
+                    SET balance = ?, paid_amount = ?, payment_status = ?
+                  WHERE id = ?`,
+                [newBalance, newPaid, paymentStatus, order.id]
+            );
+
+            lastUpdatedOrderId = order.id;
+            processedAmount = parseFloat((processedAmount + payAmount).toFixed(2));
+            applied.push({ order_id: order.id, order_number: alloc.bill_id, amount: payAmount });
         }
+
+        if (processedAmount <= 0) {
+            const err = new Error('None of those bills had an outstanding balance.');
+            err.status = 400;
+            throw err;
+        }
+
+        // ---- Record the payment ----
+        const [countRows] = await connection.query(
+            'SELECT COUNT(*) AS count FROM payments WHERE DATE(created_at) = CURDATE()'
+        );
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const paymentNumber = `PAY-${dateStr}-${String(countRows[0].count + 1).padStart(4, '0')}`;
+
+        const [paymentResult] = await connection.query(
+            `INSERT INTO payments (
+               payment_number, retailer_id, order_id, amount, method, status,
+               collected_by, collected_by_role, verified_by, verified_at
+             ) VALUES (?, ?, ?, ?, ?, 'verified', ?, 'admin', ?, NOW())`,
+            [
+                paymentNumber,
+                retailer_id,
+                applied.length === 1 ? applied[0].order_id : null,
+                processedAmount,
+                method,
+                req.user.name || 'Admin',
+                req.user.name || 'Admin'
+            ]
+        );
+
+        // ---- Recalculate outstanding from the bills themselves ----
+        const [[{ outstanding }]] = await connection.query(
+            `SELECT COALESCE(SUM(balance), 0) AS outstanding
+               FROM orders
+              WHERE retailer_id = ? AND order_status != 'cancelled'`,
+            [retailer_id]
+        );
 
         await connection.query(
             'UPDATE retailers SET outstanding = ? WHERE id = ?',
-            [newOutstanding, retailer_id]
+            [outstanding, retailer_id]
         );
 
-        const description = `Payment via ${payment_method}`;
-        const currentDate = new Date().toISOString().slice(0, 10);
-
+        // ---- Ledger credit ----
         await connection.query(
-            `INSERT INTO ledgers (retailer_id, order_id, type, amount, description, date, created_at) 
-             VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-            [retailer_id, lastUpdatedOrderId, 'credit', amount, description, currentDate]
+            `INSERT INTO \`${LEDGER_TABLE}\`
+               (retailer_id, order_id, payment_id, type, amount, description, date, created_at)
+             VALUES (?, ?, ?, 'credit', ?, ?, NOW(), NOW())`,
+            [
+                retailer_id,
+                lastUpdatedOrderId,
+                paymentResult.insertId,
+                processedAmount,
+                `Payment via ${method}`
+            ]
         );
 
         await connection.commit();
@@ -661,15 +753,27 @@ const recordPayment = async (req, res) => {
         res.status(200).json({
             success: true,
             message: 'Payment recorded successfully',
-            data: { newOutstanding, processedAmount }
+            data: {
+                payment_number: paymentNumber,
+                newOutstanding: parseFloat(outstanding),
+                processedAmount,
+                applied
+            }
         });
 
     } catch (error) {
-        await connection.rollback();
-        console.error('❌ Error in recordPayment:', error);
-        res.status(500).json({ success: false, message: error.message || 'Failed to record payment' });
+        // Guarded: if pool.getConnection() itself failed, `connection` is
+        // undefined and the old code masked the real error with a TypeError.
+        if (connection) {
+            try { await connection.rollback(); } catch (e) { /* already closed */ }
+        }
+        console.error('\u274c Error in recordPayment:', error);
+        res.status(error.status || 500).json({
+            success: false,
+            message: error.message || 'Failed to record payment'
+        });
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 };
 

@@ -423,16 +423,30 @@ const createTables = async () => {
     // DEFAULT DATA
     // ============================================
 
-    // Check if admin user exists before inserting
+    // Admin user.
+    // The old version inserted the literal string '$2a$10$YourHashedPasswordHere'
+    // as the password hash. bcrypt.compare() can never match that, so the
+    // seeded admin could not log in. A real hash is generated instead.
     const [adminCheck] = await pool.query(`SELECT id FROM users WHERE phone = '9999999999'`);
     if (adminCheck.length === 0) {
-      await pool.query(`
-        INSERT INTO users (name, phone, password, role, status) 
-        VALUES ('Mohammed Admin', '9999999999', '$2a$10$YourHashedPasswordHere', 'admin', 'active')
-      `);
-      console.log('✅ Default admin user created');
+      const bcrypt = require('bcryptjs');
+      const initialPassword = process.env.ADMIN_INITIAL_PASSWORD;
+
+      if (!initialPassword) {
+        console.warn('⚠️  No admin user created. Set ADMIN_INITIAL_PASSWORD in .env and re-run,');
+        console.warn('    or run: node scripts/createAdmin.js');
+      } else {
+        const hash = await bcrypt.hash(initialPassword, 10);
+        await pool.query(
+          `INSERT INTO users (name, phone, password, role, status)
+           VALUES ('Mohammed Admin', '9999999999', ?, 'admin', 'active')`,
+          [hash]
+        );
+        console.log('✅ Admin user created (phone 9999999999)');
+        console.log('⚠️  Change that password after your first login.');
+      }
     } else {
-      console.log('✅ Default admin user already exists');
+      console.log('✅ Admin user already exists');
     }
 
     // Insert default global pricing

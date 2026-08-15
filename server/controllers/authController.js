@@ -1,11 +1,12 @@
 const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/jwt');
 
 // Login user
 const login = async (req, res) => {
   try {
-    console.log('🔐 Login attempt:', req.body);
+    console.log('🔐 Login attempt for phone:', req.body?.phone);
     const { phone, password } = req.body;
     
     // Validate input
@@ -55,14 +56,8 @@ const login = async (req, res) => {
       [user.id]
     );
     
-    // ✅ ADD DEBUG LOGS HERE
-    const JWT_SECRET = process.env.JWT_SECRET || 'bismilla_chicken_center_2026_super_secret_key';
-    
-    console.log('=================================');
-    console.log('🔑 SIGN SECRET:', JWT_SECRET);
-    console.log('=================================');
-    
-    // Generate JWT token
+    // Generate JWT token (secret comes from config/jwt.js, which refuses to
+    // start without a real JWT_SECRET)
     const token = jwt.sign(
       { 
         id: user.id, 
@@ -71,12 +66,8 @@ const login = async (req, res) => {
         name: user.name 
       },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: JWT_EXPIRES_IN }
     );
-    
-    console.log('✅ Generated Token:');
-    console.log(token);
-    console.log('=================================');
     
     console.log(`✅ User logged in: ${user.name} (${user.role})`);
     
@@ -98,7 +89,7 @@ const login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error during login',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
