@@ -28,6 +28,13 @@ export const getPaymentStatus = async (reference) => {
   return data;
 };
 
+// Tell the backend the customer backed out of checkout, so an order created
+// for this attempt is cancelled immediately instead of sitting pending.
+export const cancelCheckout = async (reference) => {
+  const { data } = await api.post(`/payments/cancel/${reference}`);
+  return data;
+};
+
 // Hand the browser to the gateway's hosted page.
 // Works unchanged for Razorpay Payment Links later.
 export const redirectToGateway = (url) => {

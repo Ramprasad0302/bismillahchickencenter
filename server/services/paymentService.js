@@ -143,6 +143,16 @@ const settleTransaction = async ({
       remaining = parseFloat((remaining - applyAmount).toFixed(2));
     }
 
+    // --- 1b. A fresh order created for this checkout attempt (place-order
+    // → pay-with-UPI flow) is still sitting in 'pending' until its payment
+    // clears. Move it forward now that the money has landed.
+    if (txn.order_id) {
+      await connection.query(
+        `UPDATE orders SET order_status = 'confirmed' WHERE id = ? AND order_status = 'pending'`,
+        [txn.order_id]
+      );
+    }
+
     // --- 2. Insert into the existing payments table ---
     const paymentNumber = await generatePaymentNumber(connection);
 
@@ -236,15 +246,77 @@ const settleTransaction = async ({
 };
 
 // ============================================
-// Mark a transaction failed / cancelled. Touches nothing financial.
+// Mark a transaction failed / cancelled.
+//
+// If it was created for a brand-new order (the place-order → pay-with-UPI
+// flow), that order is still sitting in 'pending' with nothing paid against
+// it — a failed or cancelled checkout means the order never went through, so
+// it's cancelled here rather than left behind as a phantom unpaid order.
+// Pre-existing orders being settled through the general Payments page are
+// untouched: this only fires for orders still in their original 'pending'
+// state, before any staff/driver workflow has moved them along.
 // ============================================
 const failTransaction = async ({ reference, reason, status = 'failed' }) => {
-  await pool.query(
-    `UPDATE payment_transactions
-        SET status = ?, failure_reason = ?
-      WHERE reference = ? AND settled = 0`,
-    [status, (reason || '').slice(0, 255), reference]
-  );
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [txnRows] = await connection.query(
+      'SELECT * FROM payment_transactions WHERE reference = ? FOR UPDATE',
+      [reference]
+    );
+    if (txnRows.length === 0) {
+      await connection.rollback();
+      return { applied: false, reason: 'unknown_reference' };
+    }
+
+    const txn = txnRows[0];
+
+    // A payment that already settled must never be walked back by a late
+    // "failed" webhook (e.g. a delayed expiry event arriving after the poll
+    // already settled it from the gateway's side).
+    if (txn.settled === 1) {
+      await connection.rollback();
+      return { applied: false, reason: 'already_settled' };
+    }
+
+    await connection.query(
+      `UPDATE payment_transactions SET status = ?, failure_reason = ? WHERE id = ?`,
+      [status, (reason || '').slice(0, 255), txn.id]
+    );
+
+    if (txn.order_id) {
+      const [orderRows] = await connection.query(
+        `SELECT id, retailer_id, order_status FROM orders WHERE id = ? FOR UPDATE`,
+        [txn.order_id]
+      );
+      const order = orderRows[0];
+
+      if (order && order.order_status === 'pending') {
+        await connection.query(`UPDATE orders SET order_status = 'cancelled' WHERE id = ?`, [
+          order.id,
+        ]);
+
+        await connection.query(
+          `UPDATE retailers
+              SET outstanding = (
+                SELECT COALESCE(SUM(balance), 0) FROM orders
+                 WHERE retailer_id = ? AND order_status != 'cancelled'
+              )
+            WHERE id = ?`,
+          [order.retailer_id, order.retailer_id]
+        );
+      }
+    }
+
+    await connection.commit();
+    return { applied: true };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 module.exports = {

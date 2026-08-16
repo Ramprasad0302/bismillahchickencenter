@@ -270,6 +270,46 @@ const getTransactionStatus = async (req, res) => {
 };
 
 // ============================================
+// POST /api/payments/cancel/:reference
+// Called by the return page the moment the customer lands back on
+// cancel_url. Stripe/Razorpay don't send a webhook for "customer clicked
+// back" — the session just sits open until it expires (hours later) — so
+// without this, an order created for that checkout would stay stuck in
+// 'pending' until then.
+// ============================================
+const cancelTransaction = async (req, res) => {
+  try {
+    const { reference } = req.params;
+
+    const [rows] = await pool.query('SELECT * FROM payment_transactions WHERE reference = ?', [
+      reference,
+    ]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Payment not found' });
+    }
+
+    const txn = rows[0];
+    if (req.user.role !== 'admin') {
+      const retailer = await getRetailerForUser(req.user.id);
+      if (!retailer || retailer.id !== txn.retailer_id) {
+        return res.status(403).json({ success: false, message: 'Access denied' });
+      }
+    }
+
+    await paymentService.failTransaction({
+      reference,
+      reason: 'Cancelled by customer',
+      status: 'cancelled',
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ cancelTransaction:', error);
+    res.status(500).json({ success: false, message: 'Could not cancel the payment' });
+  }
+};
+
+// ============================================
 // POST /api/payments/webhook
 // No auth middleware. Trust comes from the signature, and req.body must be a
 // raw Buffer here (see the express.raw mount in server.js).
@@ -322,5 +362,6 @@ module.exports = {
   getPayments,
   createCheckout,
   getTransactionStatus,
+  cancelTransaction,
   handleWebhook,
 };

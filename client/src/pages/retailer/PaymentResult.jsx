@@ -6,7 +6,7 @@ import {
   FiLoader,
   FiAlertCircle,
 } from 'react-icons/fi';
-import { getPaymentStatus } from '../../services/paymentService';
+import { getPaymentStatus, cancelCheckout } from '../../services/paymentService';
 
 // The gateway sends the customer back here. The webhook is what actually
 // updates the books, so this page polls until the transaction settles.
@@ -30,10 +30,20 @@ const PaymentResult = () => {
       setMessage('This link is missing a payment reference.');
       return;
     }
-    if (cancelled) return;
 
     let timer;
     let active = true;
+
+    if (cancelled) {
+      // Stripe/Razorpay don't send a webhook for "customer clicked back" —
+      // the session just sits open for hours. Tell the backend right away so
+      // an order created for this attempt is cancelled instead of left
+      // pending.
+      cancelCheckout(reference).catch((err) => {
+        console.error('Cancel notify failed:', err);
+      });
+      return;
+    }
 
     const poll = async () => {
       try {

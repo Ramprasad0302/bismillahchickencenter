@@ -19,5 +19,6 @@ router.get('/', paymentController.getPayments);
 router.get('/summary', paymentController.getPaymentSummary);
 router.post('/checkout', paymentController.createCheckout);
 router.get('/status/:reference', paymentController.getTransactionStatus);
+router.post('/cancel/:reference', paymentController.cancelTransaction);
 
 module.exports = router;

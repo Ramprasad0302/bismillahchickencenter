@@ -17,6 +17,7 @@ import {
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import api from '../../services/api';
+import { startCheckout, redirectToGateway } from '../../services/paymentService';
 
 const RetailerPlaceOrder = () => {
   const navigate = useNavigate();
@@ -123,8 +124,37 @@ const RetailerPlaceOrder = () => {
       console.log('📦 Sending order data:', apiOrderData);
 
       const response = await api.post('/orders', apiOrderData);
-      
+      const newOrder = response.data.data;
+
       console.log('✅ Order placed successfully:', response.data);
+
+      // UPI: the order now exists but is 'pending' with nothing paid. Send
+      // the retailer straight to Stripe checkout for this order's amount —
+      // it only becomes 'confirmed' once the payment actually clears
+      // (server/services/paymentService.js). If checkout can't be started,
+      // the order stays pending and they can pay it from the Payments page.
+      if (selectedPayment === 'upi') {
+        const checkoutRes = await startCheckout({ orderId: newOrder.id });
+        if (checkoutRes.success && checkoutRes.data.redirect_url) {
+          redirectToGateway(checkoutRes.data.redirect_url);
+          return; // leaving the page — no further UI updates needed
+        }
+
+        // Order exists but we couldn't reach the gateway. Let them know
+        // instead of silently pretending it's confirmed.
+        setIsConfirmModalOpen(false);
+        setError(
+          checkoutRes.message ||
+            `Order ${newOrder.order_number} was created but the payment could not be started. Pay it from the Payments page.`
+        );
+        setKg('');
+        setDeliveryAddress('');
+        setNotes('');
+        setCustomAmount('');
+        setOrderData(null);
+        setIsLoading(false);
+        return;
+      }
 
       // Close modal
       setIsConfirmModalOpen(false);
