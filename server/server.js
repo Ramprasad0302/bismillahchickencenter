@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -80,6 +81,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ============================================
+// Static files — uploaded trip bill photos (diesel bills, etc)
+// Served at /uploads/trip-bills/<filename>, written by
+// middleware/uploadMiddleware.js via the POST /api/driver/upload-photo route.
+// ============================================
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ============================================
 // Request logging
 // ============================================
 const SENSITIVE_FIELDS = [
@@ -122,27 +130,6 @@ app.get('/api/test', (req, res) => {
     server: `Running on port ${PORT}`,
     timestamp: new Date().toISOString(),
   });
-});
-
-// ============================================
-// TEMPORARY DIAGNOSTIC — DELETE AFTER USE
-// Asks MySQL itself which database this process is connected to. This is the
-// only answer that cannot be wrong: it ignores .env, ignores the hosting
-// panel, and reports what the live connection is actually pointed at.
-// ============================================
-app.get('/api/whoami', async (req, res) => {
-  try {
-    const pool = require('./config/db');
-    const [[row]] = await pool.query(
-      "SELECT DATABASE() AS db, @@hostname AS host, @@port AS port, " +
-      "(SELECT COUNT(*) FROM orders) AS order_count, " +
-      "(SELECT MAX(order_number) FROM orders) AS latest_order, " +
-      "(SELECT paid_amount FROM orders WHERE id = 8) AS order8_paid"
-    );
-    res.json({ success: true, ...row });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
 });
 
 // ============================================

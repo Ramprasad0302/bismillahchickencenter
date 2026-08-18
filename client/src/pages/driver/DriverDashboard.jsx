@@ -32,6 +32,8 @@ const DriverDashboard = () => {
   // Lock states for Driver inputs
   const [isHensLocked, setIsHensLocked] = useState(false);
   const [isDieselLocked, setIsDieselLocked] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
 
   const [tripData, setTripData] = useState({
     totalHens: '',
@@ -78,7 +80,7 @@ const DriverDashboard = () => {
   // Start Trip - Set initial real data
   const handleStartTrip = () => {
     setIsTripStarted(true);
-    setActiveTrip(currentTrip);
+    setActiveTrip(currentTrip); // includes driverName + cleaners from the dashboard fetch
     setTripData({
       ...tripData,
       totalHens: currentTrip.totalHens || '',
@@ -151,8 +153,19 @@ const DriverDashboard = () => {
   const getTotalDeliveredKg = () => tripData.orders.reduce((sum, o) => sum + (o.actualKg || 0), 0);
   const getTotalCashCollected = () => tripData.orders.reduce((sum, o) => sum + (o.cashCollected || 0), 0);
 
-  // ✅ FIXED MATH: Use parseFloat to ensure multiplication
-  const totalKgFromHens = tripData.totalHens ? parseFloat(tripData.totalHens) * 0.5 : 0;
+  // Loading charge: hens x rate/hen -- shown and stored in RUPEES, not kg.
+  // Must match LOADING_RATE_PER_HEN in server/controllers/driverController.js.
+  const LOADING_RATE_PER_HEN = 0.5;
+  const loadingCharge = tripData.totalHens ? parseFloat(tripData.totalHens) * LOADING_RATE_PER_HEN : 0;
+
+  // Food allowance preview: driver (always 1) + every cleaner assigned to
+  // this trip, at a flat rate per head. Actual expense rows are written by
+  // the server on trip completion -- this is just so the driver can see the
+  // number before submitting.
+  const FOOD_RATE_PER_HEAD = 150;
+  const cleanerCount = activeTrip?.cleaners?.length || 0;
+  const foodHeadCount = 1 + cleanerCount; // 1 = the driver
+  const foodAllowance = foodHeadCount * FOOD_RATE_PER_HEAD;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -198,40 +211,76 @@ const DriverDashboard = () => {
           </div>
         </div>
 
-        {/* Hens Input */}
+        {/* Assigned Staff */}
+        {(activeTrip?.driverName || cleanerCount > 0) && (
+          <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
+            <h3 className="font-semibold text-[#151A17] mb-4">Assigned Staff</h3>
+            <div className="flex flex-wrap gap-2">
+              {activeTrip?.driverName && (
+                <span className="inline-flex items-center px-3 py-1.5 bg-[#F6F7F6] rounded-full text-sm text-[#151A17]">
+                  🚚 {activeTrip.driverName} <span className="text-[#6B716D] ml-1">(Driver)</span>
+                </span>
+              )}
+              {activeTrip?.cleaners?.map((c) => (
+                <span key={c.id} className="inline-flex items-center px-3 py-1.5 bg-[#F6F7F6] rounded-full text-sm text-[#151A17]">
+                  🧹 {c.name} <span className="text-[#6B716D] ml-1">(Cleaner)</span>
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-[#6B716D] mt-3">
+              Food allowance on completion: {foodHeadCount} head × ₹{FOOD_RATE_PER_HEAD} ={' '}
+              <span className="font-medium text-[#151A17]">₹{foodAllowance}</span>
+            </p>
+          </div>
+        )}
+
+        {/* Hens Loaded */}
         <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
-          <h3 className="font-semibold text-[#151A17] mb-4 flex justify-between items-center">
-            Total Hens Loaded
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-[#151A17]">Total Hens Loaded</h3>
             {isHensLocked && (
-              <button onClick={() => setIsHensLocked(false)} className="flex items-center gap-2 text-sm text-[#16834B] hover:underline">
+              <button onClick={() => setIsHensLocked(false)} className="flex items-center gap-1.5 text-sm text-[#16834B] hover:underline">
                 <FiEdit2 className="w-4 h-4" /> Edit
               </button>
             )}
-          </h3>
-          <div className="flex items-center flex-wrap gap-4">
-            <div className="relative">
-              <input
-                type="number"
-                value={tripData.totalHens}
-                onChange={(e) => setTripData({ ...tripData, totalHens: e.target.value })}
-                onKeyDown={(e) => { if (e.key === 'Enter') setIsHensLocked(true); }}
-                placeholder="Enter total hens"
-                className={`w-40 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
-                disabled={isHensLocked}
-                min="0"
-                step="1"
-              />
-              {!isHensLocked && (
-                <button onClick={() => setIsHensLocked(true)} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#16834B] hover:underline">Enter</button>
-              )}
-            </div>
-            <span className="text-sm text-[#6B716D]">hens</span>
-            <div className="ml-2 p-2 bg-[#F6F7F6] rounded-lg">
-              <span className="text-sm text-[#6B716D]">= </span>
-              <span className="font-semibold text-[#151A17]">{totalKgFromHens ? `${totalKgFromHens.toFixed(1)} kg` : '0 kg'}</span>
-              <span className="text-xs text-[#6B716D] ml-2">(× 0.5)</span>
-            </div>
           </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              value={tripData.totalHens}
+              onChange={(e) => setTripData({ ...tripData, totalHens: e.target.value })}
+              onKeyDown={(e) => { if (e.key === 'Enter' && tripData.totalHens) setIsHensLocked(true); }}
+              placeholder="e.g. 1000"
+              className={`flex-1 px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
+              disabled={isHensLocked}
+              min="0"
+              step="1"
+            />
+            <span className="text-sm font-medium text-[#6B716D] whitespace-nowrap">hens</span>
+            {!isHensLocked && (
+              <Button
+                onClick={() => tripData.totalHens && setIsHensLocked(true)}
+                disabled={!tripData.totalHens || parseFloat(tripData.totalHens) <= 0}
+                className="px-4 py-3"
+              >
+                Confirm
+              </Button>
+            )}
+          </div>
+
+          {/* Loading charge readout -- in rupees, matching what the server stores
+              as the "loading" expense against this trip. */}
+          {tripData.totalHens && parseFloat(tripData.totalHens) > 0 && (
+            <div className="mt-4 p-3 bg-[#F6F7F6] rounded-lg flex items-center justify-between">
+              <span className="text-sm text-[#6B716D]">
+                {tripData.totalHens} hens × ₹{LOADING_RATE_PER_HEN}
+              </span>
+              <span className="font-semibold text-[#151A17]">
+                {formatCurrency(loadingCharge)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Expenses Section */}
@@ -247,22 +296,30 @@ const DriverDashboard = () => {
 
           <div className="space-y-4">
             {/* Diesel Input */}
-            <div className="relative max-w-xs">
+            <div className="max-w-xs">
               <label className="block text-sm text-[#6B716D] mb-1.5">Diesel Amount</label>
-              <input
-                type="number"
-                value={tripData.dieselAmount}
-                onChange={(e) => setTripData({ ...tripData, dieselAmount: e.target.value })}
-                onKeyDown={(e) => { if (e.key === 'Enter') setIsDieselLocked(true); }}
-                placeholder="Enter diesel amount"
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isDieselLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
-                disabled={isDieselLocked}
-                min="0"
-                step="1"
-              />
-              {!isDieselLocked && (
-                <button onClick={() => setIsDieselLocked(true)} className="absolute right-2 bottom-2.5 text-xs text-[#16834B] hover:underline">Enter</button>
-              )}
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={tripData.dieselAmount}
+                  onChange={(e) => setTripData({ ...tripData, dieselAmount: e.target.value })}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && tripData.dieselAmount) setIsDieselLocked(true); }}
+                  placeholder="e.g. 500"
+                  className={`flex-1 px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isDieselLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
+                  disabled={isDieselLocked}
+                  min="0"
+                  step="1"
+                />
+                {!isDieselLocked && (
+                  <Button
+                    onClick={() => tripData.dieselAmount && setIsDieselLocked(true)}
+                    disabled={!tripData.dieselAmount || parseFloat(tripData.dieselAmount) <= 0}
+                    className="px-4 py-2.5"
+                  >
+                    Confirm
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Diesel Bill Image Upload */}
@@ -274,15 +331,37 @@ const DriverDashboard = () => {
                   accept="image/*"
                   className="hidden"
                   id="diesel-photo"
-                  onChange={(e) => {
-                    if (e.target.files[0]) {
-                      // In a real app, you would upload this to cloud storage here and get a URL.
-                      // For now, we just show the preview
-                      setTripData({ 
-                        ...tripData, 
-                        dieselPhoto: e.target.files[0],
-                        dieselPhotoPreview: URL.createObjectURL(e.target.files[0])
+                  disabled={isUploadingPhoto}
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    setUploadError(null);
+                    setTripData((prev) => ({
+                      ...prev,
+                      dieselPhoto: file,
+                      dieselPhotoPreview: URL.createObjectURL(file),
+                    }));
+
+                    setIsUploadingPhoto(true);
+                    try {
+                      const formData = new FormData();
+                      formData.append('photo', file);
+                      const res = await api.post('/driver/upload-photo', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' },
                       });
+                      if (res.data.success) {
+                        setTripData((prev) => ({ ...prev, dieselPhotoUrl: res.data.url }));
+                      } else {
+                        setUploadError('Upload failed. Please try again.');
+                      }
+                    } catch (err) {
+                      console.error('Error uploading diesel photo:', err);
+                      setUploadError(
+                        err.response?.data?.message || 'Upload failed. Please try again.'
+                      );
+                    } finally {
+                      setIsUploadingPhoto(false);
                     }
                   }}
                 />
@@ -290,7 +369,7 @@ const DriverDashboard = () => {
                   {tripData.dieselPhotoPreview ? (
                     <div className="relative inline-block">
                       <img src={tripData.dieselPhotoPreview} alt="Bill" className="w-32 h-32 object-cover mx-auto rounded-lg border border-[#E5E8E6]" />
-                      <button onClick={(e) => { e.preventDefault(); setTripData({ ...tripData, dieselPhoto: null, dieselPhotoPreview: null }); }} className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600">
+                      <button onClick={(e) => { e.preventDefault(); setTripData({ ...tripData, dieselPhoto: null, dieselPhotoPreview: null, dieselPhotoUrl: '' }); setUploadError(null); }} className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600">
                         <FiX className="w-4 h-4" />
                       </button>
                     </div>
@@ -302,6 +381,15 @@ const DriverDashboard = () => {
                   )}
                 </label>
               </div>
+              {isUploadingPhoto && (
+                <p className="text-xs text-[#6B716D] mt-2">Uploading...</p>
+              )}
+              {!isUploadingPhoto && tripData.dieselPhotoPreview && tripData.dieselPhotoUrl && (
+                <p className="text-xs text-[#16834B] mt-2">Uploaded</p>
+              )}
+              {uploadError && (
+                <p className="text-xs text-[#D14343] mt-2">{uploadError}</p>
+              )}
             </div>
           </div>
         </div>
