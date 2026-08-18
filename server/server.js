@@ -21,6 +21,8 @@ const settingsRoutes = require('./routes/settings');
 const driverRoutes = require('./routes/driver');
 const cashVerificationRoutes = require('./routes/cashVerification');
 const paymentRoutes = require('./routes/payments'); // 💳 Online payments (Stripe / Razorpay)
+const expensesRoutes = require('./routes/expenses'); // admin trip expenses view
+const salariesRoutes = require('./routes/salaries'); // admin driver/staff salary tracking
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -148,6 +150,8 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/cash-verification', cashVerificationRoutes);
 app.use('/api/payments', paymentRoutes); // 💳 Online payments
+app.use('/api/expenses', expensesRoutes);
+app.use('/api/salaries', salariesRoutes);
 
 // The old /api/debug-routes handler read app._router, which no longer exists
 // in Express 5 — it would have thrown. It also published the full route map

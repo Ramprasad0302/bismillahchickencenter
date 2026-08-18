@@ -20,6 +20,8 @@ import Users from '../pages/admin/Users';
 import Staff from '../pages/admin/Staff';
 import Settings from '../pages/admin/Settings';
 import CashVerification from '../pages/admin/CashVerification';
+import Expenses from '../pages/admin/Expenses';
+import Salaries from '../pages/admin/Salaries';
 
 // Retailer Pages
 import RetailerDashboard from '../pages/retailer/RetailerDashboard';
@@ -76,7 +78,8 @@ const AppRoutes = () => {
             <Route path="/admin/drivers" element={<ComingSoon />} />
             <Route path="/admin/products" element={<ComingSoon />} />
             <Route path="/admin/inventory" element={<ComingSoon />} />
-            <Route path="/admin/expenses" element={<ComingSoon />} />
+            <Route path="/admin/expenses" element={<Expenses />} />
+            <Route path="/admin/salaries" element={<Salaries />} />
           </Route>
         </Route>
 

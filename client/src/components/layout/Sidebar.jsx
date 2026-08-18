@@ -17,7 +17,8 @@ import {
   FiUserPlus,
   FiBriefcase,
   FiCheckCircle,
-  FiLoader
+  FiLoader,
+  FiClipboard
 } from 'react-icons/fi';
 
 const Sidebar = ({ onClose }) => {
@@ -91,6 +92,8 @@ const Sidebar = ({ onClose }) => {
       category: 'Finance',
       items: [
         { path: '/admin/ledgers', label: 'Ledgers', icon: FiFileText },
+        { path: '/admin/expenses', label: 'Expenses', icon: FiClipboard },
+        { path: '/admin/salaries', label: 'Salaries', icon: FiDollarSign },
         { path: '/admin/payments', label: 'Payments', icon: FiCreditCard },
         { path: '/admin/cash-verification', label: 'Cash Verification', icon: FiCheckCircle },
         { path: '/admin/reports', label: 'Reports', icon: FiPieChart },
