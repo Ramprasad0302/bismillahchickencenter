@@ -5,9 +5,12 @@ const pool = require('../config/db');
 // ============================================
 exports.getCurrentPricing = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT default_price_per_kg FROM pricing ORDER BY id DESC LIMIT 1');
+        const [rows] = await pool.query(
+            'SELECT default_price_per_kg, avg_weight_per_bird FROM pricing ORDER BY id DESC LIMIT 1'
+        );
         const price = rows[0]?.default_price_per_kg || 188; // Default fallback if table is empty
-        res.json({ success: true, price });
+        const avgWeight = rows[0]?.avg_weight_per_bird ?? null;
+        res.json({ success: true, price, avgWeight: avgWeight === null ? null : parseFloat(avgWeight) });
     } catch (error) {
         console.error('Error fetching current pricing:', error);
         res.status(500).json({ success: false, message: 'Server error' });
@@ -20,8 +23,10 @@ exports.getCurrentPricing = async (req, res) => {
 exports.getAdminPricingData = async (req, res) => {
     try {
         // 1. Get the latest Global Price
-        const [globalRows] = await pool.query('SELECT default_price_per_kg, updated_at FROM pricing ORDER BY id DESC LIMIT 1');
-        const globalPrice = globalRows[0] || { default_price_per_kg: 188 };
+        const [globalRows] = await pool.query(
+            'SELECT default_price_per_kg, avg_weight_per_bird, updated_at FROM pricing ORDER BY id DESC LIMIT 1'
+        );
+        const globalPrice = globalRows[0] || { default_price_per_kg: 188, avg_weight_per_bird: null };
 
         // 2. Get all retailers and join with their custom prices (if they exist)
         const [retailers] = await pool.query(`
@@ -40,6 +45,11 @@ exports.getAdminPricingData = async (req, res) => {
         res.json({
             success: true,
             globalPrice: globalPrice.default_price_per_kg,
+            avgWeight:
+                globalPrice.avg_weight_per_bird === null ||
+                globalPrice.avg_weight_per_bird === undefined
+                    ? null
+                    : parseFloat(globalPrice.avg_weight_per_bird),
             lastUpdated: globalPrice.updated_at,
             retailers: retailers
         });
@@ -60,18 +70,39 @@ exports.updateGlobalPrice = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Access denied. Admin only.' });
         }
 
-        const { price } = req.body;
+        const { price, avgWeight } = req.body;
         if (!price || price <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid price provided' });
         }
 
+        // avgWeight is optional. When the admin edits only the price we must keep
+        // the existing weight, because this table is append-only — a new row with
+        // NULL here would silently wipe the value everywhere it's displayed.
+        let weightToStore = null;
+
+        if (avgWeight !== undefined && avgWeight !== null && avgWeight !== '') {
+            const parsed = parseFloat(avgWeight);
+            if (Number.isNaN(parsed) || parsed <= 0 || parsed > 999) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Average weight must be a number greater than 0',
+                });
+            }
+            weightToStore = parsed;
+        } else {
+            const [prev] = await pool.query(
+                'SELECT avg_weight_per_bird FROM pricing ORDER BY id DESC LIMIT 1'
+            );
+            weightToStore = prev[0]?.avg_weight_per_bird ?? null;
+        }
+
         // Insert a new row into pricing table
         await pool.query(
-            'INSERT INTO pricing (default_price_per_kg, updated_by) VALUES (?, ?)',
-            [price, req.user.name || 'Admin']
+            'INSERT INTO pricing (default_price_per_kg, avg_weight_per_bird, updated_by) VALUES (?, ?, ?)',
+            [price, weightToStore, req.user.name || 'Admin']
         );
 
-        res.json({ success: true, message: 'Global price updated successfully!' });
+        res.json({ success: true, message: 'Global pricing updated successfully!' });
 
     } catch (error) {
         console.error('Error updating global price:', error);
@@ -158,8 +189,11 @@ exports.getRetailerPrice = async (req, res) => {
         const retailerId = retailer[0].id;
 
         // 2. Get latest global price
-        const [globalRow] = await pool.query('SELECT default_price_per_kg FROM pricing ORDER BY id DESC LIMIT 1');
+        const [globalRow] = await pool.query(
+            'SELECT default_price_per_kg, avg_weight_per_bird FROM pricing ORDER BY id DESC LIMIT 1'
+        );
         const globalPrice = globalRow[0]?.default_price_per_kg || 188;
+        const avgWeight = globalRow[0]?.avg_weight_per_bird ?? null;
 
         // 3. Check if this specific retailer has a custom price
         const [customRow] = await pool.query(
@@ -173,6 +207,7 @@ exports.getRetailerPrice = async (req, res) => {
         res.json({
             success: true,
             price: finalPrice,
+            avgWeight: avgWeight === null ? null : parseFloat(avgWeight),
             isCustom: customRow.length > 0
         });
 

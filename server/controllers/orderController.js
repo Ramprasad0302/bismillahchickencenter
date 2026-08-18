@@ -19,6 +19,8 @@ const createOrder = async (req, res) => {
         
         const {
             kg_ordered,
+            hens_ordered = null,
+            avg_weight_used = null,
             rate_per_kg,
             delivery_charge = 0,
             discount = 0,
@@ -30,6 +32,8 @@ const createOrder = async (req, res) => {
         
         console.log('📦 Order Data Received:', {
             kg_ordered,
+            hens_ordered,
+            avg_weight_used,
             rate_per_kg,
             delivery_charge,
             discount,
@@ -51,6 +55,34 @@ const createOrder = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Please enter a valid rate per kg'
+            });
+        }
+
+        // Retailers order in hens; kg_ordered is derived on the client from the
+        // day's average weight. Both are stored so the order can still be read
+        // as "500 hens" later, after the average has moved on. Optional, so
+        // orders placed with kg only still work.
+        const hensToStore =
+            hens_ordered === null || hens_ordered === undefined || hens_ordered === ''
+                ? null
+                : parseInt(hens_ordered, 10);
+
+        const avgWeightToStore =
+            avg_weight_used === null || avg_weight_used === undefined || avg_weight_used === ''
+                ? null
+                : parseFloat(avg_weight_used);
+
+        if (hensToStore !== null && (Number.isNaN(hensToStore) || hensToStore <= 0)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please enter a valid number of hens'
+            });
+        }
+
+        if (avgWeightToStore !== null && (Number.isNaN(avgWeightToStore) || avgWeightToStore <= 0)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid average weight'
             });
         }
 
@@ -122,6 +154,8 @@ const createOrder = async (req, res) => {
                         order_number,
                         retailer_id,
                         kg_ordered,
+                        hens_ordered,
+                        avg_weight_used,
                         rate_per_kg,
                         subtotal,
                         discount,
@@ -136,11 +170,13 @@ const createOrder = async (req, res) => {
                         notes,
                         order_date,
                         created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
                     [
                         order_number,
                         retailerId,
                         kg_ordered,
+                        hensToStore,
+                        avgWeightToStore,
                         rate_per_kg,
                         subtotal,
                         discount,

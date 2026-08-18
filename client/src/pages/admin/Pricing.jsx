@@ -39,8 +39,11 @@ const Pricing = () => {
   const [userPrices, setUserPrices] = useState([]);
   const [customPriceUsers, setCustomPriceUsers] = useState(0);
   
+  const [avgWeight, setAvgWeight] = useState(null);
+
   const [isEditingDefault, setIsEditingDefault] = useState(false);
   const [editPriceValue, setEditPriceValue] = useState('');
+  const [editAvgWeightValue, setEditAvgWeightValue] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -60,9 +63,10 @@ const Pricing = () => {
       const response = await api.get('/pricing/admin-data');
       
       if (response.data.success) {
-        const { globalPrice, lastUpdated, retailers } = response.data;
+        const { globalPrice, avgWeight: fetchedAvgWeight, lastUpdated, retailers } = response.data;
         
         setCurrentPrice(globalPrice);
+        setAvgWeight(fetchedAvgWeight ?? null);
         setLastUpdated(formatDate(lastUpdated));
         setUserPrices(retailers);
         
@@ -70,8 +74,9 @@ const Pricing = () => {
         const customCount = retailers.filter(r => r.custom_price > 0).length;
         setCustomPriceUsers(customCount);
         
-        // Update edit input to match current
+        // Update edit inputs to match current
         setEditPriceValue(globalPrice);
+        setEditAvgWeightValue(fetchedAvgWeight ?? '');
       }
     } catch (err) {
       console.error('Error fetching pricing data:', err);
@@ -95,16 +100,29 @@ const Pricing = () => {
       return;
     }
 
+    // Average weight is optional — leaving it blank keeps the existing value.
+    let newAvgWeight;
+    if (editAvgWeightValue !== '' && editAvgWeightValue !== null) {
+      newAvgWeight = parseFloat(editAvgWeightValue);
+      if (Number.isNaN(newAvgWeight) || newAvgWeight <= 0) {
+        alert('Please enter a valid average weight greater than 0');
+        return;
+      }
+    }
+
     try {
-      const response = await api.post('/pricing/global', { price: newPrice });
+      const response = await api.post('/pricing/global', {
+        price: newPrice,
+        avgWeight: newAvgWeight,
+      });
       if (response.data.success) {
-        alert('Global price updated successfully!');
+        alert('Global pricing updated successfully!');
         setIsEditingDefault(false);
         fetchPricingData(); // Refresh data from server
       }
     } catch (err) {
-      console.error('Error updating global price:', err);
-      alert('Failed to update global price. Please try again.');
+      console.error('Error updating global pricing:', err);
+      alert(err.response?.data?.message || 'Failed to update global pricing. Please try again.');
     }
   };
 
@@ -255,6 +273,39 @@ const Pricing = () => {
                 <span className="ml-2 text-sm text-[#6B716D]">/ kg</span>
               </div>
             )}
+
+            {/* Average weight per bird — global, shown to retailers */}
+            {isEditingDefault ? (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-[#151A17] mb-1">
+                  Average weight per bird
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={editAvgWeightValue}
+                    onChange={(e) => setEditAvgWeightValue(e.target.value)}
+                    className="w-32 px-4 py-2 text-lg font-semibold border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 1.80"
+                  />
+                  <span className="text-sm text-[#6B716D]">kg / bird</span>
+                </div>
+                <p className="text-xs text-[#6B716D] mt-1">
+                  Leave blank to keep the current value.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-3">
+                <span className="text-sm text-[#6B716D]">Average weight per bird: </span>
+                <span className="text-lg font-semibold text-[#151A17]">
+                  {avgWeight !== null && avgWeight !== undefined
+                    ? `${avgWeight} kg`
+                    : 'Not set'}
+                </span>
+              </div>
+            )}
           </div>
           
           <div className="text-right">
@@ -266,6 +317,7 @@ const Pricing = () => {
                   onClick={() => {
                     setIsEditingDefault(false);
                     setEditPriceValue(currentPrice);
+                    setEditAvgWeightValue(fetchedAvgWeight ?? '');
                   }}
                 >
                   <FiX className="w-4 h-4 mr-1" />
@@ -276,7 +328,7 @@ const Pricing = () => {
                   onClick={handleDefaultPriceUpdate}
                 >
                   <FiSave className="w-4 h-4 mr-1" />
-                  Save Price
+                  Save Pricing
                 </Button>
               </div>
             ) : (
@@ -286,10 +338,11 @@ const Pricing = () => {
                 onClick={() => {
                   setIsEditingDefault(true);
                   setEditPriceValue(currentPrice);
+                  setEditAvgWeightValue(fetchedAvgWeight ?? '');
                 }}
               >
                 <FiEdit2 className="w-4 h-4 mr-1" />
-                Update Price
+                Update Pricing
               </Button>
             )}
             <p className="text-xs text-[#6B716D] mt-2">

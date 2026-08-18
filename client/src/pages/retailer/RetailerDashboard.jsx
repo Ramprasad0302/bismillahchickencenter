@@ -38,6 +38,7 @@ const RetailerDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [error, setError] = useState(null);
   const [pricePerKg, setPricePerKg] = useState(188);
+  const [avgWeight, setAvgWeight] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -114,14 +115,20 @@ const RetailerDashboard = () => {
         console.log('✅ Pricing response:', pricingResponse.data);
         if (pricingResponse.data.success) {
           setPricePerKg(pricingResponse.data.price);
+          // Global figure set by the admin on the Pricing page. May be null if
+          // it has never been set — the card hides itself in that case rather
+          // than showing a misleading zero.
+          setAvgWeight(pricingResponse.data.avgWeight ?? null);
         } else {
           // Fallback if API succeeds but data is missing
           setPricePerKg(188);
+          setAvgWeight(null);
         }
       } catch (pricingError) {
         console.log('ℹ️ Falling back to default pricing:', pricingError.message);
         // Fallback if request fails
         setPricePerKg(188);
+        setAvgWeight(null);
       } finally {
         setPriceLoading(false);
       }
@@ -277,6 +284,16 @@ const RetailerDashboard = () => {
         )}
         
         <p className="text-xs text-white/40 mt-1">per kg (UPI / Cash)</p>
+
+        {/* Average weight per bird — set globally by the admin. Hidden when
+            it has never been configured. */}
+        {!priceLoading && avgWeight !== null && avgWeight !== undefined && (
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <p className="text-sm text-white/60">AVERAGE WEIGHT</p>
+            <p className="text-xl font-bold mt-1">{avgWeight} kg</p>
+            <p className="text-xs text-white/40 mt-1">per bird</p>
+          </div>
+        )}
       </div>
 
       {/* Place New Order Button */}

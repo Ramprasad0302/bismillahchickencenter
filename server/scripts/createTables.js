@@ -64,6 +64,7 @@ const createTables = async () => {
       CREATE TABLE IF NOT EXISTS pricing (
         id INT PRIMARY KEY AUTO_INCREMENT,
         default_price_per_kg DECIMAL(10,2) NOT NULL,
+        avg_weight_per_bird DECIMAL(5,2) NULL,
         updated_by VARCHAR(50),
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )

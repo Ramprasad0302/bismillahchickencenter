@@ -21,7 +21,7 @@ import { startCheckout, redirectToGateway } from '../../services/paymentService'
 
 const RetailerPlaceOrder = () => {
   const navigate = useNavigate();
-  const [kg, setKg] = useState('');
+  const [hens, setHens] = useState('');
   const [selectedPayment, setSelectedPayment] = useState('upi');
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [customAmount, setCustomAmount] = useState('');
@@ -36,10 +36,11 @@ const RetailerPlaceOrder = () => {
 
   // LIVE DATA STATES
   const [pricePerKg, setPricePerKg] = useState(0);
+  const [avgWeight, setAvgWeight] = useState(null);
   const [outstanding, setOutstanding] = useState(0);
   const [dataError, setDataError] = useState(null);
 
-  const quickKgOptions = [50, 100, 200, 300, 500];
+  const quickHenOptions = [50, 100, 200, 300, 500];
 
   // FETCH LIVE PRICE & OUTSTANDING ON LOAD
   useEffect(() => {
@@ -51,8 +52,10 @@ const RetailerPlaceOrder = () => {
         const priceRes = await api.get('/pricing/retailer-price');
         if (priceRes.data.success) {
           setPricePerKg(priceRes.data.price);
+          setAvgWeight(priceRes.data.avgWeight ?? null);
         } else {
           setPricePerKg(188); // Fallback
+          setAvgWeight(null);
         }
 
         // 2. Get Outstanding Balance
@@ -65,6 +68,7 @@ const RetailerPlaceOrder = () => {
         console.error('Error loading place order data:', err);
         setDataError('Failed to load pricing/outstanding data.');
         setPricePerKg(188); // Fallback
+        setAvgWeight(null); // No guessing at weight — the page blocks instead
         setOutstanding(0);  // Fallback
       } finally {
         setIsPageLoading(false);
@@ -74,24 +78,38 @@ const RetailerPlaceOrder = () => {
     fetchLiveData();
   }, []);
 
-  const totalAmount = kg ? parseFloat(kg) * pricePerKg : 0;
+  // The retailer orders in HENS. Total weight is derived from the average
+  // weight per bird that the admin set for the day, and the money is then the
+  // same calculation as before: weight x price per kg.
+  const henCount = hens ? parseFloat(hens) : 0;
+  const totalKg = avgWeight ? henCount * avgWeight : 0;
+  const totalAmount = totalKg * pricePerKg;
+
+  // Without an average weight there is no way to turn hens into kilograms, so
+  // ordering is blocked rather than guessed at.
+  const weightMissing = avgWeight === null || avgWeight === undefined || avgWeight <= 0;
 
   const handlePlaceOrder = () => {
     setError(null);
     setSuccessMessage(null);
     setPlacedOrder(null);
 
-    if (!kg || parseFloat(kg) <= 0) {
-      setError('Please enter a valid quantity in KG');
+    if (!hens || henCount <= 0) {
+      setError('Please enter how many hens you want');
       return;
     }
-    if (totalAmount > outstanding) {
-      setError(`You have outstanding balance of ₹${outstanding.toLocaleString()}. Please clear your dues first.`);
+
+    if (weightMissing) {
+      setError(
+        'Average weight per hen has not been set for today. Please contact the admin.'
+      );
       return;
     }
     
     const orderSummary = {
-      kg: parseFloat(kg),
+      hens: henCount,
+      avgWeight: avgWeight,
+      kg: parseFloat(totalKg.toFixed(2)),
       rate_per_kg: pricePerKg,
       totalAmount: totalAmount,
       paymentMethod: selectedPayment === 'upi' ? 'UPI' : 'Cash',
@@ -112,6 +130,8 @@ const RetailerPlaceOrder = () => {
     try {
       const apiOrderData = {
         kg_ordered: orderData.kg,
+        hens_ordered: orderData.hens,
+        avg_weight_used: orderData.avgWeight,
         rate_per_kg: orderData.rate_per_kg,
         delivery_charge: 0,
         discount: 0,
@@ -147,7 +167,7 @@ const RetailerPlaceOrder = () => {
           checkoutRes.message ||
             `Order ${newOrder.order_number} was created but the payment could not be started. Pay it from the Payments page.`
         );
-        setKg('');
+        setHens('');
         setDeliveryAddress('');
         setNotes('');
         setCustomAmount('');
@@ -162,6 +182,8 @@ const RetailerPlaceOrder = () => {
       // Store the order details
       const orderDetails = {
         orderNumber: response.data.data.order_number,
+        hens: orderData.hens,
+        avgWeight: orderData.avgWeight,
         kg: orderData.kg,
         totalAmount: parseFloat(response.data.data.total_amount) || 0,
         paymentMethod: orderData.paymentMethod,
@@ -176,7 +198,7 @@ const RetailerPlaceOrder = () => {
       setPlacedOrder(orderDetails);
       
       // Reset form
-      setKg('');
+      setHens('');
       setDeliveryAddress('');
       setNotes('');
       setCustomAmount('');
@@ -216,7 +238,7 @@ const RetailerPlaceOrder = () => {
     setPlacedOrder(null);
     setSuccessMessage(null);
     setError(null);
-    setKg('');
+    setHens('');
     setDeliveryAddress('');
     setNotes('');
     setCustomAmount('');
@@ -282,7 +304,9 @@ const RetailerPlaceOrder = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
               <span className="text-sm text-[#6B716D]">📦 Quantity</span>
-              <span className="font-medium text-[#151A17]">{placedOrder.kg} kg</span>
+              <span className="font-medium text-[#151A17]">
+                {placedOrder.hens} hens ({placedOrder.kg} kg)
+              </span>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
               <span className="text-sm text-[#6B716D]">💰 Rate</span>
@@ -380,7 +404,7 @@ const RetailerPlaceOrder = () => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-[#151A17]">Place Order</h1>
-        <p className="text-sm text-[#6B716D] mt-1">Just enter kilograms. That's it.</p>
+        <p className="text-sm text-[#6B716D] mt-1">Just enter the number of hens. That's it.</p>
       </div>
 
       {/* Error Message */}
@@ -403,41 +427,80 @@ const RetailerPlaceOrder = () => {
         </div>
       )}
 
-      {/* Outstanding Warning - LIVE DATA */}
-      <div className="bg-[#FDEEEE] border border-[#D14343] rounded-xl p-4 mb-6">
-        <div className="flex items-center gap-2">
-          <FiAlertCircle className="w-5 h-5 text-[#D14343]" />
-          <p className="text-sm text-[#D14343]">
-            Outstanding Balance: <span className="font-bold">{formatCurrency(outstanding)}</span>
+      {/* Outstanding balance — informational only, never blocks an order.
+          Hidden entirely when the retailer owes nothing. */}
+      {outstanding > 0 && (
+        <div className="bg-[#FFF8E6] border border-[#E0A32E] rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <FiAlertCircle className="w-5 h-5 text-[#E0A32E]" />
+            <p className="text-sm text-[#151A17]">
+              Outstanding Balance: <span className="font-bold">{formatCurrency(outstanding)}</span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Today's rate — set by the admin, read-only here */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
+          <p className="text-xs font-medium text-[#6B716D]">PRICE PER KG</p>
+          <p className="text-2xl font-bold text-[#151A17] mt-1">₹{pricePerKg}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
+          <p className="text-xs font-medium text-[#6B716D]">AVG WEIGHT / HEN</p>
+          <p className="text-2xl font-bold text-[#151A17] mt-1">
+            {weightMissing ? '—' : `${avgWeight} kg`}
           </p>
         </div>
       </div>
 
-      {/* KG Input */}
+      {/* Average weight is what converts hens into kilograms. Without it the
+          order cannot be priced, so say so plainly instead of guessing. */}
+      {!isPageLoading && weightMissing && (
+        <div className="bg-[#FDEEEE] border border-[#D14343] rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <FiAlertCircle className="w-5 h-5 text-[#D14343]" />
+            <p className="text-sm text-[#151A17]">
+              Today's average weight per hen hasn't been set yet. Please contact the
+              admin before ordering.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Hen Count Input */}
       <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
         <label className="block text-sm font-medium text-[#151A17] mb-2">
-          How many KG?
+          How many hens?
         </label>
         <div className="flex items-center gap-4">
           <input
             type="number"
-            value={kg}
-            onChange={(e) => setKg(e.target.value)}
-            placeholder="e.g. 220"
+            value={hens}
+            onChange={(e) => setHens(e.target.value)}
+            placeholder="e.g. 500"
             className="flex-1 px-4 py-3 text-lg border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
             min="0"
             step="1"
-            disabled={isLoading}
+            disabled={isLoading || weightMissing}
           />
-          <span className="text-lg font-medium text-[#6B716D]">kg</span>
+          <span className="text-lg font-medium text-[#6B716D]">hens</span>
         </div>
 
-        {/* Quick KG Options */}
+        {/* Live weight conversion so the retailer sees what they're getting */}
+        {henCount > 0 && !weightMissing && (
+          <p className="text-sm text-[#6B716D] mt-3">
+            {henCount} hens × {avgWeight} kg ={' '}
+            <span className="font-bold text-[#151A17]">{totalKg.toFixed(2)} kg</span>
+          </p>
+        )}
+
+        {/* Quick Hen Options */}
         <div className="flex flex-wrap gap-2 mt-4">
-          {quickKgOptions.map((option) => (
+          {quickHenOptions.map((option) => (
             <button
               key={option}
-              onClick={() => setKg(option.toString())}
+              onClick={() => setHens(option.toString())}
               className="px-4 py-2 bg-[#F6F7F6] rounded-lg text-sm text-[#151A17] hover:bg-[#E5E8E6] transition"
               disabled={isLoading}
             >
@@ -534,10 +597,10 @@ const RetailerPlaceOrder = () => {
         </button>
 
         {/* Custom Amount - Only Show for UPI */}
-        {kg && parseFloat(kg) > 0 && selectedPayment === 'upi' && (
+        {henCount > 0 && !weightMissing && selectedPayment === 'upi' && (
           <div className="mt-4 p-4 bg-[#F6F7F6] rounded-lg">
             <p className="text-sm text-[#6B716D] mb-2">
-              Total: {kg} kg × ₹{pricePerKg} = ₹{totalAmount.toFixed(0)}
+              Total: {henCount} hens × {avgWeight} kg × ₹{pricePerKg} = ₹{totalAmount.toFixed(0)}
             </p>
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-[#151A17]">Pay:</span>
@@ -562,10 +625,10 @@ const RetailerPlaceOrder = () => {
         )}
 
         {/* Show total for Cash without custom amount input */}
-        {kg && parseFloat(kg) > 0 && selectedPayment === 'cash' && (
+        {henCount > 0 && !weightMissing && selectedPayment === 'cash' && (
           <div className="mt-4 p-4 bg-[#F6F7F6] rounded-lg">
             <p className="text-sm text-[#6B716D]">
-              Total: {kg} kg × ₹{pricePerKg} = <span className="font-bold text-[#151A17]">₹{totalAmount.toFixed(0)}</span>
+              Total: {henCount} hens × {avgWeight} kg × ₹{pricePerKg} = <span className="font-bold text-[#151A17]">₹{totalAmount.toFixed(0)}</span>
             </p>
             <p className="text-xs text-[#6B716D] mt-1">
               <FiCheck className="inline w-3 h-3 text-[#16834B] mr-1" />
@@ -582,31 +645,26 @@ const RetailerPlaceOrder = () => {
             <p className="text-sm text-[#6B716D]">TOTAL</p>
             {/* ✅ FIXED: Using {pricePerKg} variable dynamically */}
             <p className="text-sm text-[#6B716D]">
-              {kg && parseFloat(kg) > 0 
-                ? `${kg} kg × ₹${pricePerKg}`
-                : `0 kg × ₹${pricePerKg}`}
+              {henCount > 0 && !weightMissing
+                ? `${henCount} hens · ${totalKg.toFixed(2)} kg × ₹${pricePerKg}`
+                : `0 hens · 0 kg × ₹${pricePerKg}`}
             </p>
             <p className="text-xs text-[#6B716D] mt-1">
               Payment: {selectedPayment === 'upi' ? 'UPI' : 'Cash'}
             </p>
           </div>
           <p className="text-3xl font-bold text-[#111714]">
-            {kg && parseFloat(kg) > 0 
+            {henCount > 0 && !weightMissing
               ? `₹${totalAmount.toFixed(0)}`
               : '₹0'}
           </p>
         </div>
         
-        {kg && parseFloat(kg) > 0 && totalAmount > outstanding && (
-          <p className="text-sm text-[#D14343] mb-3">
-            ⚠️ You have outstanding balance. Please clear your dues first.
-          </p>
-        )}
         
         <Button 
           className="w-full py-4 text-base"
           onClick={handlePlaceOrder}
-          disabled={!kg || parseFloat(kg) <= 0 || totalAmount > outstanding || isLoading}
+          disabled={!hens || henCount <= 0 || weightMissing || isLoading}
         >
           {isLoading ? (
             <>
@@ -671,7 +729,9 @@ const RetailerPlaceOrder = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
                   <span className="text-sm text-[#6B716D]">📦 Quantity</span>
-                  <span className="font-medium text-[#151A17]">{orderData.kg} kg</span>
+                  <span className="font-medium text-[#151A17]">
+                    {orderData.hens} hens ({orderData.kg} kg)
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
