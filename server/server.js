@@ -7,6 +7,28 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
+// ============================================
+// Silence console.log/console.info/console.debug in production.
+//
+// The codebase has many console.log calls across controllers and scripts,
+// used during development. Rather than touching every one of those files,
+// this mutes them all at once by overriding the console methods themselves
+// before any route module is required below -- every controller's later
+// `console.log(...)` calls become no-ops in production automatically.
+//
+// console.error and console.warn are left untouched on purpose: those are
+// server-side terminal/log output only you see via SSH or PM2 logs -- never
+// exposed to a website visitor -- and are exactly what you want when
+// something breaks in production.
+// ============================================
+if (!IS_DEV) {
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+}
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -27,7 +49,6 @@ const tripOverviewRoutes = require('./routes/tripOverview'); // admin loaded-vs-
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const IS_DEV = process.env.NODE_ENV !== 'production';
 
 // ============================================
 // CORS
@@ -87,7 +108,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ============================================
-// Request logging
+// Request logging -- dev only. In production this line would otherwise be
+// the single noisiest thing in the logs (one line per request); it's
+// wrapped in IS_DEV directly rather than relying only on the console.log
+// override above, so it costs nothing at all in production instead of
+// running and silently discarding its output.
 // ============================================
 const SENSITIVE_FIELDS = [
   'password',
@@ -105,19 +130,20 @@ const redact = (body) => {
   return copy;
 };
 
-app.use((req, res, next) => {
-  console.log(`📝 ${req.method} ${req.url}`);
-  // Buffer check: the webhook body is a raw Buffer, not a plain object.
-  if (
-    IS_DEV &&
-    req.body &&
-    !Buffer.isBuffer(req.body) &&
-    Object.keys(req.body).length > 0
-  ) {
-    console.log('📦 Body:', redact(req.body));
-  }
-  next();
-});
+if (IS_DEV) {
+  app.use((req, res, next) => {
+    console.log(`📝 ${req.method} ${req.url}`);
+    // Buffer check: the webhook body is a raw Buffer, not a plain object.
+    if (
+      req.body &&
+      !Buffer.isBuffer(req.body) &&
+      Object.keys(req.body).length > 0
+    ) {
+      console.log('📦 Body:', redact(req.body));
+    }
+    next();
+  });
+}
 
 // ============================================
 // Health check
