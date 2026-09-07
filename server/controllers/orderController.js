@@ -1,8 +1,14 @@
 const pool = require('../config/db');
+const paymentService = require('../services/paymentService');
 
 // createTables.js creates `ledger`; the old recordPayment inserted into
 // `ledgers`, which does not exist — every admin payment threw and rolled back.
 const LEDGER_TABLE = process.env.LEDGER_TABLE || 'ledger';
+
+// Anything under ₹1 left on a bill isn't real money owed at this business's
+// whole-rupee pricing. Same threshold used in driverController.js and
+// paymentService.settleTransaction so every path agrees on "paid".
+const PAID_THRESHOLD = 1;
 
 // ============================================
 // CREATE ORDER
@@ -290,7 +296,15 @@ const getMyOrders = async (req, res) => {
             });
         }
 
+        // Clear out any abandoned UPI checkouts before showing the list.
+        await paymentService.expireStalePendingOrders();
+
         // ✅ COMPLETE QUERY: Pull delivered_status directly from trip_orders
+        // Abandoned UPI checkouts (cancelled, nothing ever paid) never
+        // became a real order from the retailer's point of view — they
+        // clicked back before paying, so nothing should show up here at
+        // all. This only excludes that specific case; a genuinely
+        // cancelled cash/credit order (if that ever happens) still shows.
         const [orders] = await pool.query(`
             SELECT 
                 o.id,
@@ -323,6 +337,7 @@ const getMyOrders = async (req, res) => {
             LEFT JOIN trip_orders to_ ON o.id = to_.order_id
             LEFT JOIN trips t ON o.trip_id = t.id
             WHERE o.retailer_id = ?
+              AND NOT (o.order_status = 'cancelled' AND o.payment_method = 'upi' AND o.paid_amount = 0)
             ORDER BY o.created_at DESC
         `, [retailer[0].id]);
 
@@ -367,8 +382,14 @@ const getAllOrders = async (req, res) => {
 
         console.log('📋 Fetching orders...');
 
+        // Clear out any abandoned UPI checkouts before showing the list.
+        await paymentService.expireStalePendingOrders();
+
         const { retailer_id } = req.query;
 
+        // Abandoned UPI checkouts (cancelled, nothing ever paid) are noise,
+        // not orders — excluded here too so admin doesn't have to mentally
+        // filter out every browser-back-button abandonment.
         let sqlQuery = `
             SELECT 
                 o.id,
@@ -397,12 +418,13 @@ const getAllOrders = async (req, res) => {
             JOIN retailers r ON o.retailer_id = r.id
             LEFT JOIN trip_orders to_ ON o.id = to_.order_id
             LEFT JOIN trips t ON o.trip_id = t.id
+            WHERE NOT (o.order_status = 'cancelled' AND o.payment_method = 'upi' AND o.paid_amount = 0)
         `;
         
         let queryParams = [];
 
         if (retailer_id) {
-            sqlQuery += ` WHERE o.retailer_id = ?`;
+            sqlQuery += ` AND o.retailer_id = ?`;
             queryParams.push(retailer_id);
         }
 
@@ -435,7 +457,9 @@ const getAllOrders = async (req, res) => {
 };
 
 // ============================================
-// GET ORDER BY ID (Single order details) ✅ FINAL FIX
+// GET ORDER BY ID (Single order details) — now includes hens/kg
+// ordered vs delivered, the trip/driver/company it went through, and
+// any online payment transactions, for the admin order detail page.
 // ============================================
 const getOrderById = async (req, res) => {
     try {
@@ -444,14 +468,18 @@ const getOrderById = async (req, res) => {
         const userId = req.user.id;
         const userRole = req.user.role;
 
-        // ✅ CRITICAL FIX: Include o.retailer_id in the SELECT clause!
         const [orders] = await pool.query(`
             SELECT 
                 o.id,
                 o.order_number,
-                o.retailer_id,  -- 🟢 THIS WAS MISSING! Without this, undefined happens.
+                o.retailer_id,
                 o.kg_ordered,
+                o.hens_ordered,
+                o.avg_weight_used,
                 o.rate_per_kg,
+                o.subtotal,
+                o.discount,
+                o.delivery_charge,
                 o.total_amount,
                 o.paid_amount,
                 o.balance,
@@ -459,6 +487,7 @@ const getOrderById = async (req, res) => {
                 o.payment_status,
                 o.order_status as original_order_status,
                 o.delivery_address,
+                o.notes,
                 o.order_date,
                 o.created_at,
                 o.delivered_date,
@@ -468,15 +497,21 @@ const getOrderById = async (req, res) => {
                 COALESCE(to_.actual_delivered_kg, 
                     CASE WHEN o.order_status = 'delivered' THEN o.kg_ordered ELSE 0 END
                 ) as kg_delivered,
+                COALESCE(to_.hens_delivered, 0) as hens_delivered,
                 COALESCE(to_.cash_collected, 0) as cash_collected,
                 t.trip_number,
+                t.date as trip_date,
+                d.name as driver_name,
+                c.name as company_name,
                 to_.delivered_status
             FROM orders o
             JOIN retailers r ON o.retailer_id = r.id
             LEFT JOIN trip_orders to_ ON o.id = to_.order_id
-            LEFT JOIN trips t ON o.trip_id = t.id
+            LEFT JOIN trips t ON to_.trip_id = t.id
+            LEFT JOIN drivers d ON t.driver_id = d.id
+            LEFT JOIN companies c ON t.company_id = c.id
             WHERE o.id = ? 
-        `, [id]); // ✅ Searching by Numeric Primary ID
+        `, [id]);
 
         if (orders.length === 0) {
             return res.status(404).json({
@@ -509,6 +544,16 @@ const getOrderById = async (req, res) => {
                 });
             }
         }
+
+        // Online payment attempts against this order (Stripe/Razorpay) — only
+        // meaningful for UPI orders, but harmless to fetch either way.
+        const [transactions] = await pool.query(`
+            SELECT reference, provider, provider_payment_id, amount, status, settled, created_at
+            FROM payment_transactions
+            WHERE order_id = ?
+            ORDER BY created_at DESC
+        `, [id]);
+        order.transactions = transactions;
 
         res.status(200).json({
             success: true,
@@ -714,7 +759,8 @@ const recordPayment = async (req, res) => {
 
             const newBalance = parseFloat((currentBalance - payAmount).toFixed(2));
             const newPaid = parseFloat(((parseFloat(order.paid_amount) || 0) + payAmount).toFixed(2));
-            const paymentStatus = newBalance <= 0 ? 'paid' : newPaid > 0 ? 'partial' : 'pending';
+            // A balance under ₹1 counts as fully paid -- see PAID_THRESHOLD.
+            const paymentStatus = newBalance < PAID_THRESHOLD ? 'paid' : newPaid > 0 ? 'partial' : 'pending';
 
             await connection.query(
                 `UPDATE orders
@@ -758,11 +804,12 @@ const recordPayment = async (req, res) => {
         );
 
         // ---- Recalculate outstanding from the bills themselves ----
+        // Balances under ₹1 don't count as "owed" here either.
         const [[{ outstanding }]] = await connection.query(
             `SELECT COALESCE(SUM(balance), 0) AS outstanding
                FROM orders
-              WHERE retailer_id = ? AND order_status != 'cancelled'`,
-            [retailer_id]
+              WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?`,
+            [retailer_id, PAID_THRESHOLD]
         );
 
         await connection.query(

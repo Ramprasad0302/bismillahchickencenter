@@ -15,6 +15,7 @@ import {
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import api from '../../services/api';
+import { startCheckout, redirectToGateway } from '../../services/paymentService';
 
 const RetailerOrderDetails = () => {
   // ✅ Now reading the Numeric ID (e.g., 4, 11, etc.)
@@ -22,6 +23,10 @@ const RetailerOrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Make Payment button state
+  const [isStartingPayment, setIsStartingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
 
   // ✅ Fetch order details from API
   useEffect(() => {
@@ -54,6 +59,25 @@ const RetailerOrderDetails = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Send the retailer to the payment gateway to clear this order's balance.
+  const handleMakePayment = async () => {
+    setPaymentError(null);
+    setIsStartingPayment(true);
+    try {
+      const res = await startCheckout({ orderId: order.id });
+      if (res.success && res.data?.redirect_url) {
+        redirectToGateway(res.data.redirect_url);
+        return; // leaving the page
+      }
+      setPaymentError(res.message || 'Could not start the payment. Please try again.');
+    } catch (err) {
+      console.error('❌ Error starting checkout:', err);
+      setPaymentError(err.response?.data?.message || 'Could not start the payment. Please try again.');
+    } finally {
+      setIsStartingPayment(false);
     }
   };
 
@@ -187,6 +211,7 @@ const RetailerOrderDetails = () => {
   const statusInfo = getStatusInfo(order.order_status, order.delivered_status);
   const paymentInfo = getPaymentStatusInfo(order.payment_status);
   const timeline = getTimeline(order.order_status, order.delivered_status);
+  const balanceDue = parseFloat(order.balance) || 0;
 
   return (
     <div>
@@ -335,11 +360,40 @@ const RetailerOrderDetails = () => {
           {/* Actions */}
           <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
             <h3 className="font-semibold text-[#151A17] mb-4">Actions</h3>
+
+            {paymentError && (
+              <div className="mb-3 p-3 bg-[#FDEEEE] border border-[#D14343]/20 rounded-lg flex items-start gap-2">
+                <FiAlertCircle className="w-4 h-4 text-[#D14343] mt-0.5 shrink-0" />
+                <p className="text-xs text-[#D14343]">{paymentError}</p>
+              </div>
+            )}
+
             <div className="flex flex-col gap-2">
-              <Button variant="outline" className="w-full">
-                <FiCreditCard className="w-4 h-4 mr-2" />
-                Make Payment
-              </Button>
+              {balanceDue > 0 ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleMakePayment}
+                  disabled={isStartingPayment}
+                >
+                  {isStartingPayment ? (
+                    <>
+                      <FiLoader className="w-4 h-4 mr-2 animate-spin" />
+                      Starting payment...
+                    </>
+                  ) : (
+                    <>
+                      <FiCreditCard className="w-4 h-4 mr-2" />
+                      Pay {formatCurrency(balanceDue)}
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#EAF6EF] text-[#16834B] rounded-lg text-sm font-medium">
+                  <FiCheckCircle className="w-4 h-4" />
+                  Fully paid
+                </div>
+              )}
               <Link to="/retailer/place-order" className="w-full">
                 <Button variant="outline" className="w-full">
                   <FiPackage className="w-4 h-4 mr-2" />

@@ -1,12 +1,31 @@
 const pool = require('../config/db');
 
 // ============================================
-// GET /api/expenses/trips
+// GET /api/expenses/trips?month=YYYY-MM
 // List every trip that has expenses recorded against it, with a summed
 // total per category so the admin can scan the list before drilling in.
+//
+// `month` is optional — pass e.g. "2026-09" to restrict the list to that
+// calendar month (1st through the last day, whatever the month length is).
+// Omit it to get every trip, same as before.
 // ============================================
 exports.getTripsWithExpenses = async (req, res) => {
     try {
+        const { month } = req.query;
+
+        let dateFilter = '';
+        const params = [];
+        if (month) {
+            if (!/^\d{4}-\d{2}$/.test(month)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'month must be in YYYY-MM format',
+                });
+            }
+            dateFilter = 'WHERE t.date >= ? AND t.date < DATE_ADD(?, INTERVAL 1 MONTH)';
+            params.push(`${month}-01`, `${month}-01`);
+        }
+
         const [trips] = await pool.query(`
             SELECT
                 t.id,
@@ -23,9 +42,10 @@ exports.getTripsWithExpenses = async (req, res) => {
             FROM trips t
             JOIN drivers d ON t.driver_id = d.id
             LEFT JOIN expenses e ON e.trip_id = t.id
+            ${dateFilter}
             GROUP BY t.id, t.trip_number, t.date, t.status, t.total_hens, d.name
             ORDER BY t.date DESC, t.id DESC
-        `);
+        `, params);
 
         const formatted = trips.map((t) => ({
             id: t.id,
@@ -41,7 +61,20 @@ exports.getTripsWithExpenses = async (req, res) => {
             expenseCount: t.expense_count,
         }));
 
-        res.json({ success: true, data: formatted });
+        // Category totals for the whole (filtered) list, so the client
+        // doesn't have to re-sum the list itself.
+        const summary = formatted.reduce(
+            (acc, t) => {
+                acc.total += t.totalExpenses;
+                acc.loading += t.loadingTotal;
+                acc.food += t.foodTotal;
+                acc.diesel += t.dieselTotal;
+                return acc;
+            },
+            { total: 0, loading: 0, food: 0, diesel: 0 }
+        );
+
+        res.json({ success: true, data: formatted, summary, month: month || null });
     } catch (error) {
         console.error('Error fetching trips with expenses:', error.message);
         res.status(500).json({ success: false, message: 'Failed to load trip expenses' });

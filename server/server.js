@@ -23,6 +23,7 @@ const cashVerificationRoutes = require('./routes/cashVerification');
 const paymentRoutes = require('./routes/payments'); // 💳 Online payments (Stripe / Razorpay)
 const expensesRoutes = require('./routes/expenses'); // admin trip expenses view
 const salariesRoutes = require('./routes/salaries'); // admin driver/staff salary tracking
+const tripOverviewRoutes = require('./routes/tripOverview'); // admin loaded-vs-delivered reconciliation
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,10 +32,6 @@ const IS_DEV = process.env.NODE_ENV !== 'production';
 // ============================================
 // CORS
 // ============================================
-// The previous version built an allow-list and then called callback(null, true)
-// in the else branch too — so a "blocked" origin was logged and then allowed.
-// Combined with credentials: true that let any site on the internet make
-// authenticated requests. Blocked origins are now actually blocked.
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
   [
@@ -51,12 +48,10 @@ const allowedOrigins = (
 app.use(
   cors({
     origin: (origin, callback) => {
-      // No Origin header: curl, Postman, server-to-server, mobile webviews.
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) return callback(null, true);
 
-      // In development, allow any localhost port so Vite can move around.
       if (IS_DEV && /^http:\/\/localhost(:\d+)?$/.test(origin)) {
         return callback(null, true);
       }
@@ -76,7 +71,9 @@ app.use(
 // 💳 The payment webhook must keep its raw body. Signature verification hashes
 // the exact bytes the gateway sent; once express.json() parses and
 // re-serialises them, every signature check fails. This mount has to stay
-// above express.json().
+// above express.json(). Both Stripe and Razorpay post to this same path —
+// handleWebhook picks the right verifier based on which signature header
+// is present.
 app.use('/api/payments/webhook', express.raw({ type: '*/*' }));
 
 app.use(express.json());
@@ -152,6 +149,7 @@ app.use('/api/cash-verification', cashVerificationRoutes);
 app.use('/api/payments', paymentRoutes); // 💳 Online payments
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/salaries', salariesRoutes);
+app.use('/api/trip-overview', tripOverviewRoutes); // admin loaded-vs-delivered reconciliation
 
 // The old /api/debug-routes handler read app._router, which no longer exists
 // in Express 5 — it would have thrown. It also published the full route map

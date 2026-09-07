@@ -9,6 +9,9 @@
     "db:setup": "node scripts/createTables.js",
     "db:payments": "node scripts/createPaymentTables.js",
     "db:migrate-ledger": "node scripts/migrateLedger.js",
+    "db:companies": "node scripts/createCompanyTables.js",
+    "db:seed-companies": "node scripts/seedCompanies.js",
+    "db:fix-payment-status": "node scripts/fixPaymentStatus.js",
     "create:admin": "node scripts/createAdmin.js",
     "stripe:listen": "stripe listen --forward-to localhost:5000/api/payments/webhook",
     "db:reconcile": "node scripts/updateOutstanding.js"
@@ -26,6 +29,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "mysql2": "^3.23.1",
+    "razorpay": "^2.9.8",
     "stripe": "^18.5.0"
   },
   "devDependencies": {

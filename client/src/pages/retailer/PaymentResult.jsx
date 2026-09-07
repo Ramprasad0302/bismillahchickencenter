@@ -19,6 +19,15 @@ const PaymentResult = () => {
   const reference = params.get('ref');
   const cancelled = params.get('cancelled') === '1';
 
+  // Whatever happens on this page (success, failure, or cancel) is the real
+  // outcome of the checkout. Clear the "did the retailer come back without
+  // finishing?" marker Place Order set before redirecting here, so a later
+  // visit to Place Order can never mistake a completed trip through this
+  // page for an abandoned one.
+  useEffect(() => {
+    sessionStorage.removeItem('bismilla_pending_checkout');
+  }, []);
+
   const [status, setStatus] = useState(cancelled ? 'cancelled' : 'checking');
   const [txn, setTxn] = useState(null);
   const [message, setMessage] = useState(null);

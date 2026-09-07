@@ -77,6 +77,7 @@ const Sidebar = ({ onClose }) => {
         { path: '/admin/pricing', label: 'Pricing', icon: FiDollarSign },
         { path: '/admin/orders', label: 'Orders', icon: FiShoppingBag },
         { path: '/admin/deliveries', label: 'Deliveries', icon: FiTruck },
+        { path: '/admin/trip-overview', label: 'Trip Overview', icon: FiTruck },
       ]
     },
     {

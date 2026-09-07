@@ -11,6 +11,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import Pricing from '../pages/admin/Pricing';
 import Customers from '../pages/admin/Customers';
 import Orders from '../pages/admin/Orders';
+import OrderDetail from '../pages/admin/OrderDetail';
 import Deliveries from '../pages/admin/Deliveries';
 import Vehicles from '../pages/admin/Vehicles';
 import Ledgers from '../pages/admin/Ledgers';
@@ -22,6 +23,7 @@ import Settings from '../pages/admin/Settings';
 import CashVerification from '../pages/admin/CashVerification';
 import Expenses from '../pages/admin/Expenses';
 import Salaries from '../pages/admin/Salaries';
+import TripOverview from '../pages/admin/TripOverview';
 
 // Retailer Pages
 import RetailerDashboard from '../pages/retailer/RetailerDashboard';
@@ -73,13 +75,14 @@ const AppRoutes = () => {
             <Route path="/admin/staff" element={<Staff />} />
             <Route path="/admin/cash-verification" element={<CashVerification />} />
             <Route path="/admin/settings" element={<Settings />} />
-            <Route path="/admin/orders/:id" element={<ComingSoon />} />
+            <Route path="/admin/orders/:id" element={<OrderDetail />} />
             <Route path="/admin/retailers" element={<ComingSoon />} />
             <Route path="/admin/drivers" element={<ComingSoon />} />
             <Route path="/admin/products" element={<ComingSoon />} />
             <Route path="/admin/inventory" element={<ComingSoon />} />
             <Route path="/admin/expenses" element={<Expenses />} />
             <Route path="/admin/salaries" element={<Salaries />} />
+            <Route path="/admin/trip-overview" element={<TripOverview />} />
           </Route>
         </Route>
 

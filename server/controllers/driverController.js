@@ -1,5 +1,13 @@
 const pool = require('../config/db');
 
+// Anything under ₹1 left on a bill isn't real money owed at this business's
+// whole-rupee pricing — it's rounding dust from kg × rate math (e.g. a
+// ₹0.10 remainder), and should never keep an order stuck on "Partial"
+// forever. Same threshold used in orderController.recordPayment and
+// paymentService.settleTransaction so every path agrees on what "paid"
+// means.
+const PAID_THRESHOLD = 1;
+
 // ============================================
 // UPLOAD A TRIP BILL PHOTO (diesel bill, loading receipt, etc)
 // The file itself is handled by multer (see routes/driver.js) before this
@@ -15,6 +23,21 @@ exports.uploadTripPhoto = async (req, res) => {
     } catch (error) {
         console.error('❌ Error uploading trip photo:', error.message);
         res.status(500).json({ success: false, message: 'Upload failed' });
+    }
+};
+
+// ============================================
+// GET COMPANIES (for the driver's loading-company dropdown)
+// ============================================
+exports.getCompanies = async (req, res) => {
+    try {
+        const [companies] = await pool.query(
+            'SELECT id, name FROM companies WHERE is_active = TRUE ORDER BY name ASC'
+        );
+        res.json({ success: true, data: companies });
+    } catch (error) {
+        console.error('❌ Error fetching companies:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to load companies' });
     }
 };
 
@@ -91,7 +114,10 @@ exports.updateTripStatus = async (req, res) => {
     try {
         await connection.beginTransaction();
         const driverUserId = req.user.id;
-        const { tripNumber, status, totalHens, dieselAmount, orders, dieselPhotoUrl } = req.body;
+        const {
+            tripNumber, status, totalHens, dieselAmount, orders, dieselPhotoUrl,
+            companyId, totalLoadedKg,
+        } = req.body;
 
         console.log(`🛠️ Processing trip update: ${tripNumber} -> ${status}`);
         console.log(`📦 Received ${orders.length} orders from frontend.`);
@@ -100,11 +126,21 @@ exports.updateTripStatus = async (req, res) => {
         if (driver.length === 0) throw new Error('Driver not found');
         const driverId = driver[0].id;
 
-        // 1. Update Trip status
+        // 1. Update Trip status — now also stores which company the hens
+        //    were loaded from and how many kg were loaded in total.
         await connection.query(
-            `UPDATE trips SET status = ?, total_hens = ?, diesel_amount = ?, diesel_photo = ? 
+            `UPDATE trips SET status = ?, total_hens = ?, total_loaded_kg = ?, company_id = ?, diesel_amount = ?, diesel_photo = ? 
              WHERE trip_number = ? AND driver_id = ?`,
-            [status, totalHens, dieselAmount, dieselPhotoUrl || null, tripNumber, driverId]
+            [
+                status,
+                totalHens,
+                parseFloat(totalLoadedKg) || 0,
+                companyId || null,
+                dieselAmount,
+                dieselPhotoUrl || null,
+                tripNumber,
+                driverId,
+            ]
         );
 
         const [tripRow] = await connection.query(
@@ -122,7 +158,7 @@ exports.updateTripStatus = async (req, res) => {
             // Fetch the REAL numeric ID and the pricing fields needed to
             // recompute the bill, based on the order_number string
             const [orderRows] = await connection.query(
-                `SELECT id, kg_ordered, rate_per_kg, discount, delivery_charge, paid_amount
+                `SELECT id, retailer_id, kg_ordered, rate_per_kg, discount, delivery_charge, paid_amount
                  FROM orders WHERE order_number = ?`,
                 [order.id]
             );
@@ -145,6 +181,7 @@ exports.updateTripStatus = async (req, res) => {
                 ? parseFloat(order.actualKg)
                 : parseFloat(dbOrder.kg_ordered);
             const cashCollected = parseFloat(order.cashCollected) || 0;
+            const hensDelivered = parseFloat(order.hensDelivered) || 0;
 
             const ratePerKg = parseFloat(dbOrder.rate_per_kg) || 0;
             const discount = parseFloat(dbOrder.discount) || 0;
@@ -160,13 +197,24 @@ exports.updateTripStatus = async (req, res) => {
             const newPaidAmount = previousPaid + cashCollected;
             const newBalance = newTotalAmount - newPaidAmount;
 
-            // 1. Update trip_orders with actual delivery metrics
+            // The bill was just recalculated off the ACTUAL delivered weight,
+            // which can be more or less than what was ordered and already
+            // paid for. payment_status has to be re-derived here too --
+            // otherwise an order paid in full at order time (e.g. 2kg via
+            // UPI) still reads "Paid" after the driver delivers 20kg for a
+            // much bigger bill, even though most of it is now unpaid.
+            // A balance under ₹1 counts as fully paid — see PAID_THRESHOLD.
+            const newPaymentStatus =
+                newBalance < PAID_THRESHOLD ? 'paid' : newPaidAmount > 0 ? 'partial' : 'pending';
+
+            // 1. Update trip_orders with actual delivery metrics — now
+            //    including hens delivered to this specific retailer.
             await connection.query(
                 `UPDATE trip_orders 
-                 SET actual_delivered_kg = ?, cash_collected = ?, delivered_status = 'delivered'
+                 SET actual_delivered_kg = ?, hens_delivered = ?, cash_collected = ?, delivered_status = 'delivered'
                  WHERE trip_id = (SELECT id FROM trips WHERE trip_number = ?) 
                  AND order_id = ?`,
-                [actualKg, cashCollected, tripNumber, realOrderId]
+                [actualKg, hensDelivered, cashCollected, tripNumber, realOrderId]
             );
             console.log(`trip_orders updated for Order ${order.id}`);
 
@@ -182,17 +230,34 @@ exports.updateTripStatus = async (req, res) => {
                      total_amount = ?,
                      paid_amount = ?,
                      balance = ?,
+                     payment_status = ?,
                      order_status = 'delivered',
                      delivered_date = CURDATE()
                  WHERE id = ?`,
-                [actualKg, newSubtotal, newTotalAmount, newPaidAmount, newBalance, realOrderId]
+                [actualKg, newSubtotal, newTotalAmount, newPaidAmount, newBalance, newPaymentStatus, realOrderId]
             );
+
+            // Keep the retailer's running outstanding total in step with
+            // this recalculated bill -- otherwise Ledgers/dashboard totals
+            // drift the same way payment_status used to before this fix.
+            // Balances under ₹1 don't count as "owed" here either.
+            if (dbOrder.retailer_id) {
+                await connection.query(
+                    `UPDATE retailers
+                        SET outstanding = (
+                            SELECT COALESCE(SUM(balance), 0) FROM orders
+                             WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?
+                        )
+                      WHERE id = ?`,
+                    [dbOrder.retailer_id, PAID_THRESHOLD, dbOrder.retailer_id]
+                );
+            }
 
             if (cashCollected > 0) {
                 totalCashCollected += cashCollected;
-                console.log(`Order ${order.id}: delivered ${actualKg}kg, bill Rs.${newTotalAmount.toFixed(2)}, cash collected Rs.${cashCollected}`);
+                console.log(`Order ${order.id}: delivered ${actualKg}kg / ${hensDelivered} hens, bill Rs.${newTotalAmount.toFixed(2)}, cash collected Rs.${cashCollected}, status: ${newPaymentStatus}`);
             } else {
-                console.log(`Order ${order.id}: delivered ${actualKg}kg, bill Rs.${newTotalAmount.toFixed(2)} (no cash collected this trip)`);
+                console.log(`Order ${order.id}: delivered ${actualKg}kg / ${hensDelivered} hens, bill Rs.${newTotalAmount.toFixed(2)} (no cash collected this trip), status: ${newPaymentStatus}`);
             }
         }
 

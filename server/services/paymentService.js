@@ -1,6 +1,11 @@
 const pool = require('../config/db');
 const config = require('../config/payment');
 
+// Anything under ₹1 left on a bill isn't real money owed at this business's
+// whole-rupee pricing. Same threshold used in driverController.js and
+// orderController.recordPayment so every path agrees on what "paid" means.
+const PAID_THRESHOLD = 1;
+
 // ============================================
 // Reference / payment number generators
 // ============================================
@@ -125,8 +130,8 @@ const settleTransaction = async ({
         ((parseFloat(bill.paid_amount) || 0) + applyAmount).toFixed(2)
       );
 
-      // Existing recordPayment never touched payment_status — this does.
-      const paymentStatus = newBalance <= 0 ? 'paid' : newPaid > 0 ? 'partial' : 'pending';
+      // A balance under ₹1 counts as fully paid -- see PAID_THRESHOLD.
+      const paymentStatus = newBalance < PAID_THRESHOLD ? 'paid' : newPaid > 0 ? 'partial' : 'pending';
 
       await connection.query(
         `UPDATE orders
@@ -173,12 +178,13 @@ const settleTransaction = async ({
     );
 
     // --- 3. Recalculate the retailer's outstanding from the bills themselves ---
-    // Safer than subtracting from the stored figure, which drifts.
+    // Safer than subtracting from the stored figure, which drifts. Balances
+    // under ₹1 don't count as "owed" here either.
     const [[{ outstanding }]] = await connection.query(
       `SELECT COALESCE(SUM(balance), 0) AS outstanding
          FROM orders
-        WHERE retailer_id = ? AND order_status != 'cancelled'`,
-      [retailerId]
+        WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?`,
+      [retailerId, PAID_THRESHOLD]
     );
 
     await connection.query('UPDATE retailers SET outstanding = ? WHERE id = ?', [
@@ -319,9 +325,50 @@ const failTransaction = async ({ reference, reason, status = 'failed' }) => {
   }
 };
 
+// ============================================
+// Clear out UPI orders whose checkout was abandoned.
+//
+// The order row is created BEFORE the gateway redirect (so the checkout
+// session has an order_id to attach to). If the retailer presses the
+// browser's own Back button instead of the gateway's own back/cancel
+// button, cancel_url never fires, so `failTransaction` never runs — the
+// order is left sitting as a normal-looking "Pending" order forever, even
+// though no money ever moved.
+//
+// Rather than a cron job, this runs as a lazy sweep every time an order
+// list is fetched (getMyOrders / getAllOrders): any UPI order that is still
+// pending, has nothing paid, was created more than STALE_MINUTES ago, and
+// has no settled payment_transaction against it gets marked 'cancelled'.
+// The settled check means a late-arriving success webhook can never be
+// undone by this sweep — only genuinely abandoned checkouts are touched.
+// ============================================
+const STALE_MINUTES = 15;
+
+const expireStalePendingOrders = async () => {
+  try {
+    await pool.query(
+      `UPDATE orders o
+          SET o.order_status = 'cancelled'
+        WHERE o.order_status = 'pending'
+          AND o.payment_method = 'upi'
+          AND o.paid_amount = 0
+          AND o.created_at < (NOW() - INTERVAL ? MINUTE)
+          AND NOT EXISTS (
+            SELECT 1 FROM payment_transactions pt
+             WHERE pt.order_id = o.id AND pt.settled = 1
+          )`,
+      [STALE_MINUTES]
+    );
+  } catch (error) {
+    // Never let a cleanup sweep break the actual orders list it's called from.
+    console.error('❌ expireStalePendingOrders:', error.message);
+  }
+};
+
 module.exports = {
   generateReference,
   getPayableSummary,
   settleTransaction,
   failTransaction,
+  expireStalePendingOrders,
 };

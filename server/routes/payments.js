@@ -7,6 +7,8 @@ const authMiddleware = require('../middleware/auth');
 // WEBHOOK — must stay above router.use(authMiddleware).
 // The gateway has no JWT; it proves itself with a signature instead.
 // The raw-body parser for this path is mounted in server.js.
+// Handles both Stripe and Razorpay — handleWebhook checks which
+// signature header is present and delegates to the matching gateway adapter.
 // ============================================
 router.post('/webhook', paymentController.handleWebhook);
 

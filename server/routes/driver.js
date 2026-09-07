@@ -7,6 +7,7 @@ const upload = require('../middleware/uploadMiddleware');
 router.use(authMiddleware);
 
 router.get('/dashboard', driverController.getDriverDashboard);
+router.get('/companies', driverController.getCompanies);
 router.get('/trips', driverController.getDriverTrips);
 router.put('/trip/status', driverController.updateTripStatus);
 router.get('/collections', driverController.getDriverCollections);

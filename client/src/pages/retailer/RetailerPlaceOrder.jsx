@@ -17,7 +17,17 @@ import {
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import api from '../../services/api';
-import { startCheckout, redirectToGateway } from '../../services/paymentService';
+import { startCheckout, redirectToGateway, cancelCheckout } from '../../services/paymentService';
+
+// Marker written to sessionStorage right before the browser is sent to the
+// gateway for a UPI order. If this page mounts again with the marker still
+// present, the checkout was abandoned rather than completed — most commonly
+// because the retailer pressed the browser's own Back button instead of the
+// gateway's cancel/back button, which never fires the app's cancel_url at
+// all. When that happens we tell the backend immediately (same call the
+// payment-result page uses) instead of waiting for the 15-minute lazy sweep
+// on the Orders list to eventually mark it failed.
+const PENDING_CHECKOUT_KEY = 'bismilla_pending_checkout';
 
 const RetailerPlaceOrder = () => {
   const navigate = useNavigate();
@@ -34,6 +44,9 @@ const RetailerPlaceOrder = () => {
   const [orderData, setOrderData] = useState(null);
   const [placedOrder, setPlacedOrder] = useState(null);
 
+  // Shown when we detect an abandoned checkout on return to this page.
+  const [paymentFailedNotice, setPaymentFailedNotice] = useState(null);
+
   // LIVE DATA STATES
   const [pricePerKg, setPricePerKg] = useState(0);
   const [avgWeight, setAvgWeight] = useState(null);
@@ -41,6 +54,49 @@ const RetailerPlaceOrder = () => {
   const [dataError, setDataError] = useState(null);
 
   const quickHenOptions = [50, 100, 200, 300, 500];
+
+  // Detect an abandoned checkout every time this page becomes active —
+  // both on a normal mount and on a bfcache restore (browser Back after
+  // window.location.href sent us to the gateway). 'pageshow' fires in both
+  // cases; a plain mount-only effect would miss the bfcache case entirely.
+  useEffect(() => {
+    const checkAbandonedCheckout = () => {
+      const raw = sessionStorage.getItem(PENDING_CHECKOUT_KEY);
+      if (!raw) return;
+
+      sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+
+      let pending;
+      try {
+        pending = JSON.parse(raw);
+      } catch {
+        return;
+      }
+      if (!pending?.reference) return;
+
+      cancelCheckout(pending.reference).catch((err) => {
+        console.error('Failed to notify backend of abandoned checkout:', err);
+      });
+
+      setPaymentFailedNotice({
+        orderNumber: pending.orderNumber,
+        amount: pending.amount,
+      });
+
+      // The outstanding balance card should reflect that this order no
+      // longer counts against them.
+      api
+        .get('/retailers/stats')
+        .then((res) => {
+          if (res.data.success) setOutstanding(res.data.data.outstandingBalance || 0);
+        })
+        .catch(() => {});
+    };
+
+    checkAbandonedCheckout();
+    window.addEventListener('pageshow', checkAbandonedCheckout);
+    return () => window.removeEventListener('pageshow', checkAbandonedCheckout);
+  }, []);
 
   // FETCH LIVE PRICE & OUTSTANDING ON LOAD
   useEffect(() => {
@@ -93,6 +149,7 @@ const RetailerPlaceOrder = () => {
     setError(null);
     setSuccessMessage(null);
     setPlacedOrder(null);
+    setPaymentFailedNotice(null);
 
     if (!hens || henCount <= 0) {
       setError('Please enter how many hens you want');
@@ -112,7 +169,7 @@ const RetailerPlaceOrder = () => {
       kg: parseFloat(totalKg.toFixed(2)),
       rate_per_kg: pricePerKg,
       totalAmount: totalAmount,
-      paymentMethod: selectedPayment === 'upi' ? 'UPI' : 'Cash',
+      paymentMethod: selectedPayment === 'upi' ? 'UPI' : 'Credit',
       deliveryAddress: deliveryAddress || 'Not provided',
       notes: notes || 'No notes',
       customAmount: customAmount ? parseFloat(customAmount) : null
@@ -156,6 +213,18 @@ const RetailerPlaceOrder = () => {
       if (selectedPayment === 'upi') {
         const checkoutRes = await startCheckout({ orderId: newOrder.id });
         if (checkoutRes.success && checkoutRes.data.redirect_url) {
+          // Remember this attempt so that if the browser comes straight
+          // back here (Back button, closed the gateway tab, etc.) instead
+          // of via the gateway's own cancel flow, we can tell immediately
+          // that it never completed.
+          sessionStorage.setItem(
+            PENDING_CHECKOUT_KEY,
+            JSON.stringify({
+              reference: checkoutRes.data.reference,
+              orderNumber: newOrder.order_number,
+              amount: checkoutRes.data.amount,
+            })
+          );
           redirectToGateway(checkoutRes.data.redirect_url);
           return; // leaving the page — no further UI updates needed
         }
@@ -398,14 +467,28 @@ const RetailerPlaceOrder = () => {
   // ============================================
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Debug: Show placedOrder state */}
-      {console.log('📊 Current placedOrder state:', placedOrder)}
-      
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-[#151A17]">Place Order</h1>
         <p className="text-sm text-[#6B716D] mt-1">Just enter the number of hens. That's it.</p>
       </div>
+
+      {/* Abandoned checkout notice */}
+      {paymentFailedNotice && (
+        <div className="bg-[#FDEEEE] border border-[#D14343] rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <FiAlertCircle className="w-5 h-5 text-[#D14343] shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-[#D14343]">Payment Failed</p>
+              <p className="text-xs text-[#151A17] mt-0.5">
+                Order {paymentFailedNotice.orderNumber} was not placed — the payment
+                {paymentFailedNotice.amount ? ` of ₹${paymentFailedNotice.amount}` : ''} was not completed.
+                You can place a new order whenever you're ready.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -570,7 +653,7 @@ const RetailerPlaceOrder = () => {
           )}
         </button>
 
-        {/* Cash Payment */}
+        {/* Credit Payment */}
         <button
           onClick={() => setSelectedPayment('cash')}
           className={`w-full flex items-center justify-between p-4 rounded-lg border-2 transition ${
@@ -587,7 +670,7 @@ const RetailerPlaceOrder = () => {
               <FiDollarSign className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <p className="font-medium text-[#151A17]">Cash</p>
+              <p className="font-medium text-[#151A17]">Credit</p>
               <p className="text-sm text-[#6B716D]">₹{pricePerKg}/kg</p>
             </div>
           </div>
@@ -624,7 +707,7 @@ const RetailerPlaceOrder = () => {
           </div>
         )}
 
-        {/* Show total for Cash without custom amount input */}
+        {/* Show total for Credit without custom amount input */}
         {henCount > 0 && !weightMissing && selectedPayment === 'cash' && (
           <div className="mt-4 p-4 bg-[#F6F7F6] rounded-lg">
             <p className="text-sm text-[#6B716D]">
@@ -650,7 +733,7 @@ const RetailerPlaceOrder = () => {
                 : `0 hens · 0 kg × ₹${pricePerKg}`}
             </p>
             <p className="text-xs text-[#6B716D] mt-1">
-              Payment: {selectedPayment === 'upi' ? 'UPI' : 'Cash'}
+              Payment: {selectedPayment === 'upi' ? 'UPI' : 'Credit'}
             </p>
           </div>
           <p className="text-3xl font-bold text-[#111714]">

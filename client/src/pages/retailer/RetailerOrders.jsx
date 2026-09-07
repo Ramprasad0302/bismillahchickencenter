@@ -112,8 +112,15 @@ const RetailerOrders = () => {
   };
 
   // ✅ Get status color and display text
-  const getStatusInfo = (status) => {
+  // An order cancelled while it was still an unpaid UPI order (paid_amount
+  // is 0) means the checkout was abandoned before any money moved -- that's
+  // clearer to the retailer as "Payment Failed" than a generic "Cancelled",
+  // which reads like the shop deliberately cancelled a real order.
+  const getStatusInfo = (status, paymentMethod, paidAmount) => {
     const s = status?.toLowerCase() || '';
+    if (s === 'cancelled' && paymentMethod === 'upi' && (parseFloat(paidAmount) || 0) === 0) {
+      return { color: 'error', label: 'Payment Failed' };
+    }
     const statusMap = {
       'pending': { color: 'warning', label: 'Pending' },
       'confirmed': { color: 'primary', label: 'Confirmed' },
@@ -259,7 +266,7 @@ const RetailerOrders = () => {
       <div className="space-y-4">
         {filteredOrders.length > 0 ? (
           filteredOrders.map((order) => {
-            const statusInfo = getStatusInfo(order.order_status);
+            const statusInfo = getStatusInfo(order.order_status, order.payment_method, order.paid_amount);
             const paymentInfo = getPaymentStatusInfo(order.payment_status);
             const isDelivered = order.order_status?.toLowerCase() === 'delivered';
             const isPartiallyPaid = order.cash_collected > 0 && order.cash_collected < order.total_amount;

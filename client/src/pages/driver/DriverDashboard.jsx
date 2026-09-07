@@ -28,6 +28,10 @@ const DriverDashboard = () => {
   const [trips, setTrips] = useState([]);
   const [activeTrip, setActiveTrip] = useState(null);
   const [isTripStarted, setIsTripStarted] = useState(false);
+
+  // Companies for the loading-company dropdown
+  const [companies, setCompanies] = useState([]);
+  const [companiesError, setCompaniesError] = useState(null);
   
   // Lock states for Driver inputs
   const [isHensLocked, setIsHensLocked] = useState(false);
@@ -36,7 +40,9 @@ const DriverDashboard = () => {
   const [uploadError, setUploadError] = useState(null);
 
   const [tripData, setTripData] = useState({
+    companyId: '',
     totalHens: '',
+    totalLoadedKg: '',
     dieselAmount: '',
     dieselPhoto: null,
     dieselPhotoPreview: null,
@@ -63,8 +69,22 @@ const DriverDashboard = () => {
     }
   };
 
+  const fetchCompanies = async () => {
+    setCompaniesError(null);
+    try {
+      const response = await api.get('/driver/companies');
+      if (response.data.success) {
+        setCompanies(response.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching companies:', err);
+      setCompaniesError('Failed to load companies.');
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
+    fetchCompanies();
   }, []);
 
   const currentTrip = trips.length > 0 ? trips[0] : null;
@@ -83,10 +103,13 @@ const DriverDashboard = () => {
     setActiveTrip(currentTrip); // includes driverName + cleaners from the dashboard fetch
     setTripData({
       ...tripData,
+      companyId: '',
       totalHens: currentTrip.totalHens || '',
+      totalLoadedKg: '',
       orders: currentTrip.orders.map(order => ({
         ...order,
         actualKg: order.kg,
+        hensDelivered: 0,
         cashCollected: 0,
         delivered: false,
       })),
@@ -99,7 +122,9 @@ const DriverDashboard = () => {
       const payload = {
         tripNumber: activeTrip.id,
         status: 'completed',
+        companyId: tripData.companyId || null,
         totalHens: parseFloat(tripData.totalHens) || 0,
+        totalLoadedKg: parseFloat(tripData.totalLoadedKg) || 0,
         dieselAmount: parseFloat(tripData.dieselAmount) || 0,
         dieselPhotoUrl: tripData.dieselPhotoUrl,
         orders: tripData.orders
@@ -111,7 +136,8 @@ const DriverDashboard = () => {
         setIsTripStarted(false);
         setActiveTrip(null);
         setTripData({
-          totalHens: '', dieselAmount: '', dieselPhoto: null, dieselPhotoPreview: null, dieselPhotoUrl: '', orders: []
+          companyId: '', totalHens: '', totalLoadedKg: '', dieselAmount: '',
+          dieselPhoto: null, dieselPhotoPreview: null, dieselPhotoUrl: '', orders: []
         });
         setIsHensLocked(false);
         setIsDieselLocked(false);
@@ -142,6 +168,13 @@ const DriverDashboard = () => {
     setTripData({ ...tripData, orders: updatedOrders });
   };
 
+  const updateOrderHens = (orderId, newHens) => {
+    const updatedOrders = tripData.orders.map(order =>
+      order.id === orderId ? { ...order, hensDelivered: parseFloat(newHens) || 0 } : order
+    );
+    setTripData({ ...tripData, orders: updatedOrders });
+  };
+
   const updateCashCollected = (orderId, amount) => {
     const updatedOrders = tripData.orders.map(order =>
       order.id === orderId ? { ...order, cashCollected: parseFloat(amount) || 0 } : order
@@ -151,7 +184,9 @@ const DriverDashboard = () => {
 
   const getDeliveredCount = () => tripData.orders.filter(o => o.delivered).length;
   const getTotalDeliveredKg = () => tripData.orders.reduce((sum, o) => sum + (o.actualKg || 0), 0);
+  const getTotalDeliveredHens = () => tripData.orders.reduce((sum, o) => sum + (o.hensDelivered || 0), 0);
   const getTotalCashCollected = () => tripData.orders.reduce((sum, o) => sum + (o.cashCollected || 0), 0);
+  const allDelivered = tripData.orders.length > 0 && tripData.orders.every(o => o.delivered);
 
   // Loading charge: hens x rate/hen -- shown and stored in RUPEES, not kg.
   // Must match LOADING_RATE_PER_HEN in server/controllers/driverController.js.
@@ -169,54 +204,81 @@ const DriverDashboard = () => {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
   };
 
-  if (loading) {
-    return ( <div className="flex items-center justify-center h-64"><FiLoader className="w-12 h-12 animate-spin text-[#16834B] mx-auto mb-4" /><p className="text-[#6B716D]">Loading trip data...</p></div> );
-  }
+  // Photo upload for diesel bill
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  if (error) {
-    return ( <div className="bg-[#FDEEEE] border border-[#D14343]/20 rounded-xl p-8 text-center max-w-md mx-auto"><FiAlertCircle className="w-16 h-16 text-[#D14343] mx-auto mb-4" /><h3 className="text-lg font-semibold text-[#D14343] mb-2">Unable to Load Dashboard</h3><Button onClick={fetchDashboardData} className="mt-4">Retry</Button></div> );
+    setUploadError(null);
+    setTripData({ ...tripData, dieselPhoto: file, dieselPhotoPreview: URL.createObjectURL(file) });
+
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    setIsUploadingPhoto(true);
+    try {
+      const response = await api.post('/driver/upload-photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (response.data.success) {
+        setTripData((prev) => ({ ...prev, dieselPhotoUrl: response.data.url }));
+      }
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+      setUploadError('Failed to upload photo. Please try again.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const removePhoto = () => {
+    setTripData({ ...tripData, dieselPhoto: null, dieselPhotoPreview: null, dieselPhotoUrl: '' });
+    setUploadError(null);
+  };
+
+  // ============================================
+  // LOADING STATE
+  // ============================================
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <FiLoader className="w-10 h-10 animate-spin text-[#16834B]" />
+      </div>
+    );
   }
 
   // ============================================
-  // TRIP IN PROGRESS VIEW
+  // ACTIVE TRIP VIEW
   // ============================================
   if (isTripStarted && activeTrip) {
-    const allDelivered = tripData.orders.every(order => order.delivered);
-
     return (
-      <div className="max-w-4xl mx-auto pb-32">
+      <div className="max-w-3xl mx-auto pb-10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-[#151A17]">Trip in Progress</h1>
-            <p className="text-sm text-[#6B716D] mt-1">{activeTrip.id} - {activeTrip.date}</p>
+            <h1 className="text-2xl font-semibold text-[#151A17]">{activeTrip.id}</h1>
+            <p className="text-sm text-[#6B716D] mt-1">{activeTrip.date}</p>
           </div>
           <Badge variant="info">In Progress</Badge>
         </div>
 
-        {/* Progress Bar */}
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-[#6B716D]">Progress:</span>
-              <div className="w-48 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-[#16834B] transition-all duration-500" style={{ width: `${totalOrders > 0 ? (getDeliveredCount() / totalOrders) * 100 : 0}%` }} />
-              </div>
-            </div>
-            <span className="text-sm font-medium">{getDeliveredCount()}/{totalOrders}</span>
+        {error && (
+          <div className="bg-[#FDEEEE] border border-[#D14343] rounded-xl p-4 mb-6 flex items-center gap-2">
+            <FiAlertCircle className="w-5 h-5 text-[#D14343]" />
+            <p className="text-sm text-[#D14343]">{error}</p>
           </div>
-        </div>
+        )}
 
-        {/* Assigned Staff */}
-        {(activeTrip?.driverName || cleanerCount > 0) && (
+        {/* Assigned staff */}
+        {(activeTrip.driverName || activeTrip.cleaners?.length > 0) && (
           <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
-            <h3 className="font-semibold text-[#151A17] mb-4">Assigned Staff</h3>
+            <h3 className="font-semibold text-[#151A17] mb-3">Assigned Staff</h3>
             <div className="flex flex-wrap gap-2">
-              {activeTrip?.driverName && (
+              {activeTrip.driverName && (
                 <span className="inline-flex items-center px-3 py-1.5 bg-[#F6F7F6] rounded-full text-sm text-[#151A17]">
                   🚚 {activeTrip.driverName} <span className="text-[#6B716D] ml-1">(Driver)</span>
                 </span>
@@ -234,10 +296,10 @@ const DriverDashboard = () => {
           </div>
         )}
 
-        {/* Hens Loaded */}
+        {/* Loading Details: company + hens loaded + kg loaded, locked together */}
         <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#151A17]">Total Hens Loaded</h3>
+            <h3 className="font-semibold text-[#151A17]">Loading Details</h3>
             {isHensLocked && (
               <button onClick={() => setIsHensLocked(false)} className="flex items-center gap-1.5 text-sm text-[#16834B] hover:underline">
                 <FiEdit2 className="w-4 h-4" /> Edit
@@ -245,26 +307,69 @@ const DriverDashboard = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <input
-              type="number"
-              value={tripData.totalHens}
-              onChange={(e) => setTripData({ ...tripData, totalHens: e.target.value })}
-              onKeyDown={(e) => { if (e.key === 'Enter' && tripData.totalHens) setIsHensLocked(true); }}
-              placeholder="e.g. 1000"
-              className={`flex-1 px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
-              disabled={isHensLocked}
-              min="0"
-              step="1"
-            />
-            <span className="text-sm font-medium text-[#6B716D] whitespace-nowrap">hens</span>
+          <div className="space-y-4">
+            {/* Company dropdown */}
+            <div>
+              <label className="block text-sm text-[#6B716D] mb-1.5">Company</label>
+              <select
+                value={tripData.companyId}
+                onChange={(e) => setTripData({ ...tripData, companyId: e.target.value })}
+                disabled={isHensLocked}
+                className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
+              >
+                <option value="">Select company</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              {companiesError && (
+                <p className="text-xs text-[#D14343] mt-1">{companiesError}</p>
+              )}
+            </div>
+
+            {/* Total Hens */}
+            <div>
+              <label className="block text-sm text-[#6B716D] mb-1.5">Total Hens Loaded</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  value={tripData.totalHens}
+                  onChange={(e) => setTripData({ ...tripData, totalHens: e.target.value })}
+                  placeholder="e.g. 1000"
+                  className={`flex-1 px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
+                  disabled={isHensLocked}
+                  min="0"
+                  step="1"
+                />
+                <span className="text-sm font-medium text-[#6B716D] whitespace-nowrap">hens</span>
+              </div>
+            </div>
+
+            {/* Total Loaded KG */}
+            <div>
+              <label className="block text-sm text-[#6B716D] mb-1.5">Total Weight Loaded</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  value={tripData.totalLoadedKg}
+                  onChange={(e) => setTripData({ ...tripData, totalLoadedKg: e.target.value })}
+                  placeholder="e.g. 1800"
+                  className={`flex-1 px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
+                  disabled={isHensLocked}
+                  min="0"
+                  step="0.5"
+                />
+                <span className="text-sm font-medium text-[#6B716D] whitespace-nowrap">kg</span>
+              </div>
+            </div>
+
             {!isHensLocked && (
               <Button
-                onClick={() => tripData.totalHens && setIsHensLocked(true)}
-                disabled={!tripData.totalHens || parseFloat(tripData.totalHens) <= 0}
-                className="px-4 py-3"
+                onClick={() => tripData.companyId && tripData.totalHens && tripData.totalLoadedKg && setIsHensLocked(true)}
+                disabled={!tripData.companyId || !tripData.totalHens || parseFloat(tripData.totalHens) <= 0 || !tripData.totalLoadedKg || parseFloat(tripData.totalLoadedKg) <= 0}
+                className="w-full"
               >
-                Confirm
+                Confirm Loading Details
               </Button>
             )}
           </div>
@@ -329,67 +434,37 @@ const DriverDashboard = () => {
                 <input
                   type="file"
                   accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoSelect}
                   className="hidden"
-                  id="diesel-photo"
+                  id="diesel-photo-upload"
                   disabled={isUploadingPhoto}
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-
-                    setUploadError(null);
-                    setTripData((prev) => ({
-                      ...prev,
-                      dieselPhoto: file,
-                      dieselPhotoPreview: URL.createObjectURL(file),
-                    }));
-
-                    setIsUploadingPhoto(true);
-                    try {
-                      const formData = new FormData();
-                      formData.append('photo', file);
-                      const res = await api.post('/driver/upload-photo', formData, {
-                        headers: { 'Content-Type': 'multipart/form-data' },
-                      });
-                      if (res.data.success) {
-                        setTripData((prev) => ({ ...prev, dieselPhotoUrl: res.data.url }));
-                      } else {
-                        setUploadError('Upload failed. Please try again.');
-                      }
-                    } catch (err) {
-                      console.error('Error uploading diesel photo:', err);
-                      setUploadError(
-                        err.response?.data?.message || 'Upload failed. Please try again.'
-                      );
-                    } finally {
-                      setIsUploadingPhoto(false);
-                    }
-                  }}
                 />
-                <label htmlFor="diesel-photo" className="cursor-pointer">
-                  {tripData.dieselPhotoPreview ? (
-                    <div className="relative inline-block">
-                      <img src={tripData.dieselPhotoPreview} alt="Bill" className="w-32 h-32 object-cover mx-auto rounded-lg border border-[#E5E8E6]" />
-                      <button onClick={(e) => { e.preventDefault(); setTripData({ ...tripData, dieselPhoto: null, dieselPhotoPreview: null, dieselPhotoUrl: '' }); setUploadError(null); }} className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600">
-                        <FiX className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <FiUploadCloud className="w-12 h-12 text-[#6B716D] mb-2" />
-                      <p className="text-sm text-[#6B716D]">Click to upload diesel bill photo</p>
-                    </div>
-                  )}
-                </label>
+                {!tripData.dieselPhotoPreview ? (
+                  <label htmlFor="diesel-photo-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                    <FiUploadCloud className="w-8 h-8 text-[#6B716D]" />
+                    <span className="text-sm text-[#6B716D]">
+                      {isUploadingPhoto ? 'Uploading...' : 'Tap to upload bill photo'}
+                    </span>
+                  </label>
+                ) : (
+                  <div className="relative inline-block">
+                    <img src={tripData.dieselPhotoPreview} alt="Diesel bill" className="max-h-40 rounded-lg mx-auto" />
+                    <button
+                      onClick={removePhoto}
+                      className="absolute -top-2 -right-2 bg-[#D14343] text-white rounded-full p-1"
+                    >
+                      <FiX className="w-4 h-4" />
+                    </button>
+                    {isUploadingPhoto && (
+                      <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg">
+                        <FiLoader className="w-6 h-6 animate-spin text-[#16834B]" />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              {isUploadingPhoto && (
-                <p className="text-xs text-[#6B716D] mt-2">Uploading...</p>
-              )}
-              {!isUploadingPhoto && tripData.dieselPhotoPreview && tripData.dieselPhotoUrl && (
-                <p className="text-xs text-[#16834B] mt-2">Uploaded</p>
-              )}
-              {uploadError && (
-                <p className="text-xs text-[#D14343] mt-2">{uploadError}</p>
-              )}
+              {uploadError && <p className="text-xs text-[#D14343] mt-1">{uploadError}</p>}
             </div>
           </div>
         </div>
@@ -427,6 +502,10 @@ const DriverDashboard = () => {
                     </div>
                   </div>
                   <div>
+                    <label className="block text-xs text-[#6B716D] mb-1">Hens Delivered</label>
+                    <input type="number" value={order.hensDelivered || ''} onChange={(e) => updateOrderHens(order.id, e.target.value)} placeholder="Enter hens delivered" className="w-full px-3 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition" min="0" step="1" />
+                  </div>
+                  <div>
                     <label className="block text-xs text-[#6B716D] mb-1">Cash Collected (₹)</label>
                     <input type="number" value={order.cashCollected || ''} onChange={(e) => updateCashCollected(order.id, e.target.value)} placeholder="Enter cash collected" className="w-full px-3 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition" min="0" step="1" />
                   </div>
@@ -434,8 +513,9 @@ const DriverDashboard = () => {
                 </div>
               ) : (
                 <div className="pt-3 border-t border-[#E5E8E6]">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-3 gap-4 text-sm">
                     <div><p className="text-[#6B716D]">Delivered KG</p><p className="font-medium text-[#151A17]">{order.actualKg || order.kg} kg</p></div>
+                    <div><p className="text-[#6B716D]">Hens Delivered</p><p className="font-medium text-[#151A17]">{order.hensDelivered || 0}</p></div>
                     <div><p className="text-[#6B716D]">Cash Collected</p><p className="font-medium text-[#16834B]">{formatCurrency(order.cashCollected || 0)}</p></div>
                   </div>
                 </div>
@@ -447,9 +527,10 @@ const DriverDashboard = () => {
         {/* Summary & Complete Trip */}
         {getDeliveredCount() > 0 && (
           <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 sticky bottom-0 shadow-lg">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
               <div className="text-center"><p className="text-xs text-[#6B716D]">Orders</p><p className="text-lg font-semibold">{getDeliveredCount()}/{totalOrders}</p></div>
               <div className="text-center"><p className="text-xs text-[#6B716D]">Total KG</p><p className="text-lg font-semibold">{getTotalDeliveredKg().toFixed(1)} kg</p></div>
+              <div className="text-center"><p className="text-xs text-[#6B716D]">Hens Delivered</p><p className="text-lg font-semibold">{getTotalDeliveredHens()}</p></div>
               <div className="text-center"><p className="text-xs text-[#6B716D]">Cash Collected</p><p className="text-lg font-semibold text-[#16834B]">{formatCurrency(getTotalCashCollected())}</p></div>
               <div className="text-center"><p className="text-xs text-[#6B716D]">Total Hens</p><p className="text-lg font-semibold">{tripData.totalHens || 0}</p></div>
             </div>

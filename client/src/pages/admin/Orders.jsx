@@ -134,7 +134,13 @@ const Orders = () => {
     return colors[status] || 'default';
   };
 
-  const getStatusLabel = (status) => {
+  // Cancelled while still an unpaid UPI order = an abandoned checkout, not a
+  // deliberately cancelled order -- worth calling out separately so it
+  // doesn't read like a real order the shop chose to cancel.
+  const getStatusLabel = (status, paymentMethod, paidAmount) => {
+    if (status === 'cancelled' && paymentMethod === 'upi' && (parseFloat(paidAmount) || 0) === 0) {
+      return 'Payment Failed';
+    }
     const labels = {
       'pending': 'Pending',
       'confirmed': 'Confirmed',
@@ -317,7 +323,7 @@ const Orders = () => {
                     </td>
                     <td className="px-6 py-4">
                       <Badge variant={getStatusColor(order.order_status)}>
-                        {getStatusLabel(order.order_status)}
+                        {getStatusLabel(order.order_status, order.payment_method, order.paid_amount)}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
