@@ -79,60 +79,6 @@ const Customers = () => {
     }).format(amount || 0);
   };
 
-  // Downloads exactly what's currently visible in the table (respecting
-  // the search box and status filter) as a CSV file.
-  const exportToCsv = () => {
-    if (filteredCustomers.length === 0) {
-      alert('No customers to export for the current filters.');
-      return;
-    }
-
-    const headers = [
-      'Shop Name',
-      'Owner Name',
-      'Phone',
-      'City',
-      'Outstanding',
-      'Total Purchase',
-      'Total Orders',
-      'Status',
-    ];
-
-    // Wrap every field in quotes and escape any embedded quotes, so a shop
-    // name or address containing a comma doesn't split into extra columns.
-    const escapeCsvField = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const rows = filteredCustomers.map((customer) => [
-      customer.shop_name || '',
-      customer.owner_name || '',
-      customer.phone || '',
-      customer.city || '',
-      customer.outstanding || 0,
-      customer.total_purchase || 0,
-      customer.total_orders || 0,
-      customer.status === 'active' ? 'Active' : 'Inactive',
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map(escapeCsvField).join(','))
-      .join('\r\n');
-
-    // Prepending the BOM keeps Excel from mangling ₹ and other non-ASCII
-    // characters when the file is opened directly.
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-
-    const dateStamp = new Date().toISOString().slice(0, 10);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `bismilla-customers-${dateStamp}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   // Loading state
   if (loading) {
     return (
@@ -186,7 +132,7 @@ const Customers = () => {
             <FiRefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button variant="outline" onClick={exportToCsv}>
+          <Button variant="outline">
             <FiDownload className="w-4 h-4 mr-2" />
             Export
           </Button>

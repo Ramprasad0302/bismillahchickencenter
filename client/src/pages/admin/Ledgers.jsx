@@ -15,8 +15,7 @@ import {
   FiClock,
   FiArrowRight,
   FiLoader,
-  FiAlertCircle,
-  FiDownload
+  FiAlertCircle
 } from 'react-icons/fi';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -24,31 +23,6 @@ import Modal from '../../components/common/Modal';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
 import api from '../../services/api';
-
-// YYYY-MM-DD in the browser's local timezone, matching what <input type=date>
-// and <input type=month> read/write -- avoids the UTC-shift bug where a
-// timestamp near midnight lands on the wrong calendar day.
-const toLocalDateStr = (dateInput) => {
-  const d = new Date(dateInput);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const DATE_MODE_OPTIONS = [
-  { value: 'all', label: 'All Time' },
-  { value: 'today', label: 'Today' },
-  { value: 'day', label: 'Single Day' },
-  { value: 'month', label: 'Whole Month' },
-  { value: 'range', label: 'Custom Range' },
-];
-
-const TYPE_OPTIONS = [
-  { value: 'all', label: 'All Entries' },
-  { value: 'debit', label: 'Debit (Bills)' },
-  { value: 'credit', label: 'Credit (Payments)' },
-];
 
 const Ledgers = () => {
   const [retailers, setRetailers] = useState([]);
@@ -60,14 +34,6 @@ const Ledgers = () => {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [submitting, setSubmitting] = useState(false);
-
-  // Transaction History filters (inside the ledger detail modal)
-  const [historyTypeFilter, setHistoryTypeFilter] = useState('all');
-  const [historyDateMode, setHistoryDateMode] = useState('all');
-  const [historySingleDate, setHistorySingleDate] = useState('');
-  const [historyMonth, setHistoryMonth] = useState('');
-  const [historyRangeFrom, setHistoryRangeFrom] = useState('');
-  const [historyRangeTo, setHistoryRangeTo] = useState('');
 
   // ✅ Fetch retailers with their ledger data
   useEffect(() => {
@@ -141,10 +107,6 @@ const Ledgers = () => {
           month: 'short',
           year: 'numeric'
         }),
-        // Kept alongside the formatted `date` above -- that string can't be
-        // reliably parsed back into a Date for filtering/export, so the raw
-        // value is carried separately for that purpose.
-        rawDate: order.order_date,
         billId: order.order_number,
         status: order.order_status,
         paidAmount: parseFloat(order.paid_amount) || 0,
@@ -164,15 +126,6 @@ const Ledgers = () => {
   // ✅ Open retailer ledger with transactions
   const openRetailerLedger = async (retailer) => {
     setSelectedRetailer(retailer);
-    // Reset the Transaction History filters every time a different retailer
-    // is opened, so a filter left on from a previous ledger doesn't silently
-    // hide everything for the new one.
-    setHistoryTypeFilter('all');
-    setHistoryDateMode('all');
-    setHistorySingleDate('');
-    setHistoryMonth('');
-    setHistoryRangeFrom('');
-    setHistoryRangeTo('');
     
     // Fetch transactions for this retailer
     const transactions = await fetchRetailerTransactions(retailer.id);
@@ -331,7 +284,6 @@ const Ledgers = () => {
           month: 'short',
           year: 'numeric'
         }),
-        rawDate: new Date().toISOString(),
         billId: 'PAYMENT',
         paidAmount: 0,
         balance: 0
@@ -392,89 +344,6 @@ const Ledgers = () => {
     r.phone?.includes(searchTerm) ||
     r.owner?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const matchesHistoryDateFilter = (transaction) => {
-    if (historyDateMode === 'all' || !transaction.rawDate) return true;
-    const txnDateStr = toLocalDateStr(transaction.rawDate);
-
-    if (historyDateMode === 'today') {
-      return txnDateStr === toLocalDateStr(new Date());
-    }
-    if (historyDateMode === 'day') {
-      return historySingleDate ? txnDateStr === historySingleDate : true;
-    }
-    if (historyDateMode === 'month') {
-      return historyMonth ? txnDateStr.slice(0, 7) === historyMonth : true;
-    }
-    if (historyDateMode === 'range') {
-      if (!historyRangeFrom && !historyRangeTo) return true;
-      if (historyRangeFrom && txnDateStr < historyRangeFrom) return false;
-      if (historyRangeTo && txnDateStr > historyRangeTo) return false;
-      return true;
-    }
-    return true;
-  };
-
-  // Transaction History, filtered -- CSV export reads from this exact same
-  // list, so whatever's visible on screen is exactly what gets downloaded.
-  const filteredTransactions = (selectedRetailer?.transactions || []).filter((t) => {
-    const matchesType = historyTypeFilter === 'all' || t.type === historyTypeFilter;
-    return matchesType && matchesHistoryDateFilter(t);
-  });
-
-  const hasHistoryFilters =
-    historyTypeFilter !== 'all' || historyDateMode !== 'all';
-
-  const clearHistoryFilters = () => {
-    setHistoryTypeFilter('all');
-    setHistoryDateMode('all');
-    setHistorySingleDate('');
-    setHistoryMonth('');
-    setHistoryRangeFrom('');
-    setHistoryRangeTo('');
-  };
-
-  // Downloads the currently filtered Transaction History for the open
-  // retailer as a CSV file.
-  const exportLedgerCsv = () => {
-    if (!selectedRetailer) return;
-    if (filteredTransactions.length === 0) {
-      alert('No transactions to export for the current filters.');
-      return;
-    }
-
-    const headers = ['Bill ID', 'Description', 'Date', 'Debit', 'Credit', 'Balance'];
-    const escapeCsvField = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-    const rows = filteredTransactions.map((t) => [
-      t.billId || '-',
-      t.description,
-      t.date,
-      t.type === 'debit' ? t.amount : '',
-      t.type === 'credit' ? t.amount : '',
-      t.type === 'debit' ? (t.balance || 0) : '',
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map(escapeCsvField).join(','))
-      .join('\r\n');
-
-    // Prepending the BOM keeps Excel from mangling ₹ and other non-ASCII
-    // characters when the file is opened directly.
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-
-    const shopSlug = (selectedRetailer.shop || 'retailer').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-    const dateStamp = new Date().toISOString().slice(0, 10);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `ledger-${shopSlug}-${dateStamp}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
 
   // Loading state
   if (loading) {
@@ -675,104 +544,7 @@ const Ledgers = () => {
 
             {/* Transaction History */}
             <div>
-              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <h4 className="font-medium text-[#151A17]">Transaction History</h4>
-                <Button variant="outline" size="sm" icon={FiDownload} onClick={exportLedgerCsv}>
-                  Export CSV
-                </Button>
-              </div>
-
-              {/* Filters */}
-              <div className="flex flex-wrap items-end gap-3 mb-3 p-3 bg-[#F6F7F6] rounded-lg">
-                <div>
-                  <label className="block text-xs font-medium text-[#6B716D] mb-1">Type</label>
-                  <select
-                    value={historyTypeFilter}
-                    onChange={(e) => setHistoryTypeFilter(e.target.value)}
-                    className="px-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[140px]"
-                  >
-                    {TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-[#6B716D] mb-1">Date</label>
-                  <select
-                    value={historyDateMode}
-                    onChange={(e) => setHistoryDateMode(e.target.value)}
-                    className="px-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[130px]"
-                  >
-                    {DATE_MODE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {historyDateMode === 'day' && (
-                  <div>
-                    <label className="block text-xs font-medium text-[#6B716D] mb-1">Pick a date</label>
-                    <div className="relative">
-                      <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B716D] pointer-events-none" />
-                      <input
-                        type="date"
-                        value={historySingleDate}
-                        onChange={(e) => setHistorySingleDate(e.target.value)}
-                        className="pl-9 pr-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {historyDateMode === 'month' && (
-                  <div>
-                    <label className="block text-xs font-medium text-[#6B716D] mb-1">Pick a month</label>
-                    <div className="relative">
-                      <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B716D] pointer-events-none" />
-                      <input
-                        type="month"
-                        value={historyMonth}
-                        onChange={(e) => setHistoryMonth(e.target.value)}
-                        className="pl-9 pr-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {historyDateMode === 'range' && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-medium text-[#6B716D] mb-1">From</label>
-                      <input
-                        type="date"
-                        value={historyRangeFrom}
-                        onChange={(e) => setHistoryRangeFrom(e.target.value)}
-                        className="px-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#6B716D] mb-1">To</label>
-                      <input
-                        type="date"
-                        value={historyRangeTo}
-                        onChange={(e) => setHistoryRangeTo(e.target.value)}
-                        className="px-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {hasHistoryFilters && (
-                  <button
-                    onClick={clearHistoryFilters}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#6B716D] hover:text-[#D14343] transition"
-                  >
-                    <FiX className="w-4 h-4" /> Clear
-                  </button>
-                )}
-              </div>
-
+              <h4 className="font-medium text-[#151A17] mb-3">Transaction History</h4>
               <div className="border border-[#E5E8E6] rounded-lg overflow-hidden max-h-60 overflow-y-auto">
                 <table className="w-full">
                   <thead className="bg-[#F6F7F6] sticky top-0">
@@ -786,36 +558,28 @@ const Ledgers = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E5E8E6]">
-                    {filteredTransactions.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-4 py-6 text-center text-sm text-[#6B716D]">
-                          No transactions match these filters.
+                    {selectedRetailer.transactions?.map((transaction) => (
+                      <tr key={transaction.id} className="hover:bg-[#F6F7F6] transition">
+                        <td className="px-4 py-2 text-sm text-[#6B716D]">
+                          {transaction.billId || '-'}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-[#151A17]">
+                          {transaction.description}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-[#6B716D]">
+                          {transaction.date}
+                        </td>
+                        <td className="px-4 py-2 text-right text-sm font-medium text-[#D14343]">
+                          {transaction.type === 'debit' ? formatCurrency(transaction.amount) : '-'}
+                        </td>
+                        <td className="px-4 py-2 text-right text-sm font-medium text-[#16834B]">
+                          {transaction.type === 'credit' ? formatCurrency(transaction.amount) : '-'}
+                        </td>
+                        <td className="px-4 py-2 text-right text-sm font-medium">
+                          {transaction.type === 'debit' ? formatCurrency(transaction.balance || 0) : '-'}
                         </td>
                       </tr>
-                    ) : (
-                      filteredTransactions.map((transaction) => (
-                        <tr key={transaction.id} className="hover:bg-[#F6F7F6] transition">
-                          <td className="px-4 py-2 text-sm text-[#6B716D]">
-                            {transaction.billId || '-'}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#151A17]">
-                            {transaction.description}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#6B716D]">
-                            {transaction.date}
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm font-medium text-[#D14343]">
-                            {transaction.type === 'debit' ? formatCurrency(transaction.amount) : '-'}
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm font-medium text-[#16834B]">
-                            {transaction.type === 'credit' ? formatCurrency(transaction.amount) : '-'}
-                          </td>
-                          <td className="px-4 py-2 text-right text-sm font-medium">
-                            {transaction.type === 'debit' ? formatCurrency(transaction.balance || 0) : '-'}
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
