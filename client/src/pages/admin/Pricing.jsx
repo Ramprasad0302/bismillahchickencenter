@@ -52,6 +52,8 @@ const Pricing = () => {
   
   const [isPriceHistoryOpen, setIsPriceHistoryOpen] = useState(false);
   const [priceHistoryList, setPriceHistoryList] = useState([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
 
   // ============================================
   // 1. FETCH DATA FROM BACKEND
@@ -175,7 +177,27 @@ const Pricing = () => {
   };
 
   // ============================================
-  // 5. OPEN MODALS
+  // 5. PRICE HISTORY
+  // ============================================
+  const openPriceHistory = async () => {
+    setIsPriceHistoryOpen(true);
+    setIsHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const response = await api.get('/pricing/history');
+      if (response.data.success) {
+        setPriceHistoryList(response.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching price history:', err);
+      setHistoryError('Failed to load price history.');
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  // ============================================
+  // 6. OPEN MODALS
   // ============================================
   const openUserPriceModal = (user) => {
     setSelectedUser(user);
@@ -229,7 +251,7 @@ const Pricing = () => {
         <div className="flex items-center gap-2">
           <Button 
             variant="outline"
-            onClick={() => setIsPriceHistoryOpen(true)}
+            onClick={openPriceHistory}
           >
             View History
           </Button>
@@ -317,7 +339,7 @@ const Pricing = () => {
                   onClick={() => {
                     setIsEditingDefault(false);
                     setEditPriceValue(currentPrice);
-                    setEditAvgWeightValue(fetchedAvgWeight ?? '');
+                    setEditAvgWeightValue(avgWeight ?? '');
                   }}
                 >
                   <FiX className="w-4 h-4 mr-1" />
@@ -338,7 +360,7 @@ const Pricing = () => {
                 onClick={() => {
                   setIsEditingDefault(true);
                   setEditPriceValue(currentPrice);
-                  setEditAvgWeightValue(fetchedAvgWeight ?? '');
+                  setEditAvgWeightValue(avgWeight ?? '');
                 }}
               >
                 <FiEdit2 className="w-4 h-4 mr-1" />
@@ -527,7 +549,7 @@ const Pricing = () => {
         isOpen={isPriceHistoryOpen}
         onClose={() => setIsPriceHistoryOpen(false)}
         title="Price History"
-        description="Track all price changes over time"
+        description="Every change to the default price and average hen weight, most recent first"
         size="lg"
         footer={
           <Button variant="outline" onClick={() => setIsPriceHistoryOpen(false)}>
@@ -535,12 +557,54 @@ const Pricing = () => {
           </Button>
         }
       >
-        <div className="space-y-3 max-h-[400px] overflow-y-auto">
-          {/* Since we don't have a price history table in DB yet, we use a placeholder */}
-          <div className="p-8 text-center text-[#6B716D]">
-            <p>Price history feature coming soon!</p>
-            <p className="text-sm mt-2">Currently, only the latest default price is tracked in the database.</p>
-          </div>
+        <div className="space-y-3 max-h-[450px] overflow-y-auto">
+          {isHistoryLoading && (
+            <div className="flex items-center justify-center py-12">
+              <FiLoader className="w-8 h-8 animate-spin text-[#16834B]" />
+            </div>
+          )}
+
+          {!isHistoryLoading && historyError && (
+            <div className="p-8 text-center">
+              <FiAlertCircle className="w-8 h-8 text-[#D14343] mx-auto mb-2" />
+              <p className="text-[#D14343] text-sm">{historyError}</p>
+            </div>
+          )}
+
+          {!isHistoryLoading && !historyError && priceHistoryList.length === 0 && (
+            <div className="p-8 text-center text-[#6B716D]">
+              <p>No price changes recorded yet.</p>
+            </div>
+          )}
+
+          {!isHistoryLoading && !historyError && priceHistoryList.map((entry, idx) => (
+            <div
+              key={entry.id}
+              className={`flex items-center justify-between p-4 rounded-xl border ${
+                idx === 0 ? 'border-[#16834B] bg-[#EAF6EF]' : 'border-[#E5E8E6] bg-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center border border-[#E5E8E6] shrink-0">
+                  <FiTrendingUp className="w-4 h-4 text-[#16834B]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-[#151A17]">₹{entry.price}/kg</span>
+                    {entry.avgWeight !== null && (
+                      <span className="text-sm text-[#6B716D]">· {entry.avgWeight} kg/hen avg</span>
+                    )}
+                    {idx === 0 && (
+                      <Badge variant="success">Current</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-[#6B716D] mt-0.5">
+                    Set by {entry.updatedBy} · {formatDate(entry.updatedAt)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </Modal>
     </div>
