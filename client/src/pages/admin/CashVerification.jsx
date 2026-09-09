@@ -101,10 +101,16 @@ const CashVerification = () => {
   const confirmVerification = async () => {
     setIsSubmitting(true);
     try {
+      // driverName and tripNumber are already loaded on this page (from
+      // getPendingVerifications) -- passed through so the payments row
+      // created on the backend records who actually collected the cash
+      // and on which trip, instead of a generic placeholder.
       const response = await api.post('/cash-verification/verify', {
         verificationId: selectedCollection.verification_id,
         orderId: selectedCollection.order_id,
-        amount: selectedCollection.amount
+        amount: selectedCollection.amount,
+        driverName: selectedCollection.driver_name,
+        tripNumber: selectedCollection.trip_number,
       });
 
       if (response.data.success) {

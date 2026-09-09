@@ -17,6 +17,9 @@ router.get('/current', pricingController.getCurrentPricing);
 // Get all data for the Admin Pricing page (Global + Custom Prices)
 router.get('/admin-data', authMiddleware, pricingController.getAdminPricingData);
 
+// Get the full history of default price / avg weight changes
+router.get('/history', authMiddleware, pricingController.getPriceHistory);
+
 // Update the Global Price (Admin only)
 router.post('/global', authMiddleware, pricingController.updateGlobalPrice);
 

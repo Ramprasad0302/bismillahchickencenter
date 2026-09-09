@@ -61,7 +61,50 @@ exports.getAdminPricingData = async (req, res) => {
 };
 
 // ============================================
-// 3. POST: Update Global Price (Admin)
+// 3. GET: Global Price History
+//
+// updateGlobalPrice below has always INSERTed a new row rather than
+// overwriting the existing one, so every past change is already sitting in
+// this table — this was never actually missing data, just a missing
+// endpoint to read it back out.
+// ============================================
+exports.getPriceHistory = async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT id, default_price_per_kg, avg_weight_per_bird, updated_by, updated_at
+            FROM pricing
+            ORDER BY id DESC
+            LIMIT 100
+        `);
+
+        // Pair each row with the one before it (chronologically) so the
+        // frontend can show what changed, not just what the value was.
+        const chronological = [...rows].reverse();
+        const withChanges = chronological.map((row, index) => {
+            const previous = index > 0 ? chronological[index - 1] : null;
+            const price = parseFloat(row.default_price_per_kg);
+            const avgWeight = row.avg_weight_per_bird === null ? null : parseFloat(row.avg_weight_per_bird);
+            return {
+                id: row.id,
+                price,
+                avgWeight,
+                updatedBy: row.updated_by || 'Admin',
+                updatedAt: row.updated_at,
+                priceChanged: previous ? previous.price !== price : true,
+                weightChanged: previous ? previous.avgWeight !== avgWeight : true,
+            };
+        });
+
+        // Most recent first for display.
+        res.json({ success: true, data: withChanges.reverse() });
+    } catch (error) {
+        console.error('Error fetching price history:', error);
+        res.status(500).json({ success: false, message: 'Failed to load price history' });
+    }
+};
+
+// ============================================
+// 4. POST: Update Global Price (Admin)
 // ============================================
 exports.updateGlobalPrice = async (req, res) => {
     try {
@@ -111,7 +154,7 @@ exports.updateGlobalPrice = async (req, res) => {
 };
 
 // ============================================
-// 4. POST: Update Custom Price for Retailer
+// 5. POST: Update Custom Price for Retailer
 // ============================================
 exports.updateCustomPrice = async (req, res) => {
     try {
@@ -154,7 +197,7 @@ exports.updateCustomPrice = async (req, res) => {
 };
 
 // ============================================
-// 5. DELETE: Revert Custom Price to Default
+// 6. DELETE: Revert Custom Price to Default
 // ============================================
 exports.deleteCustomPrice = async (req, res) => {
     try {
@@ -175,7 +218,7 @@ exports.deleteCustomPrice = async (req, res) => {
 };
 
 // ============================================
-// 6. GET: Specific Price for Logged-in Retailer
+// 7. GET: Specific Price for Logged-in Retailer
 // ============================================
 exports.getRetailerPrice = async (req, res) => {
     try {
