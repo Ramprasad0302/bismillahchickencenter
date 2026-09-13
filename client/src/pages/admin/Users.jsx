@@ -42,6 +42,7 @@ const Users = () => {
     role: 'retailer',
     password: '',
     confirmPassword: '',
+    openingOutstanding: '',
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -127,6 +128,13 @@ const Users = () => {
     if (!formData.phone.trim()) errors.phone = 'Phone is required';
     if (formData.phone.length < 10) errors.phone = 'Phone must be 10 digits';
     if (!formData.role) errors.role = 'Role is required';
+    if (
+      formData.role === 'retailer' &&
+      formData.openingOutstanding !== '' &&
+      (Number.isNaN(parseFloat(formData.openingOutstanding)) || parseFloat(formData.openingOutstanding) < 0)
+    ) {
+      errors.openingOutstanding = 'Enter a valid amount 0 or greater';
+    }
     if (!isEditModalOpen) {
       if (!formData.password) errors.password = 'Password is required';
       if (formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
@@ -149,7 +157,11 @@ const Users = () => {
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         role: formData.role,
-        password: formData.password
+        password: formData.password,
+        // Only meaningful for retailers -- the backend ignores it for
+        // admin/driver accounts. Sent as-is (including '') and the backend
+        // treats a blank/zero value as "no opening balance".
+        openingOutstanding: formData.role === 'retailer' ? formData.openingOutstanding : '',
       };
       
       const response = await userService.createUser(userData);
@@ -251,7 +263,8 @@ const Users = () => {
       role: 'retailer',
       password: '',
       confirmPassword: '',
-      status: 'active'
+      status: 'active',
+      openingOutstanding: '',
     });
     setFormErrors({});
     setSelectedUser(null);
@@ -268,6 +281,7 @@ const Users = () => {
       password: '',
       confirmPassword: '',
       status: user.status.toLowerCase(),
+      openingOutstanding: '',
     });
     setIsEditModalOpen(true);
   };
@@ -596,6 +610,40 @@ const Users = () => {
               <p className="mt-1 text-sm text-[#D14343]">{formErrors.role}</p>
             )}
           </div>
+
+          {/* Opening Outstanding -- retailers only. Lets the admin carry
+              over a balance a shop already owed before being added to this
+              system (from the previous Excel records), entered once at
+              account creation. */}
+          {formData.role === 'retailer' && (
+            <div>
+              <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+                Opening Outstanding Balance
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B716D]">₹</span>
+                <input
+                  type="number"
+                  name="openingOutstanding"
+                  value={formData.openingOutstanding}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  min="0"
+                  step="1"
+                  className={`w-full pl-8 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
+                    formErrors.openingOutstanding ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+                  }`}
+                />
+              </div>
+              {formErrors.openingOutstanding && (
+                <p className="mt-1 text-sm text-[#D14343]">{formErrors.openingOutstanding}</p>
+              )}
+              <p className="mt-1 text-xs text-[#6B716D]">
+                If this shop already owed you money before joining the system, enter it here.
+                This is a one-time entry — leave blank or 0 for a fresh account.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-[#151A17] mb-1.5">

@@ -80,7 +80,7 @@ const createUser = async (req, res) => {
   
   try {
     console.log('➕ Creating new user:', req.body);
-    const { name, email, phone, role, password } = req.body;
+    const { name, email, phone, role, password, openingOutstanding } = req.body;
     
     // Validate input
     if (!name || !phone || !role || !password) {
@@ -88,6 +88,20 @@ const createUser = async (req, res) => {
         success: false,
         message: 'Name, phone, role, and password are required'
       });
+    }
+
+    // Opening outstanding is optional and only meaningful for retailers --
+    // used to carry over a balance a shop already owed from before they
+    // were entered into this system (from the old Excel records).
+    let openingOutstandingAmount = 0;
+    if (openingOutstanding !== undefined && openingOutstanding !== null && openingOutstanding !== '') {
+      openingOutstandingAmount = parseFloat(openingOutstanding);
+      if (Number.isNaN(openingOutstandingAmount) || openingOutstandingAmount < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Opening outstanding must be a number 0 or greater',
+        });
+      }
     }
     
     // Start transaction
@@ -139,7 +153,7 @@ const createUser = async (req, res) => {
     // ✅ AUTOMATICALLY CREATE PROFILE BASED ON ROLE
     if (role === 'retailer') {
       // Create retailer profile
-      await connection.query(`
+      const [retailerResult] = await connection.query(`
         INSERT INTO retailers (
           user_id,
           owner_name,
@@ -166,10 +180,52 @@ const createUser = async (req, res) => {
         null,  // city
         null,  // pincode
         50000, // default credit limit
-        0,     // outstanding balance
+        0,     // outstanding balance -- recalculated below if there's an opening amount
         'active'
       ]);
+      const retailerId = retailerResult.insertId;
       console.log(`✅ Retailer profile created for ${name}`);
+
+      // If an opening outstanding amount was entered, record it as a real
+      // order rather than a bare number on the retailer row. Every other
+      // place in the app (Ledgers, Customers, both dashboards, the
+      // retailer's own order history) computes "outstanding" by summing
+      // orders.balance -- a number stored only on retailers.outstanding
+      // would get silently overwritten and lost the next time any of
+      // those recalculations run for this retailer. Representing it as
+      // its own order makes it show up correctly everywhere automatically,
+      // with zero other files needing to change.
+      if (openingOutstandingAmount > 0) {
+        const openingOrderNumber = `OPEN-${retailerId}-${Date.now().toString().slice(-6)}`;
+
+        await connection.query(
+          `INSERT INTO orders (
+             order_number, retailer_id, kg_ordered, kg_delivered, rate_per_kg,
+             subtotal, discount, delivery_charge, total_amount, paid_amount,
+             balance, payment_method, payment_status, order_status,
+             delivery_address, notes, order_date, created_at
+           ) VALUES (?, ?, 0, 0, 0, ?, 0, 0, ?, 0, ?, 'pending', 'pending', 'confirmed', NULL, ?, NOW(), NOW())`,
+          [
+            openingOrderNumber,
+            retailerId,
+            openingOutstandingAmount,
+            openingOutstandingAmount,
+            openingOutstandingAmount,
+            'Opening balance carried over from previous records',
+          ]
+        );
+
+        await connection.query(
+          `UPDATE retailers
+              SET outstanding = (
+                SELECT COALESCE(SUM(balance), 0) FROM orders
+                 WHERE retailer_id = ? AND order_status != 'cancelled'
+              )
+            WHERE id = ?`,
+          [retailerId, retailerId]
+        );
+        console.log(`💰 Opening outstanding of ₹${openingOutstandingAmount} recorded for ${name}`);
+      }
       
     } else if (role === 'driver') {
       // Create driver profile
