@@ -158,7 +158,7 @@ exports.updateTripStatus = async (req, res) => {
             // Fetch the REAL numeric ID and the pricing fields needed to
             // recompute the bill, based on the order_number string
             const [orderRows] = await connection.query(
-                `SELECT id, retailer_id, kg_ordered, rate_per_kg, discount, delivery_charge, paid_amount
+                `SELECT id, retailer_id, kg_ordered, hens_ordered, rate_per_kg, transport_fee_per_hen, discount, delivery_charge, paid_amount
                  FROM orders WHERE order_number = ?`,
                 [order.id]
             );
@@ -188,12 +188,20 @@ exports.updateTripStatus = async (req, res) => {
             const deliveryCharge = parseFloat(dbOrder.delivery_charge) || 0;
             const previousPaid = parseFloat(dbOrder.paid_amount) || 0;
 
+            // Transport fee tracks ACTUAL hens delivered, same principle as
+            // the kg amount tracking actual delivered weight -- the rate
+            // itself (transport_fee_per_hen) was frozen at order time and
+            // never changes here, only the quantity it's multiplied by.
+            const hensForBilling = hensDelivered > 0 ? hensDelivered : (parseFloat(dbOrder.hens_ordered) || 0);
+            const transportFeePerHen = parseFloat(dbOrder.transport_fee_per_hen) || 0;
+            const newTransportFee = parseFloat((hensForBilling * transportFeePerHen).toFixed(2));
+
             // Bill is recalculated from the ACTUAL delivered weight, not the
             // ordered one -- this is what makes a 190kg order that delivers
             // 192kg bill correctly instead of silently staying at the
             // original 190kg amount.
             const newSubtotal = actualKg * ratePerKg;
-            const newTotalAmount = newSubtotal + deliveryCharge - discount;
+            const newTotalAmount = newSubtotal + newTransportFee + deliveryCharge - discount;
             const newPaidAmount = previousPaid + cashCollected;
             const newBalance = newTotalAmount - newPaidAmount;
 
@@ -218,15 +226,17 @@ exports.updateTripStatus = async (req, res) => {
             );
             console.log(`trip_orders updated for Order ${order.id}`);
 
-            // 2. Update the MAIN orders table: kg_delivered, recalculated bill,
-            //    payment, and status. This runs every time regardless of
-            //    whether cash was collected, because kg_delivered and the
-            //    recalculated total need to be stored even on a fully-prepaid
-            //    (UPI) order where cashCollected is legitimately 0.
+            // 2. Update the MAIN orders table: kg_delivered, recalculated bill
+            //    (including transport fee), payment, and status. This runs
+            //    every time regardless of whether cash was collected, because
+            //    kg_delivered and the recalculated total need to be stored
+            //    even on a fully-prepaid (UPI) order where cashCollected is
+            //    legitimately 0.
             await connection.query(
                 `UPDATE orders 
                  SET kg_delivered = ?,
                      subtotal = ?,
+                     transport_fee = ?,
                      total_amount = ?,
                      paid_amount = ?,
                      balance = ?,
@@ -234,30 +244,32 @@ exports.updateTripStatus = async (req, res) => {
                      order_status = 'delivered',
                      delivered_date = CURDATE()
                  WHERE id = ?`,
-                [actualKg, newSubtotal, newTotalAmount, newPaidAmount, newBalance, newPaymentStatus, realOrderId]
+                [actualKg, newSubtotal, newTransportFee, newTotalAmount, newPaidAmount, newBalance, newPaymentStatus, realOrderId]
             );
 
             // Keep the retailer's running outstanding total in step with
             // this recalculated bill -- otherwise Ledgers/dashboard totals
             // drift the same way payment_status used to before this fix.
-            // Balances under ₹1 don't count as "owed" here either.
+            // Opening balance (pre-system debt, if any) is added in -- it
+            // must never be lost when a delivery updates this retailer's
+            // bills.
             if (dbOrder.retailer_id) {
                 await connection.query(
                     `UPDATE retailers
                         SET outstanding = (
-                            SELECT COALESCE(SUM(balance), 0) FROM orders
-                             WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?
+                            COALESCE((SELECT remaining_amount FROM retailer_opening_balances WHERE retailer_id = ?), 0) +
+                            COALESCE((SELECT SUM(balance) FROM orders WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?), 0)
                         )
                       WHERE id = ?`,
-                    [dbOrder.retailer_id, PAID_THRESHOLD, dbOrder.retailer_id]
+                    [dbOrder.retailer_id, dbOrder.retailer_id, PAID_THRESHOLD, dbOrder.retailer_id]
                 );
             }
 
             if (cashCollected > 0) {
                 totalCashCollected += cashCollected;
-                console.log(`Order ${order.id}: delivered ${actualKg}kg / ${hensDelivered} hens, bill Rs.${newTotalAmount.toFixed(2)}, cash collected Rs.${cashCollected}, status: ${newPaymentStatus}`);
+                console.log(`Order ${order.id}: delivered ${actualKg}kg / ${hensDelivered} hens, transport ₹${newTransportFee}, bill Rs.${newTotalAmount.toFixed(2)}, cash collected Rs.${cashCollected}, status: ${newPaymentStatus}`);
             } else {
-                console.log(`Order ${order.id}: delivered ${actualKg}kg / ${hensDelivered} hens, bill Rs.${newTotalAmount.toFixed(2)} (no cash collected this trip), status: ${newPaymentStatus}`);
+                console.log(`Order ${order.id}: delivered ${actualKg}kg / ${hensDelivered} hens, transport ₹${newTransportFee}, bill Rs.${newTotalAmount.toFixed(2)} (no cash collected this trip), status: ${newPaymentStatus}`);
             }
         }
 

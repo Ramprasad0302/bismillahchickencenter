@@ -15,14 +15,23 @@ export default defineConfig(({ mode }) => {
       // back to original source, so anyone opening DevTools could read your
       // unminified code even with the console silenced.
       sourcemap: false,
-    },
-    esbuild: {
-      // Strips every console.log/console.info/console.debug/console.warn
-      // and every `debugger` statement from the production bundle at build
-      // time -- this covers every call site across the app without
-      // touching a single component file, and without affecting `npm run
-      // dev`, where you still want to see your own logs.
-      drop: isProduction ? ["console", "debugger"] : [],
+      // Vite 8 replaced esbuild with Rolldown/Oxc for production builds.
+      // The old `esbuild: { drop: [...] }` option (used in Vite ≤7) is
+      // silently ignored under Vite 8 -- this is the actual place console
+      // stripping needs to happen now. Confirmed against Vite's official
+      // migration guide: esbuild.drop -> build.rolldownOptions.output.minify.compress.drop*
+      rolldownOptions: isProduction
+        ? {
+            output: {
+              minify: {
+                compress: {
+                  drop_console: true,
+                  drop_debugger: true,
+                },
+              },
+            },
+          }
+        : {},
     },
   };
 });

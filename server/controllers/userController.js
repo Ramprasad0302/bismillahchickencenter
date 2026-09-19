@@ -180,35 +180,24 @@ const createUser = async (req, res) => {
         null,  // city
         null,  // pincode
         50000, // default credit limit
-        0,     // outstanding balance -- recalculated below if there's an opening amount
+        0,     // outstanding balance -- set below if there's an opening amount
         'active'
       ]);
       const retailerId = retailerResult.insertId;
       console.log(`✅ Retailer profile created for ${name}`);
 
-      // If an opening outstanding amount was entered, record it as a real
-      // order rather than a bare number on the retailer row. Every other
-      // place in the app (Ledgers, Customers, both dashboards, the
-      // retailer's own order history) computes "outstanding" by summing
-      // orders.balance -- a number stored only on retailers.outstanding
-      // would get silently overwritten and lost the next time any of
-      // those recalculations run for this retailer. Representing it as
-      // its own order makes it show up correctly everywhere automatically,
-      // with zero other files needing to change.
+      // If an opening outstanding amount was entered, record it in its own
+      // table rather than as a synthetic order -- this is the amount a
+      // shop already owed before being entered into this system, and it
+      // needs to behave as its own distinct, oldest debt: added to (never
+      // lost when) later orders come in, and paid off before any regular
+      // bill when a payment is recorded.
       if (openingOutstandingAmount > 0) {
-        const openingOrderNumber = `OPEN-${retailerId}-${Date.now().toString().slice(-6)}`;
-
         await connection.query(
-          `INSERT INTO orders (
-             order_number, retailer_id, kg_ordered, kg_delivered, rate_per_kg,
-             subtotal, discount, delivery_charge, total_amount, paid_amount,
-             balance, payment_method, payment_status, order_status,
-             delivery_address, notes, order_date, created_at
-           ) VALUES (?, ?, 0, 0, 0, ?, 0, 0, ?, 0, ?, 'pending', 'pending', 'confirmed', NULL, ?, NOW(), NOW())`,
+          `INSERT INTO retailer_opening_balances (retailer_id, original_amount, remaining_amount, notes)
+           VALUES (?, ?, ?, ?)`,
           [
-            openingOrderNumber,
             retailerId,
-            openingOutstandingAmount,
             openingOutstandingAmount,
             openingOutstandingAmount,
             'Opening balance carried over from previous records',
@@ -216,13 +205,8 @@ const createUser = async (req, res) => {
         );
 
         await connection.query(
-          `UPDATE retailers
-              SET outstanding = (
-                SELECT COALESCE(SUM(balance), 0) FROM orders
-                 WHERE retailer_id = ? AND order_status != 'cancelled'
-              )
-            WHERE id = ?`,
-          [retailerId, retailerId]
+          `UPDATE retailers SET outstanding = ? WHERE id = ?`,
+          [openingOutstandingAmount, retailerId]
         );
         console.log(`💰 Opening outstanding of ₹${openingOutstandingAmount} recorded for ${name}`);
       }

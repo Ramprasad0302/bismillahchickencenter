@@ -96,6 +96,13 @@ const Ledgers = () => {
           totalPurchase: parseFloat(retailer.total_purchase) || 0,
           totalPaid: parseFloat(retailer.total_purchase) - parseFloat(retailer.outstanding) || 0,
           balance: parseFloat(retailer.outstanding) || 0,
+          joinedDate: retailer.joined_date,
+          // Opening balance -- pre-system debt carried over at account
+          // creation. Original is what was originally owed; remaining is
+          // what's still unpaid of it (it's the oldest debt, so it's paid
+          // off first, ahead of any regular bill).
+          openingBalanceOriginal: parseFloat(retailer.opening_balance_original) || 0,
+          openingBalanceRemaining: parseFloat(retailer.opening_balance_remaining) || 0,
           transactions: [], // Will be loaded when viewing ledger
           _raw: retailer // Keep raw data for reference
         }));
@@ -151,9 +158,6 @@ const Ledgers = () => {
         balance: parseFloat(order.balance) || 0
       }));
 
-      // Add payment transactions if they exist (from payments table)
-      // For now, we'll just use orders
-      
       return transactions;
     } catch (error) {
       console.error('❌ Error fetching transactions:', error);
@@ -175,10 +179,39 @@ const Ledgers = () => {
     setHistoryRangeTo('');
     
     // Fetch transactions for this retailer
-    const transactions = await fetchRetailerTransactions(retailer.id);
+    const orderTransactions = await fetchRetailerTransactions(retailer.id);
+
+    // The opening balance (if any) is the oldest debt this retailer has --
+    // predates every real order by construction (it's set the moment the
+    // account is created). Represented here as a synthetic transaction so
+    // it naturally sorts first in both Unpaid Bills and Transaction
+    // History, and naturally gets paid first by the existing FIFO
+    // allocation logic below, with no separate code path needed for it.
+    const transactions = retailer.openingBalanceOriginal > 0
+      ? [
+          {
+            id: 'TRX-OPENING',
+            type: 'debit',
+            amount: retailer.openingBalanceOriginal,
+            description: 'Opening Balance (carried over from previous records)',
+            date: retailer.joinedDate
+              ? new Date(retailer.joinedDate).toLocaleDateString('en-IN', {
+                  day: '2-digit', month: 'short', year: 'numeric',
+                })
+              : '-',
+            rawDate: retailer.joinedDate || new Date(0).toISOString(),
+            billId: 'OPENING',
+            status: retailer.openingBalanceRemaining < 1 ? 'paid' : 'pending',
+            paidAmount: retailer.openingBalanceOriginal - retailer.openingBalanceRemaining,
+            balance: retailer.openingBalanceRemaining,
+          },
+          ...orderTransactions,
+        ]
+      : orderTransactions;
+
     setSelectedRetailer(prev => ({
       ...prev,
-      transactions: transactions
+      transactions
     }));
   };
 
@@ -192,18 +225,21 @@ const Ledgers = () => {
     setPaymentMethod('Cash');
   };
 
-  // ✅ Get unpaid bills with FIFO order (oldest first)
+  // ✅ Get unpaid bills with FIFO order (oldest first) -- the opening
+  // balance is included here automatically since it's just another
+  // debit transaction with an early date, so it naturally sorts first.
   const getUnpaidBills = () => {
     if (!selectedRetailer || !selectedRetailer.transactions) return [];
     
-    // Get all debit transactions (orders) that are not fully paid
+    // Get all debit transactions (orders + opening balance) that are not
+    // fully paid
     const debitTransactions = selectedRetailer.transactions.filter(t => 
       t.type === 'debit' && t.balance > 0
     );
     
     // Sort by date (oldest first for FIFO)
     return debitTransactions
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .sort((a, b) => new Date(a.rawDate || a.date) - new Date(b.rawDate || b.date))
       .map(bill => ({
         billId: bill.billId,
         description: bill.description,
@@ -211,11 +247,11 @@ const Ledgers = () => {
         paid: bill.paidAmount || 0,
         balance: bill.balance,
         date: bill.date,
-        sortDate: new Date(bill.date)
       }));
   };
 
-  // ✅ Auto-calculate payment allocation based on amount
+  // ✅ Auto-calculate payment allocation based on amount -- opening balance
+  // is always first in getUnpaidBills(), so it's always paid down first.
   const getPaymentAllocation = () => {
     const amount = parseFloat(paymentAmount);
     if (!amount || amount <= 0 || !selectedRetailer) return [];
@@ -284,7 +320,9 @@ const Ledgers = () => {
         retailer_id: selectedRetailer.id,
         amount: amount,
         payment_method: paymentMethod,
-        // Map the allocation to a clean array of bill IDs and amounts for the backend
+        // Map the allocation to a clean array of bill IDs and amounts for
+        // the backend. 'OPENING' is recognized specially there and applied
+        // to retailer_opening_balances instead of the orders table.
         bill_allocations: paymentAllocation.map(alloc => ({
           bill_id: alloc.billId,
           amount_paid: alloc.amountToPay
@@ -301,62 +339,34 @@ const Ledgers = () => {
         throw new Error(response.data.message || 'Failed to record payment');
       }
 
-      // 2. OPTIMISTIC UI UPDATE (Update local state immediately for UI responsiveness)
-      let remainingAmount = amount;
-      const updatedTransactions = [...selectedRetailer.transactions];
-      // Ensure outstanding never goes negative due to a local math error
-      let updatedOutstanding = Math.max(0, selectedRetailer.outstanding - amount);
+      alert(`✅ Payment of ${formatCurrency(amount)} recorded successfully!`);
+      setIsPaymentModalOpen(false);
 
-      // Update each bill's balance in the local state array
-      for (let i = 0; i < updatedTransactions.length; i++) {
-        if (remainingAmount <= 0) break;
-        
-        const t = updatedTransactions[i];
-        if (t.type === 'debit' && t.balance > 0) {
-          const payAmount = Math.min(remainingAmount, t.balance);
-          t.balance = t.balance - payAmount;
-          t.paidAmount = (t.paidAmount || 0) + payAmount;
-          remainingAmount -= payAmount;
+      // Refresh everything from the server -- opening balance + bills now
+      // live in two different places, so a full refetch is simplest and
+      // safest rather than trying to patch local state by hand.
+      await fetchRetailers();
+      const refreshedList = await api.get('/retailers/customers');
+      if (refreshedList.data.success) {
+        const updated = refreshedList.data.data.find(r => r.id === selectedRetailer.id);
+        if (updated) {
+          await openRetailerLedger({
+            id: updated.id,
+            name: updated.shop_name,
+            phone: updated.phone,
+            shop: updated.shop_name,
+            owner: updated.owner_name,
+            creditLimit: parseFloat(updated.credit_limit) || 0,
+            outstanding: parseFloat(updated.outstanding) || 0,
+            totalPurchase: parseFloat(updated.total_purchase) || 0,
+            totalPaid: parseFloat(updated.total_purchase) - parseFloat(updated.outstanding) || 0,
+            balance: parseFloat(updated.outstanding) || 0,
+            joinedDate: updated.joined_date,
+            openingBalanceOriginal: parseFloat(updated.opening_balance_original) || 0,
+            openingBalanceRemaining: parseFloat(updated.opening_balance_remaining) || 0,
+          });
         }
       }
-
-      // Add a credit (payment) transaction locally so it shows immediately in history
-      updatedTransactions.push({
-        id: `PAY-${Date.now()}`,
-        type: 'credit',
-        amount: amount,
-        description: `Payment Received - ${paymentMethod}`,
-        date: new Date().toLocaleDateString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        }),
-        rawDate: new Date().toISOString(),
-        billId: 'PAYMENT',
-        paidAmount: 0,
-        balance: 0
-      });
-
-      // Construct the updated retailer object
-      const updatedRetailer = {
-        ...selectedRetailer,
-        transactions: updatedTransactions,
-        outstanding: updatedOutstanding,
-        totalPaid: (selectedRetailer.totalPaid || 0) + amount,
-        balance: updatedOutstanding
-      };
-
-      // Update local component state
-      setSelectedRetailer(updatedRetailer);
-      setRetailers(prev => prev.map(r => 
-        r.id === updatedRetailer.id ? updatedRetailer : r
-      ));
-
-      setIsPaymentModalOpen(false);
-      alert(`✅ Payment of ₹${amount.toLocaleString()} recorded successfully!`);
-
-      // 3. REFRESH DATA FROM SERVER (Crucial step to ensure UI matches DB)
-      await fetchRetailers(); 
 
     } catch (error) {
       console.error('❌ Error recording payment:', error);
@@ -638,6 +648,18 @@ const Ledgers = () => {
               </div>
             </div>
 
+            {/* Opening balance callout, when there's still some unpaid */}
+            {selectedRetailer.openingBalanceRemaining > 0 && (
+              <div className="p-3 bg-[#FFF8E6] border border-[#E0A32E] rounded-lg flex items-center gap-2">
+                <FiAlertCircle className="w-4 h-4 text-[#E0A32E] shrink-0" />
+                <p className="text-sm text-[#151A17]">
+                  Includes an opening balance of{' '}
+                  <span className="font-semibold">{formatCurrency(selectedRetailer.openingBalanceRemaining)}</span>{' '}
+                  carried over from before this shop joined the system. It's paid off first, ahead of any bill below.
+                </p>
+              </div>
+            )}
+
             {/* Unpaid Bills */}
             {getUnpaidBills().length > 0 && (
               <div>
@@ -655,8 +677,12 @@ const Ledgers = () => {
                     </thead>
                     <tbody className="divide-y divide-[#E5E8E6]">
                       {getUnpaidBills().map((bill) => (
-                        <tr key={bill.billId} className="hover:bg-[#F6F7F6] transition">
-                          <td className="px-4 py-2 text-sm text-[#6B716D]">{bill.billId}</td>
+                        <tr key={bill.billId} className={`hover:bg-[#F6F7F6] transition ${bill.billId === 'OPENING' ? 'bg-[#FFF8E6]/50' : ''}`}>
+                          <td className="px-4 py-2 text-sm text-[#6B716D]">
+                            {bill.billId === 'OPENING' ? (
+                              <span className="font-medium text-[#B25E00]">Opening Balance</span>
+                            ) : bill.billId}
+                          </td>
                           <td className="px-4 py-2 text-sm text-[#151A17]">{bill.description}</td>
                           <td className="px-4 py-2 text-sm text-[#6B716D]">{bill.date}</td>
                           <td className="px-4 py-2 text-right text-sm font-medium text-[#151A17]">
@@ -796,7 +822,9 @@ const Ledgers = () => {
                       filteredTransactions.map((transaction) => (
                         <tr key={transaction.id} className="hover:bg-[#F6F7F6] transition">
                           <td className="px-4 py-2 text-sm text-[#6B716D]">
-                            {transaction.billId || '-'}
+                            {transaction.billId === 'OPENING' ? (
+                              <span className="font-medium text-[#B25E00]">Opening</span>
+                            ) : (transaction.billId || '-')}
                           </td>
                           <td className="px-4 py-2 text-sm text-[#151A17]">
                             {transaction.description}
@@ -881,6 +909,9 @@ const Ledgers = () => {
             </div>
             <p className="mt-1 text-xs text-[#6B716D]">
               Total Outstanding: {formatCurrency(getTotalOutstanding())}
+              {selectedRetailer?.openingBalanceRemaining > 0 && (
+                <> (includes {formatCurrency(selectedRetailer.openingBalanceRemaining)} opening balance, paid first)</>
+              )}
             </p>
           </div>
 
@@ -922,6 +953,8 @@ const Ledgers = () => {
                         <td className="px-3 py-2 text-sm">
                           {alloc.billId === 'EXCESS' ? (
                             <span className="text-[#D14343] font-medium">⚠️ {alloc.description}</span>
+                          ) : alloc.billId === 'OPENING' ? (
+                            <span className="font-medium text-[#B25E00]">Opening Balance</span>
                           ) : (
                             <span className="font-medium text-[#151A17]">{alloc.billId}</span>
                           )}

@@ -264,6 +264,10 @@ const getRetailerCustomers = async (req, res) => {
   try {
     console.log('📋 Fetching retailer customers with statistics...');
 
+    // Opening balance (pre-system debt, if any) is folded into
+    // total_purchase (it represents real business done with them before
+    // this system existed) via MAX() to avoid GROUP BY issues with the
+    // one-to-one join against orders' one-to-many join.
     const [customers] = await pool.query(`
       SELECT 
         r.id,
@@ -278,8 +282,9 @@ const getRetailerCustomers = async (req, res) => {
         r.outstanding,
         r.credit_limit,
         r.joined_date,
-        -- ✅ Total purchase: SUM of ALL orders EXCEPT cancelled
-        COALESCE(SUM(CASE WHEN o.order_status != 'cancelled' THEN o.total_amount ELSE 0 END), 0) as total_purchase,
+        -- ✅ Total purchase: SUM of ALL orders EXCEPT cancelled + opening balance
+        COALESCE(SUM(CASE WHEN o.order_status != 'cancelled' THEN o.total_amount ELSE 0 END), 0)
+          + COALESCE(MAX(ob.original_amount), 0) as total_purchase,
         -- Total orders count (exclude cancelled)
         COUNT(CASE WHEN o.order_status != 'cancelled' THEN 1 END) as total_orders,
         -- Pending orders count
@@ -289,9 +294,12 @@ const getRetailerCustomers = async (req, res) => {
         -- Delivered orders count
         COALESCE(SUM(CASE WHEN o.order_status = 'delivered' THEN 1 ELSE 0 END), 0) as delivered_orders,
         -- Last order date
-        MAX(o.order_date) as last_order_date
+        MAX(o.order_date) as last_order_date,
+        COALESCE(MAX(ob.original_amount), 0) as opening_balance_original,
+        COALESCE(MAX(ob.remaining_amount), 0) as opening_balance_remaining
       FROM retailers r
       LEFT JOIN orders o ON r.id = o.retailer_id
+      LEFT JOIN retailer_opening_balances ob ON r.id = ob.retailer_id
       GROUP BY r.id
       ORDER BY r.created_at DESC
     `);

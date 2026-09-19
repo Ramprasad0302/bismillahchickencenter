@@ -1,13 +1,40 @@
 {
-  "name": "bismilla",
+  "name": "server",
   "version": "1.0.0",
-  "private": true,
-  "description": "Bismilla Chicken Center - deploy wrapper. The real apps live in server/ and client/.",
+  "description": "Bismilla Chicken Center - API server",
+  "main": "server.js",
   "scripts": {
-    "build": "cd server && npm install --omit=dev",
-    "start": "cd server && node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "db:setup": "node scripts/createTables.js",
+    "db:payments": "node scripts/createPaymentTables.js",
+    "db:migrate-ledger": "node scripts/migrateLedger.js",
+    "db:companies": "node scripts/createCompanyTables.js",
+    "db:seed-companies": "node scripts/seedCompanies.js",
+    "db:fix-payment-status": "node scripts/fixPaymentStatus.js",
+    "db:opening-balance": "node scripts/createOpeningBalanceTable.js",
+    "create:admin": "node scripts/createAdmin.js",
+    "stripe:listen": "stripe listen --forward-to localhost:5000/api/payments/webhook",
+    "db:reconcile": "node scripts/updateOutstanding.js"
   },
-  "engines": {
-    "node": ">=18"
-  }
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
+    "mysql2": "^3.23.1",
+    "razorpay": "^2.9.8",
+    "stripe": "^18.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "type": "commonjs"
 }

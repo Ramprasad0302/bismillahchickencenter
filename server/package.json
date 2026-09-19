@@ -12,6 +12,8 @@
     "db:companies": "node scripts/createCompanyTables.js",
     "db:seed-companies": "node scripts/seedCompanies.js",
     "db:fix-payment-status": "node scripts/fixPaymentStatus.js",
+    "db:opening-balance": "node scripts/createOpeningBalanceTable.js",
+    "db:transport-fee": "node scripts/addTransportFeeColumns.js",
     "create:admin": "node scripts/createAdmin.js",
     "stripe:listen": "stripe listen --forward-to localhost:5000/api/payments/webhook",
     "db:reconcile": "node scripts/updateOutstanding.js"

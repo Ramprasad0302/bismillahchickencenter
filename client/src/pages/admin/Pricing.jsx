@@ -10,7 +10,8 @@ import {
   FiUser,
   FiCheck,
   FiAlertCircle,
-  FiLoader
+  FiLoader,
+  FiTruck
 } from 'react-icons/fi';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -40,15 +41,18 @@ const Pricing = () => {
   const [customPriceUsers, setCustomPriceUsers] = useState(0);
   
   const [avgWeight, setAvgWeight] = useState(null);
+  const [transportFeePerHen, setTransportFeePerHen] = useState(0);
 
   const [isEditingDefault, setIsEditingDefault] = useState(false);
   const [editPriceValue, setEditPriceValue] = useState('');
   const [editAvgWeightValue, setEditAvgWeightValue] = useState('');
+  const [editTransportFeeValue, setEditTransportFeeValue] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [customPriceValue, setCustomPriceValue] = useState('');
+  const [customTransportFeeValue, setCustomTransportFeeValue] = useState('');
   
   const [isPriceHistoryOpen, setIsPriceHistoryOpen] = useState(false);
   const [priceHistoryList, setPriceHistoryList] = useState([]);
@@ -65,10 +69,11 @@ const Pricing = () => {
       const response = await api.get('/pricing/admin-data');
       
       if (response.data.success) {
-        const { globalPrice, avgWeight: fetchedAvgWeight, lastUpdated, retailers } = response.data;
+        const { globalPrice, avgWeight: fetchedAvgWeight, transportFeePerHen: fetchedTransportFee, lastUpdated, retailers } = response.data;
         
         setCurrentPrice(globalPrice);
         setAvgWeight(fetchedAvgWeight ?? null);
+        setTransportFeePerHen(fetchedTransportFee ?? 0);
         setLastUpdated(formatDate(lastUpdated));
         setUserPrices(retailers);
         
@@ -79,6 +84,7 @@ const Pricing = () => {
         // Update edit inputs to match current
         setEditPriceValue(globalPrice);
         setEditAvgWeightValue(fetchedAvgWeight ?? '');
+        setEditTransportFeeValue(fetchedTransportFee ?? '');
       }
     } catch (err) {
       console.error('Error fetching pricing data:', err);
@@ -112,10 +118,21 @@ const Pricing = () => {
       }
     }
 
+    // Transport fee is optional too — same "leave blank to keep current" rule.
+    let newTransportFee;
+    if (editTransportFeeValue !== '' && editTransportFeeValue !== null) {
+      newTransportFee = parseFloat(editTransportFeeValue);
+      if (Number.isNaN(newTransportFee) || newTransportFee < 0) {
+        alert('Please enter a valid transport fee (0 or greater)');
+        return;
+      }
+    }
+
     try {
       const response = await api.post('/pricing/global', {
         price: newPrice,
         avgWeight: newAvgWeight,
+        transportFeePerHen: newTransportFee,
       });
       if (response.data.success) {
         alert('Global pricing updated successfully!');
@@ -140,16 +157,29 @@ const Pricing = () => {
       return;
     }
 
+    // Custom transport fee is optional -- blank means "use the global rate
+    // for this retailer", a number (including 0) means "always use this".
+    let customTransportFee;
+    if (customTransportFeeValue !== '' && customTransportFeeValue !== null) {
+      customTransportFee = parseFloat(customTransportFeeValue);
+      if (Number.isNaN(customTransportFee) || customTransportFee < 0) {
+        alert('Please enter a valid custom transport fee (0 or greater)');
+        return;
+      }
+    }
+
     try {
       const response = await api.post('/pricing/custom', { 
         retailer_id: selectedUser.id, 
-        custom_price: newPrice 
+        custom_price: newPrice,
+        custom_transport_fee: customTransportFee,
       });
       
       if (response.data.success) {
         setIsUserModalOpen(false);
         setSelectedUser(null);
         setCustomPriceValue('');
+        setCustomTransportFeeValue('');
         fetchPricingData(); // Refresh data from server
         alert('Custom price updated successfully!');
       }
@@ -163,7 +193,7 @@ const Pricing = () => {
   // 4. REMOVE (REVERT) CUSTOM PRICE
   // ============================================
   const removeCustomPrice = async (userId) => {
-    if (!confirm('Are you sure you want to revert this retailer back to the default global price?')) return;
+    if (!confirm('Are you sure you want to revert this retailer back to the default global price and transport fee?')) return;
 
     try {
       const response = await api.delete(`/pricing/custom/${userId}`);
@@ -203,6 +233,11 @@ const Pricing = () => {
     setSelectedUser(user);
     // If they have a custom price, pre-fill it. Otherwise, show 0 or empty.
     setCustomPriceValue(user.custom_price > 0 ? user.custom_price.toString() : '');
+    setCustomTransportFeeValue(
+      user.custom_transport_fee_per_hen !== null && user.custom_transport_fee_per_hen !== undefined
+        ? user.custom_transport_fee_per_hen.toString()
+        : ''
+    );
     setIsUserModalOpen(true);
   };
 
@@ -246,7 +281,7 @@ const Pricing = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-[#151A17]">Price Management</h1>
-          <p className="text-sm text-[#6B716D] mt-1">Set today's per-kg rates. Changes apply instantly to the current price.</p>
+          <p className="text-sm text-[#6B716D] mt-1">Set today's per-kg rate and transport fee per hen. Changes apply instantly.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button 
@@ -264,7 +299,7 @@ const Pricing = () => {
 
       {/* Default Price Card */}
       <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-8">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-[#F6F7F6] rounded-lg">
@@ -328,6 +363,37 @@ const Pricing = () => {
                 </span>
               </div>
             )}
+
+            {/* Transport fee per hen — global, added to every order's bill */}
+            {isEditingDefault ? (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-[#151A17] mb-1 flex items-center gap-1.5">
+                  <FiTruck className="w-4 h-4" /> Transport fee per hen
+                </label>
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-semibold text-[#151A17]">₹</span>
+                  <input
+                    type="number"
+                    value={editTransportFeeValue}
+                    onChange={(e) => setEditTransportFeeValue(e.target.value)}
+                    className="w-32 px-4 py-2 text-lg font-semibold border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+                    min="0"
+                    step="0.5"
+                    placeholder="e.g. 5"
+                  />
+                  <span className="text-sm text-[#6B716D]">/ hen</span>
+                </div>
+                <p className="text-xs text-[#6B716D] mt-1">
+                  Added to every order's bill: hens ordered × this rate. Leave blank to keep the current value.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-3 flex items-center gap-1.5">
+                <FiTruck className="w-4 h-4 text-[#6B716D]" />
+                <span className="text-sm text-[#6B716D]">Transport fee per hen: </span>
+                <span className="text-lg font-semibold text-[#151A17]">₹{transportFeePerHen}</span>
+              </div>
+            )}
           </div>
           
           <div className="text-right">
@@ -340,6 +406,7 @@ const Pricing = () => {
                     setIsEditingDefault(false);
                     setEditPriceValue(currentPrice);
                     setEditAvgWeightValue(avgWeight ?? '');
+                    setEditTransportFeeValue(transportFeePerHen ?? '');
                   }}
                 >
                   <FiX className="w-4 h-4 mr-1" />
@@ -361,6 +428,7 @@ const Pricing = () => {
                   setIsEditingDefault(true);
                   setEditPriceValue(currentPrice);
                   setEditAvgWeightValue(avgWeight ?? '');
+                  setEditTransportFeeValue(transportFeePerHen ?? '');
                 }}
               >
                 <FiEdit2 className="w-4 h-4 mr-1" />
@@ -375,11 +443,16 @@ const Pricing = () => {
 
         {/* Quick update info */}
         <div className="mt-4 pt-4 border-t border-[#E5E8E6]">
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-6 text-sm flex-wrap">
             <div className="flex items-center gap-2">
               <FiTrendingUp className="w-4 h-4 text-[#16834B]" />
               <span className="text-[#6B716D]">Default Price:</span>
               <span className="font-medium text-[#151A17]">₹{currentPrice}/kg</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FiTruck className="w-4 h-4 text-[#3B6FD8]" />
+              <span className="text-[#6B716D]">Transport Fee:</span>
+              <span className="font-medium text-[#151A17]">₹{transportFeePerHen}/hen</span>
             </div>
             <div className="flex items-center gap-2">
               <FiUsers className="w-4 h-4 text-[#3B6FD8]" />
@@ -395,7 +468,7 @@ const Pricing = () => {
         <div className="px-6 py-4 border-b border-[#E5E8E6] flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-[#151A17]">User Custom Prices</h2>
-            <p className="text-sm text-[#6B716D]">Set different prices for individual retailers</p>
+            <p className="text-sm text-[#6B716D]">Set different prices and transport fees for individual retailers</p>
           </div>
           <div className="w-64">
             <SearchInput
@@ -411,8 +484,8 @@ const Pricing = () => {
             <thead className="bg-[#F6F7F6]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">User</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Default Price</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Custom Price</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Price /kg</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Transport /hen</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Last Updated</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Actions</th>
@@ -421,6 +494,10 @@ const Pricing = () => {
             <tbody className="divide-y divide-[#E5E8E6]">
               {filteredUsers.map((user) => {
                 const isCustom = user.custom_price > 0;
+                const effectiveTransportFee =
+                  user.custom_transport_fee_per_hen !== null && user.custom_transport_fee_per_hen !== undefined
+                    ? user.custom_transport_fee_per_hen
+                    : transportFeePerHen;
                 return (
                   <tr key={user.id} className="hover:bg-[#F6F7F6] transition">
                     <td className="px-6 py-4">
@@ -428,9 +505,6 @@ const Pricing = () => {
                         <p className="text-sm font-medium text-[#151A17]">{user.shop_name}</p>
                         <p className="text-xs text-[#6B716D]">{user.owner_name}</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-[#6B716D]">
-                      ₹{currentPrice}/kg
                     </td>
                     <td className="px-6 py-4">
                       {isCustom ? (
@@ -440,6 +514,11 @@ const Pricing = () => {
                       ) : (
                         <span className="text-sm text-[#6B716D]">₹{currentPrice}/kg</span>
                       )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-sm ${user.custom_transport_fee_per_hen !== null && user.custom_transport_fee_per_hen !== undefined ? 'font-semibold text-[#3B6FD8]' : 'text-[#6B716D]'}`}>
+                        ₹{effectiveTransportFee}/hen
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       {isCustom ? (
@@ -486,9 +565,10 @@ const Pricing = () => {
           setIsUserModalOpen(false);
           setSelectedUser(null);
           setCustomPriceValue('');
+          setCustomTransportFeeValue('');
         }}
         title={selectedUser?.custom_price > 0 ? "Edit Custom Price" : "Set Custom Price"}
-        description={`Set custom price for ${selectedUser?.shop_name} (${selectedUser?.owner_name})`}
+        description={`Set custom price and transport fee for ${selectedUser?.shop_name} (${selectedUser?.owner_name})`}
         footer={
           <>
             <Button 
@@ -497,6 +577,7 @@ const Pricing = () => {
                 setIsUserModalOpen(false);
                 setSelectedUser(null);
                 setCustomPriceValue('');
+                setCustomTransportFeeValue('');
               }}
             >
               Cancel
@@ -515,10 +596,8 @@ const Pricing = () => {
                 <p className="font-semibold text-[#151A17]">₹{currentPrice}/kg</p>
               </div>
               <div>
-                <p className="text-[#6B716D]">Current Custom Price</p>
-                <p className="font-semibold text-[#151A17]">
-                  {selectedUser?.custom_price > 0 ? `₹${selectedUser?.custom_price}/kg` : 'Not set'}
-                </p>
+                <p className="text-[#6B716D]">Default Transport Fee</p>
+                <p className="font-semibold text-[#151A17]">₹{transportFeePerHen}/hen</p>
               </div>
             </div>
           </div>
@@ -536,9 +615,24 @@ const Pricing = () => {
               min="0"
               step="1"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+              Custom Transport Fee (₹/hen)
+            </label>
+            <input
+              type="number"
+              value={customTransportFeeValue}
+              onChange={(e) => setCustomTransportFeeValue(e.target.value)}
+              placeholder={`Leave blank to use default (₹${transportFeePerHen})`}
+              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              min="0"
+              step="0.5"
+            />
             <p className="mt-2 text-xs text-[#6B716D]">
               <FiAlertCircle className="inline w-3 h-3 mr-1" />
-              Current default price is ₹{currentPrice}/kg
+              Leave blank to keep using the default transport fee (₹{transportFeePerHen}/hen) for this retailer.
             </p>
           </div>
         </div>
@@ -549,7 +643,7 @@ const Pricing = () => {
         isOpen={isPriceHistoryOpen}
         onClose={() => setIsPriceHistoryOpen(false)}
         title="Price History"
-        description="Every change to the default price and average hen weight, most recent first"
+        description="Every change to price, average hen weight, and transport fee, most recent first"
         size="lg"
         footer={
           <Button variant="outline" onClick={() => setIsPriceHistoryOpen(false)}>
@@ -594,6 +688,7 @@ const Pricing = () => {
                     {entry.avgWeight !== null && (
                       <span className="text-sm text-[#6B716D]">· {entry.avgWeight} kg/hen avg</span>
                     )}
+                    <span className="text-sm text-[#6B716D]">· ₹{entry.transportFeePerHen}/hen transport</span>
                     {idx === 0 && (
                       <Badge variant="success">Current</Badge>
                     )}

@@ -109,14 +109,35 @@ const createOrder = async (req, res) => {
         const retailerId = retailer[0].id;
         console.log('✅ Retailer ID found:', retailerId);
 
+        // Look up the transport fee that applies to this retailer right now
+        // (custom override if set, otherwise the global rate) -- frozen
+        // onto the order at creation time, same as rate_per_kg, so a later
+        // rate change never rewrites an already-placed order's bill.
+        const [globalPricingRows] = await pool.query(
+            'SELECT transport_fee_per_hen FROM pricing ORDER BY id DESC LIMIT 1'
+        );
+        const globalTransportFee = parseFloat(globalPricingRows[0]?.transport_fee_per_hen) || 0;
+
+        const [customPricingRows] = await pool.query(
+            'SELECT custom_transport_fee_per_hen FROM retailer_pricing WHERE retailer_id = ?',
+            [retailerId]
+        );
+        const transportFeePerHen =
+            customPricingRows.length > 0 && customPricingRows[0].custom_transport_fee_per_hen !== null
+                ? parseFloat(customPricingRows[0].custom_transport_fee_per_hen)
+                : globalTransportFee;
+
         // CALCULATE FINANCIALS
         const subtotal = parseFloat(kg_ordered) * parseFloat(rate_per_kg);
-        const total_amount = subtotal + parseFloat(delivery_charge) - parseFloat(discount);
+        const transportFee = hensToStore ? parseFloat((hensToStore * transportFeePerHen).toFixed(2)) : 0;
+        const total_amount = subtotal + transportFee + parseFloat(delivery_charge) - parseFloat(discount);
         const paid_amount = 0;
         const balance = total_amount;
         
         console.log('💰 Financials Calculated:', {
             subtotal,
+            transportFeePerHen,
+            transportFee,
             total_amount,
             paid_amount,
             balance
@@ -163,7 +184,9 @@ const createOrder = async (req, res) => {
                         hens_ordered,
                         avg_weight_used,
                         rate_per_kg,
+                        transport_fee_per_hen,
                         subtotal,
+                        transport_fee,
                         discount,
                         delivery_charge,
                         total_amount,
@@ -176,7 +199,7 @@ const createOrder = async (req, res) => {
                         notes,
                         order_date,
                         created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
                     [
                         order_number,
                         retailerId,
@@ -184,7 +207,9 @@ const createOrder = async (req, res) => {
                         hensToStore,
                         avgWeightToStore,
                         rate_per_kg,
+                        transportFeePerHen,
                         subtotal,
+                        transportFee,
                         discount,
                         delivery_charge,
                         total_amount,
@@ -211,15 +236,17 @@ const createOrder = async (req, res) => {
         console.log('📋 Order Number:', order_number);
         console.log('✅ Order inserted with ID:', result.insertId);
 
-        // Keep the retailer's running outstanding in step with the new bill.
+        // Keep the retailer's running outstanding in step with the new bill --
+        // opening balance (if any) is added in, never lost. This is what
+        // makes an opening balance survive the retailer placing new orders.
         await connection.query(
             `UPDATE retailers
                 SET outstanding = (
-                    SELECT COALESCE(SUM(balance), 0) FROM orders
-                     WHERE retailer_id = ? AND order_status != 'cancelled'
+                    COALESCE((SELECT remaining_amount FROM retailer_opening_balances WHERE retailer_id = ?), 0) +
+                    COALESCE((SELECT SUM(balance) FROM orders WHERE retailer_id = ? AND order_status != 'cancelled'), 0)
                 )
               WHERE id = ?`,
-            [retailerId, retailerId]
+            [retailerId, retailerId, retailerId]
         );
 
         await connection.commit();
@@ -311,6 +338,8 @@ const getMyOrders = async (req, res) => {
                 o.order_number,
                 o.kg_ordered,
                 o.rate_per_kg,
+                o.transport_fee_per_hen,
+                o.transport_fee,
                 o.total_amount,
                 o.paid_amount,
                 o.balance,
@@ -396,6 +425,8 @@ const getAllOrders = async (req, res) => {
                 o.order_number,
                 o.kg_ordered,
                 o.rate_per_kg,
+                o.transport_fee_per_hen,
+                o.transport_fee,
                 o.total_amount,
                 o.paid_amount,
                 o.balance,
@@ -458,8 +489,8 @@ const getAllOrders = async (req, res) => {
 
 // ============================================
 // GET ORDER BY ID (Single order details) — now includes hens/kg
-// ordered vs delivered, the trip/driver/company it went through, and
-// any online payment transactions, for the admin order detail page.
+// ordered vs delivered, the trip/driver/company it went through, transport
+// fee, and any online payment transactions, for the admin order detail page.
 // ============================================
 const getOrderById = async (req, res) => {
     try {
@@ -477,7 +508,9 @@ const getOrderById = async (req, res) => {
                 o.hens_ordered,
                 o.avg_weight_used,
                 o.rate_per_kg,
+                o.transport_fee_per_hen,
                 o.subtotal,
+                o.transport_fee,
                 o.discount,
                 o.delivery_charge,
                 o.total_amount,
@@ -686,6 +719,15 @@ const getOrderStats = async (req, res) => {
 
 // ============================================
 // NEW: RECORD A PAYMENT (Admin only)
+//
+// Opening balance is the oldest debt a retailer has -- any general
+// payment (this endpoint always represents one: the admin picking bills
+// off the Ledgers page) pays it down FIRST, before any regular bill.
+// bill_allocations sent from the frontend already lists the opening
+// balance first when there's one to pay (Ledgers.jsx sorts unpaid bills
+// oldest-first, and the opening balance predates every real order) --
+// this handler just needs to recognize bill_id === 'OPENING' and apply
+// it to retailer_opening_balances instead of the orders table.
 // ============================================
 const recordPayment = async (req, res) => {
     // Fixes vs. the previous version:
@@ -736,7 +778,7 @@ const recordPayment = async (req, res) => {
             throw err;
         }
 
-        // ---- Apply against the named bills ----
+        // ---- Apply against the named bills, oldest first ----
         let processedAmount = 0;
         let lastUpdatedOrderId = null;
         const applied = [];
@@ -744,6 +786,30 @@ const recordPayment = async (req, res) => {
         for (const alloc of bill_allocations) {
             const allocAmount = parseFloat(alloc.amount_paid);
             if (!alloc.bill_id || !allocAmount || allocAmount <= 0) continue;
+
+            // The opening balance (pre-system debt) -- applied to its own
+            // table, never to the orders table.
+            if (alloc.bill_id === 'OPENING') {
+                const [openingRows] = await connection.query(
+                    'SELECT id, remaining_amount FROM retailer_opening_balances WHERE retailer_id = ? FOR UPDATE',
+                    [retailer_id]
+                );
+                if (openingRows.length === 0) continue;
+
+                const openingRemaining = parseFloat(openingRows[0].remaining_amount) || 0;
+                const payAmount = parseFloat(Math.min(allocAmount, openingRemaining).toFixed(2));
+                if (payAmount <= 0) continue;
+
+                const newRemaining = parseFloat((openingRemaining - payAmount).toFixed(2));
+                await connection.query(
+                    'UPDATE retailer_opening_balances SET remaining_amount = ? WHERE id = ?',
+                    [newRemaining, openingRows[0].id]
+                );
+
+                processedAmount = parseFloat((processedAmount + payAmount).toFixed(2));
+                applied.push({ order_id: null, order_number: 'OPENING', amount: payAmount });
+                continue;
+            }
 
             const [orderRows] = await connection.query(
                 `SELECT id, balance, paid_amount FROM orders
@@ -803,13 +869,13 @@ const recordPayment = async (req, res) => {
             ]
         );
 
-        // ---- Recalculate outstanding from the bills themselves ----
-        // Balances under ₹1 don't count as "owed" here either.
+        // ---- Recalculate outstanding from opening balance + bills ----
         const [[{ outstanding }]] = await connection.query(
-            `SELECT COALESCE(SUM(balance), 0) AS outstanding
-               FROM orders
-              WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?`,
-            [retailer_id, PAID_THRESHOLD]
+            `SELECT (
+                COALESCE((SELECT remaining_amount FROM retailer_opening_balances WHERE retailer_id = ?), 0) +
+                COALESCE((SELECT SUM(balance) FROM orders WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?), 0)
+            ) AS outstanding`,
+            [retailer_id, retailer_id, PAID_THRESHOLD]
         );
 
         await connection.query(

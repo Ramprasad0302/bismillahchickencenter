@@ -1,11 +1,6 @@
 const pool = require('../config/db');
 const config = require('../config/payment');
 
-// Anything under ₹1 left on a bill isn't real money owed at this business's
-// whole-rupee pricing. Same threshold used everywhere else payment_status
-// is calculated (driverController, orderController, paymentService).
-const PAID_THRESHOLD = 1;
-
 const dateStamp = () => new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
 // ============================================
@@ -97,20 +92,26 @@ exports.getVerifiedHistory = async (req, res) => {
 };
 
 // ============================================
-// VERIFY CASH PAYMENT (DEDUCTS FROM RETAILER OUTSTANDING)
+// VERIFY CASH PAYMENT (audit/confirmation only)
 //
-// Fixes vs. the previous version:
-//   * Never wrote a `payments` row at all — verified driver cash was
-//     invisible on the admin Payments page (which reads from `payments`),
-//     even though the order and retailer balances were correctly updated.
-//     This is why "Cash Collected" stats never matched "Recent Collections".
-//   * Never recalculated the order's payment_status, so a bill paid down to
-//     zero via driver cash could still read "Pending"/"Partial" forever.
-//   * Subtracted from retailers.outstanding directly instead of
-//     recalculating from the bills themselves, which drifts over time
-//     (same class of bug fixed elsewhere in orderController/paymentService).
-//   * Never wrote a ledger credit entry, unlike every other payment path
-//     in the app (admin Ledgers page, online UPI/Razorpay settlement).
+// CRITICAL FIX vs. the previous version: it was updating orders.paid_amount
+// / orders.balance / retailers.outstanding a SECOND time here. Those were
+// already updated once, correctly, when the driver completed the trip
+// (driverController.updateTripStatus writes paid_amount/balance based on
+// cashCollected the moment delivery happens, and recalculates
+// retailers.outstanding right there). This "verification" step is the
+// admin confirming that the cash the driver says they collected was
+// physically handed over -- it is an audit action, not a second payment.
+// Re-applying the amount to the order here double-counted every verified
+// cash collection (₹10,000 collected → ₹20,000 recorded).
+//
+// What verification actually does now:
+//   1. Marks the cash_verifications row 'verified'.
+//   2. Writes the payments row + ledger credit for bookkeeping/audit
+//      trail (this is what makes it show up on the admin Payments page --
+//      the part that was genuinely missing before).
+//   3. Does NOT touch orders or retailers.outstanding -- those are already
+//      correct from delivery time.
 // ============================================
 exports.verifyPayment = async (req, res) => {
     const connection = await pool.getConnection();
@@ -130,16 +131,32 @@ exports.verifyPayment = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid verification data' });
         }
 
+        // Guard against double-clicking / double-submitting the same
+        // verification -- if it's already verified, do nothing further.
+        const [cvRows] = await connection.query(
+            `SELECT status FROM cash_verifications WHERE id = ? FOR UPDATE`,
+            [verificationId]
+        );
+        if (cvRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: 'Verification record not found' });
+        }
+        if (cvRows[0].status === 'verified') {
+            await connection.rollback();
+            return res.status(400).json({ success: false, message: 'This collection has already been verified.' });
+        }
+
         // 1. Mark cash verification as 'verified'
         await connection.query(
             `UPDATE cash_verifications SET status = 'verified', verified_at = NOW() WHERE id = ?`,
             [verificationId]
         );
 
-        // 2. Lock and read the order so the new balance/payment_status are
-        //    computed from its real current state, not guessed at.
+        // 2. Look up the retailer this order belongs to, purely so the
+        //    payments/ledger rows below are attributed correctly. Order
+        //    and retailer balances themselves are NOT modified here.
         const [orderRows] = await connection.query(
-            `SELECT id, retailer_id, balance, paid_amount FROM orders WHERE id = ? FOR UPDATE`,
+            `SELECT id, retailer_id FROM orders WHERE id = ?`,
             [orderId]
         );
         if (orderRows.length === 0) {
@@ -148,41 +165,10 @@ exports.verifyPayment = async (req, res) => {
         }
         const order = orderRows[0];
 
-        const currentBalance = parseFloat(order.balance) || 0;
-        const newBalance = parseFloat((currentBalance - payAmount).toFixed(2));
-        const newPaidAmount = parseFloat(((parseFloat(order.paid_amount) || 0) + payAmount).toFixed(2));
-        const newPaymentStatus =
-            newBalance < PAID_THRESHOLD ? 'paid' : newPaidAmount > 0 ? 'partial' : 'pending';
-
-        await connection.query(
-            `UPDATE orders 
-             SET paid_amount = ?, 
-                 balance = ?,
-                 payment_status = ?,
-                 order_status = 'delivered',
-                 delivered_date = CURDATE()
-             WHERE id = ?`,
-            [newPaidAmount, newBalance, newPaymentStatus, orderId]
-        );
-
-        // 3. Recalculate the retailer's outstanding from the bills
-        //    themselves -- safer than subtracting from the stored figure,
-        //    which drifts. Balances under the paid threshold don't count
-        //    as "owed" here either.
-        const [[{ outstanding }]] = await connection.query(
-            `SELECT COALESCE(SUM(balance), 0) AS outstanding
-               FROM orders
-              WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?`,
-            [order.retailer_id, PAID_THRESHOLD]
-        );
-        await connection.query('UPDATE retailers SET outstanding = ? WHERE id = ?', [
-            outstanding,
-            order.retailer_id,
-        ]);
-
-        // 4. Write the actual payments row -- this is what makes verified
-        //    driver cash show up on the admin Payments page and in stats,
-        //    same table every other payment path in the app writes to.
+        // 3. Write the actual payments row -- this is what makes verified
+        //    driver cash show up on the admin Payments page and in stats.
+        //    It's a record of money that already moved (at delivery time),
+        //    not new money being applied now.
         const [countRows] = await connection.query(
             'SELECT COUNT(*) AS count FROM payments WHERE DATE(created_at) = CURDATE()'
         );
@@ -204,7 +190,8 @@ exports.verifyPayment = async (req, res) => {
             ]
         );
 
-        // 5. Ledger credit -- same as every other payment path.
+        // 4. Ledger credit -- same as every other payment path, purely a
+        //    record of the transaction for the ledger view.
         await connection.query(
             `INSERT INTO \`${config.ledgerTable}\`
                (retailer_id, order_id, payment_id, type, amount, description, date, created_at)
@@ -222,8 +209,8 @@ exports.verifyPayment = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Payment verified and outstanding balance updated!',
-            data: { paymentNumber, newBalance, newPaymentStatus, outstanding: parseFloat(outstanding) },
+            message: 'Cash collection verified.',
+            data: { paymentNumber },
         });
 
     } catch (error) {

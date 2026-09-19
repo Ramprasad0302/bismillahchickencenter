@@ -30,8 +30,15 @@ const generatePaymentNumber = async (connection) => {
 // ============================================
 // How much does this retailer actually owe?
 // Always computed server-side. The browser never gets to name the amount.
+// Includes any opening balance (pre-system debt) on top of unpaid bills.
 // ============================================
 const getPayableSummary = async (retailerId, orderId = null) => {
+  const [openingRows] = await pool.query(
+    'SELECT remaining_amount FROM retailer_opening_balances WHERE retailer_id = ?',
+    [retailerId]
+  );
+  const openingRemaining = openingRows.length > 0 ? parseFloat(openingRows[0].remaining_amount) || 0 : 0;
+
   if (orderId) {
     const [rows] = await pool.query(
       `SELECT id, order_number, total_amount, paid_amount, balance, order_date
@@ -44,6 +51,8 @@ const getPayableSummary = async (retailerId, orderId = null) => {
       err.status = 404;
       throw err;
     }
+    // A specific-order checkout pays exactly that order -- opening balance
+    // isn't folded in here, since the retailer is targeting one bill.
     return {
       payable: parseFloat(rows[0].balance) || 0,
       bills: rows.filter((r) => parseFloat(r.balance) > 0),
@@ -58,8 +67,9 @@ const getPayableSummary = async (retailerId, orderId = null) => {
     [retailerId]
   );
 
-  const payable = bills.reduce((sum, b) => sum + (parseFloat(b.balance) || 0), 0);
-  return { payable: parseFloat(payable.toFixed(2)), bills };
+  const billsPayable = bills.reduce((sum, b) => sum + (parseFloat(b.balance) || 0), 0);
+  const payable = parseFloat((openingRemaining + billsPayable).toFixed(2));
+  return { payable, bills, openingRemaining };
 };
 
 // ============================================
@@ -101,10 +111,34 @@ const settleTransaction = async ({
     // Trust the gateway's figure over anything we stored, but fall back.
     const amount = parseFloat(amountPaid || txn.amount);
 
-    // --- 1. Allocate across bills, oldest first (or the one order chosen) ---
     let remaining = amount;
     const allocations = [];
 
+    // ---- 0. Opening balance (pre-system debt) is the oldest debt and
+    // gets paid first -- but only for a general payment (no specific
+    // order targeted). A checkout started for one particular order should
+    // pay that order in full, not get diverted.
+    if (!txn.order_id) {
+      const [openingRows] = await connection.query(
+        'SELECT id, remaining_amount FROM retailer_opening_balances WHERE retailer_id = ? FOR UPDATE',
+        [retailerId]
+      );
+      if (openingRows.length > 0) {
+        const openingRemaining = parseFloat(openingRows[0].remaining_amount) || 0;
+        if (openingRemaining > 0 && remaining > 0) {
+          const openingApply = parseFloat(Math.min(remaining, openingRemaining).toFixed(2));
+          const newOpeningRemaining = parseFloat((openingRemaining - openingApply).toFixed(2));
+          await connection.query(
+            'UPDATE retailer_opening_balances SET remaining_amount = ? WHERE id = ?',
+            [newOpeningRemaining, openingRows[0].id]
+          );
+          allocations.push({ order_id: null, order_number: 'OPENING', amount: openingApply });
+          remaining = parseFloat((remaining - openingApply).toFixed(2));
+        }
+      }
+    }
+
+    // --- 1. Allocate the rest across bills, oldest first (or the one order chosen) ---
     const [bills] = await connection.query(
       txn.order_id
         ? `SELECT id, order_number, balance, paid_amount, total_amount
@@ -177,14 +211,14 @@ const settleTransaction = async ({
       ]
     );
 
-    // --- 3. Recalculate the retailer's outstanding from the bills themselves ---
-    // Safer than subtracting from the stored figure, which drifts. Balances
-    // under ₹1 don't count as "owed" here either.
+    // --- 3. Recalculate the retailer's outstanding from opening balance +
+    // bills. Safer than subtracting from the stored figure, which drifts.
     const [[{ outstanding }]] = await connection.query(
-      `SELECT COALESCE(SUM(balance), 0) AS outstanding
-         FROM orders
-        WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?`,
-      [retailerId, PAID_THRESHOLD]
+      `SELECT (
+          COALESCE((SELECT remaining_amount FROM retailer_opening_balances WHERE retailer_id = ?), 0) +
+          COALESCE((SELECT SUM(balance) FROM orders WHERE retailer_id = ? AND order_status != 'cancelled' AND balance >= ?), 0)
+       ) AS outstanding`,
+      [retailerId, retailerId, PAID_THRESHOLD]
     );
 
     await connection.query('UPDATE retailers SET outstanding = ? WHERE id = ?', [
@@ -306,11 +340,11 @@ const failTransaction = async ({ reference, reason, status = 'failed' }) => {
         await connection.query(
           `UPDATE retailers
               SET outstanding = (
-                SELECT COALESCE(SUM(balance), 0) FROM orders
-                 WHERE retailer_id = ? AND order_status != 'cancelled'
+                COALESCE((SELECT remaining_amount FROM retailer_opening_balances WHERE retailer_id = ?), 0) +
+                COALESCE((SELECT SUM(balance) FROM orders WHERE retailer_id = ? AND order_status != 'cancelled'), 0)
               )
             WHERE id = ?`,
-          [order.retailer_id, order.retailer_id]
+          [order.retailer_id, order.retailer_id, order.retailer_id]
         );
       }
     }

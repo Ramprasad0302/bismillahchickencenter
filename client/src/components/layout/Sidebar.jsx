@@ -115,12 +115,14 @@ const Sidebar = ({ onClose }) => {
 
   return (
     <div className="h-full bg-[#111714] text-white flex flex-col">
-      {/* Logo */}
+           {/* Logo */}
       <div className="flex-shrink-0 p-6 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#111714] font-bold text-lg">
-            B
-          </div>
+          <img
+            src="/logo.png"
+            alt="Bismillah Chicken Center"
+            className="w-10 h-10 rounded-xl object-cover"
+          />
           <div>
             <h2 className="text-sm font-bold tracking-[0.2em]">BISMILLAH</h2>
             <p className="text-[8px] tracking-[0.3em] text-white/40">CHICKEN CENTER</p>
