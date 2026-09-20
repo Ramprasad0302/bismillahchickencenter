@@ -266,9 +266,17 @@ const OrderDetail = () => {
             <span className="font-medium text-[#151A17]">₹{formatNumber(order.rate_per_kg)}/kg</span>
           </div>
           <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
-            <span className="text-sm text-[#6B716D]">Subtotal</span>
+            <span className="text-sm text-[#6B716D]">Subtotal (Chicken)</span>
             <span className="font-medium text-[#151A17]">{formatCurrency(order.subtotal)}</span>
           </div>
+          {parseFloat(order.transport_fee) > 0 && (
+            <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
+              <span className="text-sm text-[#6B716D]">
+                Transport Fee ({formatNumber(order.hens_ordered)} hens × ₹{formatNumber(order.transport_fee_per_hen)})
+              </span>
+              <span className="font-medium text-[#151A17]">+{formatCurrency(order.transport_fee)}</span>
+            </div>
+          )}
           {parseFloat(order.delivery_charge) > 0 && (
             <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
               <span className="text-sm text-[#6B716D]">Delivery Charge</span>

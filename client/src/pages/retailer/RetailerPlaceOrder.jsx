@@ -50,6 +50,7 @@ const RetailerPlaceOrder = () => {
   // LIVE DATA STATES
   const [pricePerKg, setPricePerKg] = useState(0);
   const [avgWeight, setAvgWeight] = useState(null);
+  const [transportFeePerHen, setTransportFeePerHen] = useState(0);
   const [outstanding, setOutstanding] = useState(0);
   const [dataError, setDataError] = useState(null);
 
@@ -109,9 +110,11 @@ const RetailerPlaceOrder = () => {
         if (priceRes.data.success) {
           setPricePerKg(priceRes.data.price);
           setAvgWeight(priceRes.data.avgWeight ?? null);
+          setTransportFeePerHen(priceRes.data.transportFeePerHen ?? 0);
         } else {
           setPricePerKg(188); // Fallback
           setAvgWeight(null);
+          setTransportFeePerHen(0);
         }
 
         // 2. Get Outstanding Balance
@@ -125,6 +128,7 @@ const RetailerPlaceOrder = () => {
         setDataError('Failed to load pricing/outstanding data.');
         setPricePerKg(188); // Fallback
         setAvgWeight(null); // No guessing at weight — the page blocks instead
+        setTransportFeePerHen(0);
         setOutstanding(0);  // Fallback
       } finally {
         setIsPageLoading(false);
@@ -135,11 +139,13 @@ const RetailerPlaceOrder = () => {
   }, []);
 
   // The retailer orders in HENS. Total weight is derived from the average
-  // weight per bird that the admin set for the day, and the money is then the
-  // same calculation as before: weight x price per kg.
+  // weight per bird that the admin set for the day, and the money is then
+  // chicken (weight x price per kg) plus a transport fee (hens x rate/hen).
   const henCount = hens ? parseFloat(hens) : 0;
   const totalKg = avgWeight ? henCount * avgWeight : 0;
-  const totalAmount = totalKg * pricePerKg;
+  const chickenAmount = totalKg * pricePerKg;
+  const transportFee = henCount * transportFeePerHen;
+  const totalAmount = chickenAmount + transportFee;
 
   // Without an average weight there is no way to turn hens into kilograms, so
   // ordering is blocked rather than guessed at.
@@ -168,6 +174,9 @@ const RetailerPlaceOrder = () => {
       avgWeight: avgWeight,
       kg: parseFloat(totalKg.toFixed(2)),
       rate_per_kg: pricePerKg,
+      transportFeePerHen: transportFeePerHen,
+      transportFee: parseFloat(transportFee.toFixed(2)),
+      chickenAmount: parseFloat(chickenAmount.toFixed(2)),
       totalAmount: totalAmount,
       paymentMethod: selectedPayment === 'upi' ? 'UPI' : 'Credit',
       deliveryAddress: deliveryAddress || 'Not provided',
@@ -254,6 +263,9 @@ const RetailerPlaceOrder = () => {
         hens: orderData.hens,
         avgWeight: orderData.avgWeight,
         kg: orderData.kg,
+        transportFeePerHen: orderData.transportFeePerHen,
+        transportFee: orderData.transportFee,
+        chickenAmount: orderData.chickenAmount,
         totalAmount: parseFloat(response.data.data.total_amount) || 0,
         paymentMethod: orderData.paymentMethod,
         deliveryAddress: orderData.deliveryAddress,
@@ -378,9 +390,15 @@ const RetailerPlaceOrder = () => {
               </span>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
-              <span className="text-sm text-[#6B716D]">💰 Rate</span>
-              <span className="font-medium text-[#151A17]">₹{pricePerKg}/kg</span>
+              <span className="text-sm text-[#6B716D]">💰 Chicken Amount</span>
+              <span className="font-medium text-[#151A17]">{formatCurrency(placedOrder.chickenAmount)}</span>
             </div>
+            {placedOrder.transportFee > 0 && (
+              <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
+                <span className="text-sm text-[#6B716D]">🚚 Transport Fee ({placedOrder.hens} hens × ₹{placedOrder.transportFeePerHen})</span>
+                <span className="font-medium text-[#151A17]">{formatCurrency(placedOrder.transportFee)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
               <span className="text-sm text-[#6B716D]">💳 Payment Method</span>
               <span className="font-medium text-[#151A17]">{placedOrder.paymentMethod}</span>
@@ -524,7 +542,7 @@ const RetailerPlaceOrder = () => {
       )}
 
       {/* Today's rate — set by the admin, read-only here */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
           <p className="text-xs font-medium text-[#6B716D]">PRICE PER KG</p>
           <p className="text-2xl font-bold text-[#151A17] mt-1">₹{pricePerKg}</p>
@@ -534,6 +552,10 @@ const RetailerPlaceOrder = () => {
           <p className="text-2xl font-bold text-[#151A17] mt-1">
             {weightMissing ? '—' : `${avgWeight} kg`}
           </p>
+        </div>
+        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
+          <p className="text-xs font-medium text-[#6B716D]">TRANSPORT / HEN</p>
+          <p className="text-2xl font-bold text-[#151A17] mt-1">₹{transportFeePerHen}</p>
         </div>
       </div>
 
@@ -570,12 +592,20 @@ const RetailerPlaceOrder = () => {
           <span className="text-lg font-medium text-[#6B716D]">hens</span>
         </div>
 
-        {/* Live weight conversion so the retailer sees what they're getting */}
+        {/* Live weight/transport conversion so the retailer sees what they're getting */}
         {henCount > 0 && !weightMissing && (
-          <p className="text-sm text-[#6B716D] mt-3">
-            {henCount} hens × {avgWeight} kg ={' '}
-            <span className="font-bold text-[#151A17]">{totalKg.toFixed(2)} kg</span>
-          </p>
+          <div className="mt-3 space-y-1">
+            <p className="text-sm text-[#6B716D]">
+              {henCount} hens × {avgWeight} kg ={' '}
+              <span className="font-bold text-[#151A17]">{totalKg.toFixed(2)} kg</span>
+            </p>
+            {transportFeePerHen > 0 && (
+              <p className="text-sm text-[#6B716D]">
+                Transport: {henCount} hens × ₹{transportFeePerHen} ={' '}
+                <span className="font-bold text-[#151A17]">₹{transportFee.toFixed(0)}</span>
+              </p>
+            )}
+          </div>
         )}
 
         {/* Quick Hen Options */}
@@ -682,8 +712,16 @@ const RetailerPlaceOrder = () => {
         {/* Custom Amount - Only Show for UPI */}
         {henCount > 0 && !weightMissing && selectedPayment === 'upi' && (
           <div className="mt-4 p-4 bg-[#F6F7F6] rounded-lg">
-            <p className="text-sm text-[#6B716D] mb-2">
-              Total: {henCount} hens × {avgWeight} kg × ₹{pricePerKg} = ₹{totalAmount.toFixed(0)}
+            <p className="text-sm text-[#6B716D] mb-1">
+              Chicken: {totalKg.toFixed(2)} kg × ₹{pricePerKg} = ₹{chickenAmount.toFixed(0)}
+            </p>
+            {transportFeePerHen > 0 && (
+              <p className="text-sm text-[#6B716D] mb-1">
+                Transport: {henCount} hens × ₹{transportFeePerHen} = ₹{transportFee.toFixed(0)}
+              </p>
+            )}
+            <p className="text-sm font-semibold text-[#151A17] mb-2">
+              Total: ₹{totalAmount.toFixed(0)}
             </p>
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-[#151A17]">Pay:</span>
@@ -711,7 +749,15 @@ const RetailerPlaceOrder = () => {
         {henCount > 0 && !weightMissing && selectedPayment === 'cash' && (
           <div className="mt-4 p-4 bg-[#F6F7F6] rounded-lg">
             <p className="text-sm text-[#6B716D]">
-              Total: {henCount} hens × {avgWeight} kg × ₹{pricePerKg} = <span className="font-bold text-[#151A17]">₹{totalAmount.toFixed(0)}</span>
+              Chicken: {totalKg.toFixed(2)} kg × ₹{pricePerKg} = ₹{chickenAmount.toFixed(0)}
+            </p>
+            {transportFeePerHen > 0 && (
+              <p className="text-sm text-[#6B716D]">
+                Transport: {henCount} hens × ₹{transportFeePerHen} = ₹{transportFee.toFixed(0)}
+              </p>
+            )}
+            <p className="text-sm font-semibold text-[#151A17] mt-1">
+              Total: <span className="font-bold text-[#151A17]">₹{totalAmount.toFixed(0)}</span>
             </p>
             <p className="text-xs text-[#6B716D] mt-1">
               <FiCheck className="inline w-3 h-3 text-[#16834B] mr-1" />
@@ -726,10 +772,9 @@ const RetailerPlaceOrder = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-sm text-[#6B716D]">TOTAL</p>
-            {/* ✅ FIXED: Using {pricePerKg} variable dynamically */}
             <p className="text-sm text-[#6B716D]">
               {henCount > 0 && !weightMissing
-                ? `${henCount} hens · ${totalKg.toFixed(2)} kg × ₹${pricePerKg}`
+                ? `${henCount} hens · ${totalKg.toFixed(2)} kg × ₹${pricePerKg}${transportFeePerHen > 0 ? ` + ₹${transportFeePerHen}/hen transport` : ''}`
                 : `0 hens · 0 kg × ₹${pricePerKg}`}
             </p>
             <p className="text-xs text-[#6B716D] mt-1">
@@ -821,6 +866,22 @@ const RetailerPlaceOrder = () => {
                   <span className="text-sm text-[#6B716D]">💰 Rate</span>
                   <span className="font-medium text-[#151A17]">₹{orderData.rate_per_kg}/kg</span>
                 </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
+                  <span className="text-sm text-[#6B716D]">💵 Chicken Amount</span>
+                  <span className="font-medium text-[#151A17]">
+                    ₹{orderData.chickenAmount.toFixed(0)}
+                  </span>
+                </div>
+
+                {orderData.transportFee > 0 && (
+                  <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
+                    <span className="text-sm text-[#6B716D]">🚚 Transport Fee ({orderData.hens} × ₹{orderData.transportFeePerHen})</span>
+                    <span className="font-medium text-[#151A17]">
+                      ₹{orderData.transportFee.toFixed(0)}
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
                   <span className="text-sm text-[#6B716D]">💵 Total Amount</span>

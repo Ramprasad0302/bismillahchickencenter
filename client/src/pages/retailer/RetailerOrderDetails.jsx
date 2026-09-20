@@ -295,6 +295,12 @@ const RetailerOrderDetails = () => {
                 <span className="text-[#6B716D]">Total Amount</span>
                 <span className="font-medium">{formatCurrency(order.total_amount)}</span>
               </div>
+              {parseFloat(order.transport_fee) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#6B716D]">Transport Fee</span>
+                  <span className="font-medium">{formatCurrency(order.transport_fee)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-[#6B716D]">Paid Amount</span>
                 <span className="font-medium text-[#16834B]">{formatCurrency(order.paid_amount)}</span>
