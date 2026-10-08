@@ -1,0 +1,51 @@
+remove total customers and in place of that i want change requests i want to show what fits there and put option like view all and redirect to chnage request page
+
+ and we have notification right if i open that by clicking side it is not closing if ew click on that icon only it is closoing make it like if we can click on side any where other than that popup it should close
+
+remove the bunk manager change request tab in dashboard 
+
+in recent activity tab i dont want that i want there also change requests only only show four and put view more redirect to changes request page 
+
+in side bar remove change request just hide that from dashboard they will redirect to that page 
+in side bar remove bunks page and put it under customers like drop down after click ing on customer dropdown should be create user and bunks option and also put subscritions also should be come under customers
+
+remmove service page 
+
+and add employee page but this employees are related to this superadmin it should same as in bunks only 
+
+in reports page i want reports like customers reports and subscription reports who took which subscription and which customer is active and which are inactive and the report should open in popup first then it should come option like download csv and pdf and all and after selecting perticular customer all the deatils and reports of the customer like active or inactive and whats the subscrtion and all should be shown in popup and printable and downloadable in pdf and csv all these option should come 
+
+this is all about the super admin dashboard
+
+next is about the bunks page and all 
+
+first thinf is if admin goes in bunk page and select any bunk it should open in new tab not is the same tab so admin can access mutliple bunk in multiple tabs at a sinflr time line 
+
+and in bunk dashboard i dont want the above day week month year reprts and also duty to verify and bills pending to tally dont want that tabs and also the tanks shouls be a lot more transparent 
+
+and in daily entry no need of option cahnge bunk and also about shifts we have three shifts in a day admin can enter data for three shifts and this shift timing is putted in master data i want it like the shift timings and shifts should be customizable in master data and like they can enter a shift name and timing put a correct logic there proper 24 hrs means means first started at 2 am means the last shift should naot exceed that 2 am time it should be 24 hrs and also less than 24 hrs is fine this is customizable for every bunk every bunk has different timings 
+
+and put the Price changed mid day tick box beside hsb price on top and this shift closing reading shold be tommarrow or next shidts opening price it should be automatically come and can be editable 
+
+and next thing is the assifn employee option for that shift should be in select pump tab in every pupm there should be that option from there emplye is assidned 2 nozzels means 2 options 4 means 4 same as below but it should be up in select pump 
+
+in employee sumary tab in cash box i want denomination after entering that the cash should be automicatlly calculated in upi i want dropdown in that i want the upi providers like phonepay , bhart pay , gpay like that and also replace card with swipe card / swipe manchine and also in credit (customer) admin craetes the cridit customer and add amont if the customer is already created early just select the customer and add the type of fuel and amount and credit is created and should show in credit page and can add multiple credits at one time like can creata a new credit customer and also slect a customer already there this should happen one by one and debit (adjustment ) should have description option so we have the reason and can add multiple debit one after another with description and descrition shouls also be at credit also and next is credit recovery all the credit which are there should be shown here and can be select multiple and and custome option also should be one by one and expense should also have multiple and enty option and after entering amont like descrition we should have reason option and it need a dropdown and option like curect bill and maintance and some other expenses and others option also and rename net balance as cash 
+
+in fuel stock and lubes i want same tank as it in dashboard and it should be more transparent and below the 2 tanks i dont need any reports and all in that page in fuel stock and in puechase stock page while entering new purchase the new options should be ordered quantity and stock which is delivered and shortage should be calculated and next in purchase stock page also i want this options should be displayed that how much is ordered and how much is delivered and whats the shortage 
+
+remove sales and dsr page 
+
+and in credits expenses page add debits tab and can add devits there with the discrtption and also remove the credit recovery page it is there in redits expenses page 
+
+in employees page if i click on any employee it should show all the reports and attance of that particular employee and also the shortage of money came from the employee and all should be downloadable printable and all this should come in a popup after clicking on any employee dont need the employee by role and status overview and salary overview and all and also in that popup the payslip option should also be there it can be generated there 
+
+remove the employee salariess page 
+
+in reports page if admin opens any report it should open n new tab and all options like download printable and all should be there 
+
+in gst page remove remove invoice and add itr tab and put requred data 
+
+in banks and od tab i want the after adding bank we have multiple banks and also we will enter daily bank entery and expenses will be deduted manuvally we will enter like this is todays deposit and this is todays expenses while entering the expenses descrption is mandatory and this should be a popup and in that another option called statement it should have filtet like this moth day and custom date selsction from one dtae to another like that and downliadable in pdf and print able also and same for od also entry and expense and all and emi like while adding loans it should have option like emi date on every month on that date it should come like a popup like emi is paid for this month is will be aid in few days and also go to taht page enter that this emi is paid like that and 
+
+
+main thing is ui should be enhance a lot maore and should be looking more attrativ 
