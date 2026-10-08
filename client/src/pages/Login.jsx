@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import Logo from "../components/brand/Logo";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import {
@@ -11,9 +13,15 @@ import {
   FiLoader,
 } from "react-icons/fi";
 
+const HOME = {
+  admin: "/admin/dashboard",
+  retailer: "/retailer/dashboard",
+  driver: "/driver/dashboard",
+};
+
 const Login = () => {
   const navigate = useNavigate();
-  const { login, user } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
 
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -24,26 +32,19 @@ const Login = () => {
   // API URL from environment or fallback
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-  console.log('🔗 API URL:', API_URL);
-  console.log('👤 Current user from context:', user);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    console.log('📝 Form submitted');
-
-    // Validate input
     if (!phone || !password) {
       setError("Please enter your phone number and password.");
       return;
     }
-
     if (phone.length < 10) {
       setError("Please enter a valid 10-digit phone number.");
       return;
     }
-
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
@@ -52,94 +53,34 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     setIsLoading(true);
 
     try {
-      console.log("📤 Attempting login for:", phone);
-      console.log("📤 Password length:", password.length);
-
-      // Call your backend login API
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        phone: phone,
-        password: password,
-      });
-
-      console.log("📥 Full response:", response);
-      console.log("📥 Response status:", response.status);
-      console.log("📥 Response data:", response.data);
+      const response = await axios.post(`${API_URL}/auth/login`, { phone, password });
 
       if (response.data.success) {
         const userData = response.data.data;
         const token = response.data.token;
 
-        console.log("✅ User data received:", userData);
-        console.log("✅ Token received:", token ? "Yes - " + token.substring(0, 20) + "..." : "No");
+        if (token) localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(userData));
 
-        // Store token in localStorage
-        if (token) {
-          localStorage.setItem('token', token);
-          console.log("✅ Token stored in localStorage");
-        } else {
-          console.warn("⚠️ No token received from server");
-        }
-
-        // Store user in localStorage
-        localStorage.setItem('user', JSON.stringify(userData));
-        console.log("✅ User stored in localStorage");
-
-        // Verify localStorage was set
-        const savedToken = localStorage.getItem('token');
-        const savedUser = localStorage.getItem('user');
-        console.log("🔍 Verifying localStorage - Token:", savedToken ? "Exists" : "Missing");
-        console.log("🔍 Verifying localStorage - User:", savedUser ? JSON.parse(savedUser) : "Missing");
-
-        // Use AuthContext login
-        console.log("📞 Calling login context with:", userData);
         login({
           id: userData.id,
           phone: userData.phone,
           role: userData.role,
           name: userData.name,
           email: userData.email,
-          token: token,
+          token,
         });
 
-        console.log("✅ Login context called");
-
-        // Force a small delay to ensure state updates
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        console.log("🔀 Navigating based on role:", userData.role);
-        
-        // Navigate based on role
-        if (userData.role === "admin") {
-          console.log("🚀 Navigating to /admin/dashboard");
-          navigate("/admin/dashboard");
-        } else if (userData.role === "retailer") {
-          console.log("🚀 Navigating to /retailer/dashboard");
-          navigate("/retailer/dashboard");
-        } else if (userData.role === "driver") {
-          console.log("🚀 Navigating to /driver/dashboard");
-          navigate("/driver/dashboard");
-        } else {
-          console.log("🚀 Navigating to /dashboard");
-          navigate("/dashboard");
-        }
-        
-        console.log("✅ Navigation called");
+        navigate(HOME[userData.role] || "/login", { replace: true });
       } else {
-        console.log("❌ Login failed:", response.data.message);
         setError(response.data.message || "Invalid phone number or password.");
       }
     } catch (error) {
-      console.error("❌ Login error:", error);
-      
       if (error.response) {
-        console.error("❌ Server responded with error:", error.response.status);
-        console.error("❌ Error data:", error.response.data);
         setError(error.response.data?.message || "Invalid phone number or password.");
       } else if (error.request) {
-        console.error("❌ No response from server:", error.request);
         setError("Server is not responding. Please try again later.");
       } else {
-        console.error("❌ Request error:", error.message);
         setError("An error occurred. Please try again.");
       }
     } finally {
@@ -147,145 +88,222 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white lg:grid lg:grid-cols-2">
-      {/* LEFT SIDE */}
-      <section className="relative hidden min-h-screen overflow-hidden bg-[#111714] p-12 text-white lg:flex lg:flex-col xl:p-16">
-        <div className="absolute -bottom-52 -right-52 h-[500px] w-[500px] rounded-full border border-white/5" />
-        <div className="absolute -bottom-32 -right-32 h-[350px] w-[350px] rounded-full border border-white/5" />
+  // Already signed in (e.g. opened /login from a bookmark): go straight in.
+  if (isAuthenticated && HOME[user?.role]) {
+    return <Navigate to={HOME[user.role]} replace />;
+  }
 
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-lg font-bold text-[#111714]">B</div>
+  return (
+    <div className="min-h-screen bg-cream lg:grid lg:grid-cols-[1.1fr_1fr]">
+      {/* LEFT — brand stage */}
+      <section className="relative hidden min-h-screen overflow-hidden bg-gradient-to-br from-coal-3 via-coal-2 to-[#0b0907] p-12 text-white lg:flex lg:flex-col xl:p-16">
+        <div className="pointer-events-none absolute inset-0 bg-pattern opacity-30" />
+        <div className="pointer-events-none absolute -top-32 -left-32 h-[420px] w-[420px] rounded-full bg-gold/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-40 -right-24 h-[460px] w-[460px] rounded-full bg-brand/25 blur-3xl" />
+        <motion.div
+          className="pointer-events-none absolute -bottom-52 -right-52 h-[520px] w-[520px] rounded-full border border-gold/15"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+        >
+          <span className="absolute left-1/2 -top-1.5 h-3 w-3 -translate-x-1/2 rounded-full bg-gold-light shadow-[0_0_16px_4px_rgba(233,199,123,0.6)]" />
+        </motion.div>
+        <div className="pointer-events-none absolute -bottom-32 -right-32 h-[360px] w-[360px] rounded-full border border-white/5" />
+
+        <motion.div
+          className="relative z-10 flex items-center gap-3"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <Logo size={52} ring />
           <div>
-            <h2 className="text-[15px] font-bold tracking-[0.2em]">BISMILLAH</h2>
-            <p className="mt-1 text-[8px] tracking-[0.35em] text-white/40">CHICKEN CENTER</p>
+            <h2 className="font-brand text-lg font-bold tracking-[0.16em] text-gold-gradient leading-none">BISMILLAH</h2>
+            <p className="mt-1.5 text-[9px] tracking-[0.35em] text-white/50 font-semibold">CHICKEN CENTER · BHIMAVARAM</p>
+          </div>
+        </motion.div>
+
+        <div className="relative z-10 my-auto flex items-center gap-10">
+          <div className="max-w-xl">
+            <motion.p
+              className="mb-6 text-[11px] font-semibold tracking-[0.35em] text-gold/80"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              WHOLESALE POULTRY MANAGEMENT
+            </motion.p>
+            <motion.h1
+              className="font-display text-6xl font-semibold leading-[1.02] xl:text-7xl"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            >
+              Fresh. Hygienic.
+              <br />
+              <span className="text-gold-gradient">Perfectly managed.</span>
+            </motion.h1>
+            <motion.p
+              className="mt-8 max-w-md text-sm leading-7 text-white/55"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+            >
+              Retailers, orders, deliveries, payments and your daily poultry operations —
+              all in one elegant platform.
+            </motion.p>
+            <motion.div
+              className="mt-10 flex gap-8"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+            >
+              {[
+                ["Orders", "Live tracking"],
+                ["Ledgers", "Every rupee"],
+                ["Trips", "Driver to door"],
+              ].map(([t, d]) => (
+                <div key={t} className="border-l border-gold/40 pl-4">
+                  <p className="text-sm font-semibold text-white">{t}</p>
+                  <p className="text-xs text-white/45">{d}</p>
+                </div>
+              ))}
+            </motion.div>
           </div>
         </div>
 
-        <div className="relative z-10 my-auto max-w-xl">
-          <p className="mb-6 text-[10px] font-medium tracking-[0.3em] text-white/40">
-            WHOLESALE POULTRY MANAGEMENT
-          </p>
-          <h1 className="text-6xl font-medium leading-[0.95] tracking-[-0.05em] xl:text-7xl">
-            Business made
-            <br />
-            <span className="text-white/35">simple.</span>
-          </h1>
-          <p className="mt-8 max-w-md text-sm leading-7 text-white/45">
-            Manage retailers, orders, deliveries, payments and your daily
-            poultry operations from one simple platform.
-          </p>
-        </div>
+        <motion.img
+          src="/logo.png"
+          alt=""
+          className="pointer-events-none absolute right-12 top-1/2 hidden w-56 -translate-y-1/2 rounded-full opacity-90 shadow-[0_0_80px_rgba(201,151,63,0.35)] 2xl:block"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.9, scale: 1, y: [0, -10, 0] }}
+          transition={{ opacity: { duration: 1 }, scale: { duration: 1 }, y: { duration: 6, repeat: Infinity, ease: "easeInOut" } }}
+        />
 
-        <div className="relative z-10 text-[8px] tracking-[0.3em] text-white/25">
-          BISMILLAH CHICKEN CENTER
+        <div className="relative z-10 text-[9px] tracking-[0.35em] text-white/30">
+          © {new Date().getFullYear()} BISMILLAH CHICKEN CENTER · PROPRIETOR SAIDU
         </div>
       </section>
 
-      {/* RIGHT SIDE - Login Form */}
-      <section className="flex min-h-screen items-center justify-center px-6 py-10 sm:px-10 lg:px-14">
-        <div className="w-full max-w-[420px]">
-          <div className="mb-16 flex items-center gap-3 lg:hidden">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#111714] text-lg font-bold text-white">B</div>
-            <div>
-              <h2 className="text-sm font-bold tracking-[0.2em] text-[#111714]">BISMILLAH</h2>
-              <p className="mt-1 text-[8px] tracking-[0.3em] text-gray-400">CHICKEN CENTER</p>
-            </div>
+      {/* RIGHT — sign in */}
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-10 sm:px-10 lg:px-14">
+        <div className="pointer-events-none absolute inset-0 bg-pattern opacity-60" />
+        <div className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
+
+        <motion.div
+          className="relative w-full max-w-[430px]"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="mb-10 flex flex-col items-center text-center lg:hidden">
+            <Logo size={110} ring />
+            <h2 className="mt-4 font-brand text-2xl font-bold tracking-[0.16em] text-ink">BISMILLAH</h2>
+            <p className="mt-1 text-[10px] tracking-[0.35em] text-gold-dark font-semibold">CHICKEN CENTER</p>
           </div>
 
-          <div className="mb-10">
-            <p className="text-[10px] font-semibold tracking-[0.25em] text-gray-400">WELCOME BACK</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[#151a17]">Sign in to your account</h2>
-            <p className="mt-2 text-sm text-gray-400">Enter your credentials to continue.</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="mb-2 block text-xs font-semibold text-gray-700">Phone Number</label>
-              <div className="flex h-14 items-center rounded-lg border border-gray-200 bg-white px-4 transition focus-within:border-[#111714] focus-within:ring-4 focus-within:ring-black/5">
-                <FiPhone className="mr-3 text-lg text-gray-400" />
-                <span className="mr-3 border-r border-gray-200 pr-3 text-sm text-gray-600">+91</span>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  maxLength={10}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                  placeholder="Enter phone number"
-                  className="h-full w-full bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
-                  disabled={isLoading}
-                />
-              </div>
+          <div className="rounded-3xl border border-line bg-white/90 p-7 shadow-[var(--shadow-lift)] backdrop-blur sm:p-9">
+            <div className="mb-8">
+              <p className="text-[10px] font-semibold tracking-[0.3em] text-gold-dark">WELCOME BACK</p>
+              <h2 className="mt-3 font-display text-3xl font-semibold text-ink">Sign in to your account</h2>
+              <p className="mt-2 text-sm text-muted">Enter your credentials to continue.</p>
             </div>
 
-            <div>
-              <label className="mb-2 block text-xs font-semibold text-gray-700">Password</label>
-              <div className="flex h-14 items-center rounded-lg border border-gray-200 bg-white px-4 transition focus-within:border-[#111714] focus-within:ring-4 focus-within:ring-black/5">
-                <FiLock className="mr-3 text-lg text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="h-full w-full bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="ml-3 cursor-pointer text-lg text-gray-400 transition hover:text-gray-700"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  disabled={isLoading}
-                >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
-                </button>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-ink">Phone Number</label>
+                <div className="flex h-14 items-center rounded-xl border border-line bg-white px-4 transition focus-within:border-gold focus-within:ring-4 focus-within:ring-gold/15">
+                  <FiPhone className="mr-3 text-lg text-gold-dark" />
+                  <span className="mr-3 border-r border-line pr-3 text-sm font-medium text-muted">+91</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                    placeholder="Enter phone number"
+                    className="h-full w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted-light"
+                    disabled={isLoading}
+                    autoComplete="tel"
+                  />
+                </div>
               </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-ink">Password</label>
+                <div className="flex h-14 items-center rounded-xl border border-line bg-white px-4 transition focus-within:border-gold focus-within:ring-4 focus-within:ring-gold/15">
+                  <FiLock className="mr-3 text-lg text-gold-dark" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="h-full w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted-light"
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="ml-3 cursor-pointer text-lg text-muted-light transition hover:text-ink"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto", x: [0, -6, 6, -4, 4, 0] }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="overflow-hidden rounded-xl border border-danger/20 bg-danger-soft px-4 py-3 text-xs font-medium text-danger"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group shine flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-brand text-[12px] font-semibold tracking-[0.22em] text-white disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isLoading ? (
+                  <>
+                    <FiLoader className="animate-spin" />
+                    SIGNING IN...
+                  </>
+                ) : (
+                  <>
+                    SIGN IN
+                    <FiArrowRight className="transition-transform group-hover:translate-x-1" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-7 flex items-center gap-3">
+              <span className="h-px flex-1 bg-line" />
+              <span className="text-[10px] tracking-[0.25em] text-muted-light">FRESH · HYGIENIC</span>
+              <span className="h-px flex-1 bg-line" />
             </div>
-
-            {error && (
-              <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-600">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-lg bg-[#111714] text-[11px] font-semibold tracking-[0.2em] text-white transition hover:bg-[#29312d] disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isLoading ? (
-                <>
-                  <FiLoader className="animate-spin" />
-                  SIGNING IN...
-                </>
-              ) : (
-                <>
-                  SIGN IN
-                  <FiArrowRight className="transition-transform group-hover:translate-x-1" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-8 text-center">
-            <p className="text-[11px] leading-5 text-gray-400">
-              Having trouble signing in?
-              <br />
-              Contact your administrator.
+            <p className="mt-4 text-center text-[11px] leading-5 text-muted">
+              Having trouble signing in? Contact your administrator.
             </p>
           </div>
 
-          {/* Debug info */}
           {import.meta.env.DEV && (
-            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
-              <p className="text-xs font-semibold text-gray-700">Debug Info:</p>
-              <p className="text-xs text-gray-500">API URL: {API_URL}</p>
-              <p className="text-xs text-gray-500">Test users:</p>
-              <p className="text-xs text-gray-400">Admin: 9999999999 / admin123</p>
-              <p className="text-xs text-gray-400">Driver: 6309357023 / Ajith@1441</p>
+            <div className="mt-4 rounded-xl border border-line bg-white/70 p-3">
+              <p className="text-xs font-semibold text-ink">Debug Info:</p>
+              <p className="text-xs text-muted">API URL: {API_URL}</p>
             </div>
           )}
-        </div>
+        </motion.div>
       </section>
     </div>
   );

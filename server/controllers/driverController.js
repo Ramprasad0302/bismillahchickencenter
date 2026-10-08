@@ -385,19 +385,26 @@ exports.getDriverTrips = async (req, res) => {
 
         if (trips.length === 0) return res.json({ success: true, data: [] });
 
-        const formattedTrips = [];
-        for (const trip of trips) {
-            const [orders] = await pool.query(`
-                SELECT o.id as order_id, o.order_number, o.kg_ordered as kg, o.total_amount as amount, 
-                       o.balance, o.order_status, o.delivery_address as address, r.shop_name as retailer, 
-                       r.phone, tos.actual_delivered_kg as actualKg, tos.cash_collected as cashCollected, tos.delivered_status
-                FROM trip_orders tos
-                JOIN orders o ON tos.order_id = o.id
-                JOIN retailers r ON o.retailer_id = r.id
-                WHERE tos.trip_id = ?
-            `, [trip.trip_id]);
+        // Fetch every trip's orders in one query instead of one query per trip.
+        const [allOrders] = await pool.query(`
+            SELECT tos.trip_id, o.id as order_id, o.order_number, o.kg_ordered as kg, o.total_amount as amount, 
+                   o.balance, o.order_status, o.delivery_address as address, r.shop_name as retailer, 
+                   r.phone, tos.actual_delivered_kg as actualKg, tos.cash_collected as cashCollected, tos.delivered_status
+            FROM trip_orders tos
+            JOIN orders o ON tos.order_id = o.id
+            JOIN retailers r ON o.retailer_id = r.id
+            WHERE tos.trip_id IN (?)
+        `, [trips.map(t => t.trip_id)]);
 
-            formattedTrips.push({
+        const ordersByTrip = new Map();
+        for (const order of allOrders) {
+            if (!ordersByTrip.has(order.trip_id)) ordersByTrip.set(order.trip_id, []);
+            ordersByTrip.get(order.trip_id).push(order);
+        }
+
+        const formattedTrips = trips.map(trip => {
+            const orders = ordersByTrip.get(trip.trip_id) || [];
+            return {
                 id: trip.trip_number, date: new Date(trip.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
                 status: trip.status === 'assigned' ? 'Assigned' : trip.status === 'in_progress' ? 'In Progress' : 'Completed',
                 orders: orders.map(order => ({
@@ -407,8 +414,8 @@ exports.getDriverTrips = async (req, res) => {
                     paymentStatus: order.balance > 0 ? 'Partial' : 'Paid', cashCollected: parseFloat(order.cashCollected || 0)
                 })),
                 totalOrders: orders.length
-            });
-        }
+            };
+        });
         res.json({ success: true, data: formattedTrips });
     } catch (error) {
         console.error('❌ Error fetching driver trips:', error);
@@ -556,4 +563,4 @@ exports.getDriverProfile = async (req, res) => {
         console.error('❌ Error fetching driver profile:', error.message);
         res.status(500).json({ success: false, message: 'Failed to load driver profile' });
     }
-};
+};

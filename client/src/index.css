@@ -1,5 +1,75 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Bismillah Chicken Center — premium theme
+   Palette taken from the logo: charcoal badge, gold lettering, crimson comb,
+   ivory feathers. Every page uses these tokens (bg-brand, text-ink,
+   border-line, ring-gold ...) so the whole app can be re-tuned from here.
+   ========================================================================== */
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-brand: "Cinzel", "Playfair Display", Georgia, serif;
+
+  /* Text + surfaces */
+  --color-ink: #1f1915;
+  --color-muted: #7a6e62;
+  --color-muted-light: #a99d8f;
+  --color-line: #ece3d4;
+  --color-cream: #fbf8f2;
+  --color-ivory: #fffdf8;
+
+  /* Brand */
+  --color-brand: #a61b24;
+  --color-brand-dark: #7a1219;
+  --color-brand-light: #c8343c;
+  --color-brand-soft: #fbeceb;
+  --color-gold: #c9973f;
+  --color-gold-light: #e9c77b;
+  --color-gold-dark: #9a7128;
+  --color-gold-soft: #fbf3e2;
+  --color-coal: #15110e;
+  --color-coal-2: #221b16;
+  --color-coal-3: #2e251e;
+
+  /* Status */
+  --color-success: #1e7a4c;
+  --color-success-dark: #145c38;
+  --color-success-soft: #e8f4ec;
+  --color-danger: #c0352b;
+  --color-danger-dark: #96251d;
+  --color-danger-soft: #fdedeb;
+
+  /* Warm neutrals instead of Tailwind's cool greys */
+  --color-gray-50: #faf8f5;
+  --color-gray-100: #f3efe9;
+  --color-gray-200: #e8e1d7;
+  --color-gray-300: #d6ccbf;
+  --color-gray-400: #ab9f92;
+  --color-gray-500: #85796d;
+  --color-gray-600: #675c52;
+  --color-gray-700: #4d443c;
+  --color-gray-800: #332c26;
+  --color-gray-900: #211c18;
+
+  --shadow-card: 0 1px 2px rgb(31 25 21 / 0.04), 0 8px 24px -12px rgb(31 25 21 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(31 25 21 / 0.05), 0 18px 40px -16px rgb(31 25 21 / 0.22);
+  --shadow-gold: 0 10px 30px -10px rgb(201 151 63 / 0.55);
+
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-spin-slow: spin 9s linear infinite;
+
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+}
+
 html,
 body,
 #root {
@@ -8,5 +78,151 @@ body,
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background: var(--color-cream);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgb(201 151 63 / 0.3);
+  color: var(--color-ink);
+}
+
+/* Page titles get the editorial serif, everything else stays sans. */
+main h1 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* --------------------------------------------------------------------------
+   Surfaces. Pages build cards from `bg-white rounded-xl border`, so the
+   premium depth is layered on here once instead of in 40 files.
+   -------------------------------------------------------------------------- */
+main .bg-white.rounded-xl,
+main .bg-white.rounded-2xl,
+main .bg-white.rounded-lg.border {
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+
+main .bg-white.rounded-xl.border:hover,
+main .bg-white.rounded-2xl.border:hover {
+  border-color: rgb(201 151 63 / 0.35);
+}
+
+/* Tables */
+main table thead {
+  background: linear-gradient(180deg, #fdfaf4, #f7f0e4);
+}
+main table thead th {
+  color: var(--color-gold-dark);
+  letter-spacing: 0.08em;
+}
+main table tbody tr {
+  transition: background-color 0.2s ease;
+}
+main table tbody tr:hover {
+  background-color: rgb(251 243 226 / 0.6);
+}
+
+/* Form controls */
+input,
+select,
+textarea {
+  accent-color: var(--color-brand);
+}
+main input:not([type="checkbox"]):not([type="radio"]):focus,
+main select:focus,
+main textarea:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgb(201 151 63 / 0.18);
+  outline: none;
+}
+
+/* Primary buttons: crimson gradient with a soft glow, like the logo ribbon. */
+.bg-brand {
+  background-image: linear-gradient(135deg, #bf2a33 0%, #a61b24 45%, #7a1219 100%);
+}
+button.bg-brand,
+a.bg-brand {
+  box-shadow: 0 8px 20px -10px rgb(166 27 36 / 0.65), inset 0 1px 0 rgb(255 255 255 / 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+button.bg-brand:hover:not(:disabled),
+a.bg-brand:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px -12px rgb(166 27 36 / 0.75), inset 0 1px 0 rgb(255 255 255 / 0.15);
+}
+button.bg-brand:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Reusable gold treatments */
+.text-gold-gradient {
+  background: linear-gradient(120deg, #9a7128, #e9c77b 35%, #c9973f 55%, #f4dc9f 75%, #9a7128);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.gold-border {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--color-coal-2), var(--color-coal-2)) padding-box,
+    linear-gradient(135deg, #e9c77b, #9a7128 50%, #e9c77b) border-box;
+}
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 3.2s linear infinite;
+  pointer-events: none;
+}
+.skeleton {
+  background: linear-gradient(90deg, #f3ece1 25%, #fbf6ee 50%, #f3ece1 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 0.75rem;
+}
+
+.bg-pattern {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgb(201 151 63 / 0.12) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+/* Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(201 151 63 / 0.45) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgb(201 151 63 / 0.4);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -6,6 +6,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const zlib = require('zlib');
+const ensureIndexes = require('./config/ensureIndexes');
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
@@ -99,6 +101,40 @@ app.use('/api/payments/webhook', express.raw({ type: '*/*' }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ============================================
+// Gzip JSON responses
+//
+// List endpoints (orders, ledgers, payments...) return large JSON arrays;
+// gzip shrinks them by ~85%, which is most of the wait on a mobile
+// connection. Done with Node's built-in zlib so no extra dependency has to
+// be installed on the host. Skips small bodies and anything that is not JSON
+// (Excel/CSV exports, uploaded photos).
+// ============================================
+app.use((req, res, next) => {
+  if (!/\bgzip\b/.test(req.headers['accept-encoding'] || '')) return next();
+  const send = res.send.bind(res);
+  res.send = (body) => {
+    const type = String(res.getHeader('Content-Type') || '');
+    if (
+      (typeof body !== 'string' && !Buffer.isBuffer(body)) ||
+      !type.includes('json') ||
+      res.getHeader('Content-Encoding') ||
+      Buffer.byteLength(body) < 1024
+    ) {
+      return send(body);
+    }
+    zlib.gzip(body, (err, compressed) => {
+      if (err) return send(body);
+      res.setHeader('Content-Encoding', 'gzip');
+      res.setHeader('Vary', 'Accept-Encoding');
+      res.removeHeader('Content-Length');
+      send(compressed);
+    });
+    return res;
+  };
+  next();
+});
 
 // ============================================
 // Static files — uploaded trip bill photos (diesel bills, etc)
@@ -212,6 +248,7 @@ app.use((err, req, res, next) => {
 // Start
 // ============================================
 app.listen(PORT, '0.0.0.0', () => {
+  ensureIndexes();
   console.log(`✔ Server running on port ${PORT} (${IS_DEV ? 'development' : 'production'})`);
   console.log(`💳 Payment provider: ${process.env.PAYMENT_PROVIDER || 'stripe'}`);
   console.log(`🌐 Allowed origins: ${allowedOrigins.join(', ')}`);

@@ -22,7 +22,8 @@ import Badge from '../../components/common/Badge';
 import SearchInput from '../../components/common/SearchInput';
 import Modal from '../../components/common/Modal';
 import EmptyState from '../../components/common/EmptyState';
-import { userService } from '../../services/userService';
+import { userService } from '../../services/userService';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -304,8 +305,8 @@ const Users = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <FiLoader className="w-12 h-12 animate-spin text-[#16834B] mx-auto mb-4" />
-          <p className="text-[#6B716D]">Loading users...</p>
+          <BrandLoader />
+          <p className="text-muted">Loading users...</p>
         </div>
       </div>
     );
@@ -316,8 +317,8 @@ const Users = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">User Management</h1>
-          <p className="text-sm text-[#6B716D] mt-1">Manage user accounts and permissions</p>
+          <h1 className="text-2xl font-semibold text-ink">User Management</h1>
+          <p className="text-sm text-muted mt-1">Manage user accounts and permissions</p>
         </div>
         <Button 
           icon={FiPlus} 
@@ -332,32 +333,32 @@ const Users = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-          <p className="text-sm text-[#6B716D]">Total Users</p>
-          <p className="text-2xl font-semibold text-[#151A17]">{users.length}</p>
+        <div className="bg-white rounded-xl border border-line p-6">
+          <p className="text-sm text-muted">Total Users</p>
+          <p className="text-2xl font-semibold text-ink">{users.length}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-          <p className="text-sm text-[#6B716D]">Active Users</p>
-          <p className="text-2xl font-semibold text-[#151A17]">
+        <div className="bg-white rounded-xl border border-line p-6">
+          <p className="text-sm text-muted">Active Users</p>
+          <p className="text-2xl font-semibold text-ink">
             {users.filter(u => u.status === 'Active').length}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-          <p className="text-sm text-[#6B716D]">Admins</p>
-          <p className="text-2xl font-semibold text-[#151A17]">
+        <div className="bg-white rounded-xl border border-line p-6">
+          <p className="text-sm text-muted">Admins</p>
+          <p className="text-2xl font-semibold text-ink">
             {users.filter(u => u.role === 'admin').length}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-          <p className="text-sm text-[#6B716D]">Retailers & Drivers</p>
-          <p className="text-2xl font-semibold text-[#151A17]">
+        <div className="bg-white rounded-xl border border-line p-6">
+          <p className="text-sm text-muted">Retailers & Drivers</p>
+          <p className="text-2xl font-semibold text-ink">
             {users.filter(u => u.role !== 'admin').length}
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
@@ -370,7 +371,7 @@ const Users = () => {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="px-4 py-2.5 border border-[#E5E8E6] rounded-lg bg-white focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="px-4 py-2.5 border border-line rounded-lg bg-white focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="all">All Roles</option>
               <option value="admin">Admin</option>
@@ -380,7 +381,7 @@ const Users = () => {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-4 py-2.5 border border-[#E5E8E6] rounded-lg bg-white focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="px-4 py-2.5 border border-line rounded-lg bg-white focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="all">All Status</option>
               <option value="Active">Active</option>
@@ -391,39 +392,39 @@ const Users = () => {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
+      <div className="bg-white rounded-xl border border-line overflow-hidden">
         {filteredUsers.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#F6F7F6]">
+              <thead className="bg-cream">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Last Login</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Contact</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Last Login</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Created</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-muted uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E8E6]">
+              <tbody className="divide-y divide-line">
                 {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-[#F6F7F6] transition">
+                  <tr key={user.id} className="hover:bg-cream transition">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#F6F7F6] flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-full bg-cream flex items-center justify-center">
                           {getRoleIcon(user.role)}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-[#151A17]">{user.name}</p>
-                          <p className="text-xs text-[#6B716D]">{user.id}</p>
+                          <p className="text-sm font-medium text-ink">{user.name}</p>
+                          <p className="text-xs text-muted">{user.id}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <p className="text-sm text-[#151A17]">{user.email}</p>
-                        <p className="text-xs text-[#6B716D]">{user.phone}</p>
+                        <p className="text-sm text-ink">{user.email}</p>
+                        <p className="text-xs text-muted">{user.phone}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -436,8 +437,8 @@ const Users = () => {
                         {user.status}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#6B716D]">{user.lastLogin}</td>
-                    <td className="px-6 py-4 text-sm text-[#6B716D]">{user.createdAt}</td>
+                    <td className="px-6 py-4 text-sm text-muted">{user.lastLogin}</td>
+                    <td className="px-6 py-4 text-sm text-muted">{user.createdAt}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
@@ -446,9 +447,9 @@ const Users = () => {
                           title={user.status === 'Active' ? 'Disable User' : 'Enable User'}
                         >
                           {user.status === 'Active' ? (
-                            <FiUserX className="w-4 h-4 text-[#D14343]" />
+                            <FiUserX className="w-4 h-4 text-danger" />
                           ) : (
-                            <FiUserCheck className="w-4 h-4 text-[#16834B]" />
+                            <FiUserCheck className="w-4 h-4 text-success" />
                           )}
                         </button>
                         <button
@@ -456,7 +457,7 @@ const Users = () => {
                           className="p-2 hover:bg-gray-100 rounded-lg transition"
                           title="Edit User"
                         >
-                          <FiEdit2 className="w-4 h-4 text-[#6B716D]" />
+                          <FiEdit2 className="w-4 h-4 text-muted" />
                         </button>
                         {user.role !== 'admin' && (
                           <button
@@ -464,7 +465,7 @@ const Users = () => {
                             className="p-2 hover:bg-red-50 rounded-lg transition"
                             title="Delete User"
                           >
-                            <FiTrash2 className="w-4 h-4 text-[#D14343]" />
+                            <FiTrash2 className="w-4 h-4 text-danger" />
                           </button>
                         )}
                       </div>
@@ -527,8 +528,8 @@ const Users = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Full Name <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Full Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -536,18 +537,18 @@ const Users = () => {
               value={formData.name}
               onChange={handleInputChange}
               placeholder="Enter full name"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.name ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.name ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.name && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.name}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.name}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Email Address <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Email Address <span className="text-danger">*</span>
             </label>
             <input
               type="email"
@@ -555,21 +556,21 @@ const Users = () => {
               value={formData.email}
               onChange={handleInputChange}
               placeholder="Enter email address"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.email ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.email ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.email && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.email}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.email}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Phone Number <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Phone Number <span className="text-danger">*</span>
             </label>
             <div className="flex">
-              <span className="inline-flex items-center px-3 border border-r-0 border-[#E5E8E6] rounded-l-lg bg-gray-50 text-[#6B716D]">
+              <span className="inline-flex items-center px-3 border border-r-0 border-line rounded-l-lg bg-gray-50 text-muted">
                 +91
               </span>
               <input
@@ -578,26 +579,26 @@ const Users = () => {
                 value={formData.phone}
                 onChange={handleInputChange}
                 placeholder="10-digit phone number"
-                className={`flex-1 px-4 py-2.5 border rounded-r-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                  formErrors.phone ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+                className={`flex-1 px-4 py-2.5 border rounded-r-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                  formErrors.phone ? 'border-danger' : 'border-line'
                 }`}
               />
             </div>
             {formErrors.phone && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.phone}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.phone}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Role <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Role <span className="text-danger">*</span>
             </label>
             <select
               name="role"
               value={formData.role}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.role ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.role ? 'border-danger' : 'border-line'
               }`}
             >
               {roleOptions.map((role) => (
@@ -607,7 +608,7 @@ const Users = () => {
               ))}
             </select>
             {formErrors.role && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.role}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.role}</p>
             )}
           </div>
 
@@ -617,11 +618,11 @@ const Users = () => {
               account creation. */}
           {formData.role === 'retailer' && (
             <div>
-              <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+              <label className="block text-sm font-medium text-ink mb-1.5">
                 Opening Outstanding Balance
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B716D]">₹</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">₹</span>
                 <input
                   type="number"
                   name="openingOutstanding"
@@ -630,15 +631,15 @@ const Users = () => {
                   placeholder="0"
                   min="0"
                   step="1"
-                  className={`w-full pl-8 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                    formErrors.openingOutstanding ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+                  className={`w-full pl-8 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                    formErrors.openingOutstanding ? 'border-danger' : 'border-line'
                   }`}
                 />
               </div>
               {formErrors.openingOutstanding && (
-                <p className="mt-1 text-sm text-[#D14343]">{formErrors.openingOutstanding}</p>
+                <p className="mt-1 text-sm text-danger">{formErrors.openingOutstanding}</p>
               )}
-              <p className="mt-1 text-xs text-[#6B716D]">
+              <p className="mt-1 text-xs text-muted">
                 If this shop already owed you money before joining the system, enter it here.
                 This is a one-time entry — leave blank or 0 for a fresh account.
               </p>
@@ -646,8 +647,8 @@ const Users = () => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Password <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Password <span className="text-danger">*</span>
             </label>
             <input
               type="password"
@@ -655,18 +656,18 @@ const Users = () => {
               value={formData.password}
               onChange={handleInputChange}
               placeholder="Minimum 6 characters"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.password ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.password ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.password && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.password}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.password}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Confirm Password <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Confirm Password <span className="text-danger">*</span>
             </label>
             <input
               type="password"
@@ -674,12 +675,12 @@ const Users = () => {
               value={formData.confirmPassword}
               onChange={handleInputChange}
               placeholder="Confirm password"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.confirmPassword ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.confirmPassword ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.confirmPassword && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.confirmPassword}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.confirmPassword}</p>
             )}
           </div>
         </div>
@@ -721,47 +722,47 @@ const Users = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Full Name <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Full Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.name ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.name ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.name && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.name}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.name}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Email Address <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Email Address <span className="text-danger">*</span>
             </label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.email ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.email ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.email && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.email}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.email}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Phone Number <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Phone Number <span className="text-danger">*</span>
             </label>
             <div className="flex">
-              <span className="inline-flex items-center px-3 border border-r-0 border-[#E5E8E6] rounded-l-lg bg-gray-50 text-[#6B716D]">
+              <span className="inline-flex items-center px-3 border border-r-0 border-line rounded-l-lg bg-gray-50 text-muted">
                 +91
               </span>
               <input
@@ -769,26 +770,26 @@ const Users = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className={`flex-1 px-4 py-2.5 border rounded-r-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                  formErrors.phone ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+                className={`flex-1 px-4 py-2.5 border rounded-r-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                  formErrors.phone ? 'border-danger' : 'border-line'
                 }`}
               />
             </div>
             {formErrors.phone && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.phone}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.phone}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Role <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Role <span className="text-danger">*</span>
             </label>
             <select
               name="role"
               value={formData.role}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.role ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.role ? 'border-danger' : 'border-line'
               }`}
             >
               {roleOptions.map((role) => (
@@ -798,27 +799,27 @@ const Users = () => {
               ))}
             </select>
             {formErrors.role && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.role}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.role}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Status
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
           </div>
 
-          <div className="p-4 bg-[#F6F7F6] rounded-lg">
-            <p className="text-sm text-[#6B716D]">
+          <div className="p-4 bg-cream rounded-lg">
+            <p className="text-sm text-muted">
               <FiKey className="inline w-4 h-4 mr-2" />
               Leave password fields empty to keep current password.
             </p>
@@ -860,8 +861,8 @@ const Users = () => {
           </>
         }
       >
-        <div className="p-4 bg-[#FDEEEE] rounded-lg border border-[#D14343]/20">
-          <p className="text-sm text-[#D14343]">
+        <div className="p-4 bg-danger-soft rounded-lg border border-danger/20">
+          <p className="text-sm text-danger">
             <FiTrash2 className="inline w-4 h-4 mr-2" />
             This will permanently remove {selectedUser?.name} from the system.
           </p>

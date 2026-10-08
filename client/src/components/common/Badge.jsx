@@ -1,18 +1,30 @@
-const Badge = ({ children, variant = 'default', className = '' }) => {
-  const variants = {
-    default: 'bg-gray-100 text-gray-700',
-    success: 'bg-green-100 text-green-700',
-    warning: 'bg-yellow-100 text-yellow-700',
-    danger: 'bg-red-100 text-red-700',
-    info: 'bg-blue-100 text-blue-700',
-    primary: 'bg-[#111714] text-white',
-  };
-
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variant]} ${className}`}>
-      {children}
-    </span>
-  );
+const variants = {
+  default: 'bg-gray-100 text-gray-700 ring-gray-200',
+  success: 'bg-success-soft text-success ring-success/20',
+  warning: 'bg-gold-soft text-gold-dark ring-gold/30',
+  danger: 'bg-danger-soft text-danger ring-danger/20',
+  info: 'bg-sky-50 text-sky-700 ring-sky-200',
+  primary: 'bg-brand text-white ring-brand/30',
 };
+
+const dots = {
+  default: 'bg-gray-400',
+  success: 'bg-success',
+  warning: 'bg-gold',
+  danger: 'bg-danger',
+  info: 'bg-sky-500',
+  primary: 'bg-white',
+};
+
+const Badge = ({ children, variant = 'default', className = '' }) => (
+  <span
+    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ring-1 ring-inset ${
+      variants[variant] || variants.default
+    } ${className}`}
+  >
+    <span className={`w-1.5 h-1.5 rounded-full ${dots[variant] || dots.default}`} />
+    {children}
+  </span>
+);
 
 export default Badge;
