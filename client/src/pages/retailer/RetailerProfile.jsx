@@ -10,7 +10,8 @@ import {
   FiAlertCircle
 } from 'react-icons/fi';
 import Badge from '../../components/common/Badge';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const RetailerProfile = () => {
   const [loading, setLoading] = useState(true);
@@ -102,8 +103,8 @@ const RetailerProfile = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <FiLoader className="w-12 h-12 animate-spin text-[#16834B] mx-auto mb-4" />
-          <p className="text-[#6B716D]">Loading profile data...</p>
+          <BrandLoader />
+          <p className="text-muted">Loading profile data...</p>
         </div>
       </div>
     );
@@ -114,13 +115,13 @@ const RetailerProfile = () => {
   // ============================================
   if (error) {
     return (
-      <div className="bg-[#FDEEEE] border border-[#D14343]/20 rounded-xl p-8 text-center max-w-md mx-auto mt-8">
-        <FiAlertCircle className="w-16 h-16 text-[#D14343] mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-[#D14343] mb-2">Unable to Load Profile</h3>
-        <p className="text-sm text-[#D14343]/80 mb-4">{error}</p>
+      <div className="bg-danger-soft border border-danger/20 rounded-xl p-8 text-center max-w-md mx-auto mt-8">
+        <FiAlertCircle className="w-16 h-16 text-danger mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-danger mb-2">Unable to Load Profile</h3>
+        <p className="text-sm text-danger/80 mb-4">{error}</p>
         <button 
           onClick={() => window.location.reload()} 
-          className="px-4 py-2 bg-[#D14343] text-white rounded-lg hover:bg-[#b03939] transition"
+          className="px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger-dark transition"
         >
           Retry
         </button>
@@ -135,23 +136,23 @@ const RetailerProfile = () => {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#151A17]">Profile</h1>
-        <p className="text-sm text-[#6B716D] mt-1">View your profile information</p>
+        <h1 className="text-2xl font-semibold text-ink">Profile</h1>
+        <p className="text-sm text-muted mt-1">View your profile information</p>
       </div>
 
       {/* Profile Card */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
+      <div className="bg-white rounded-xl border border-line overflow-hidden">
         {/* Header with status */}
-        <div className="px-6 py-4 border-b border-[#E5E8E6] flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-line flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-16 h-16 bg-[#111714] rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-brand rounded-full flex items-center justify-center">
               <span className="text-2xl font-bold text-white">
                 {profile.ownerName ? profile.ownerName[0].toUpperCase() : '?'}
               </span>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-[#151A17]">{profile.ownerName}</h2>
-              <p className="text-sm text-[#6B716D]">{profile.shopName}</p>
+              <h2 className="text-xl font-semibold text-ink">{profile.ownerName}</h2>
+              <p className="text-sm text-muted">{profile.shopName}</p>
             </div>
           </div>
           <Badge variant={profile.status?.toLowerCase() === 'active' ? 'success' : 'default'}>
@@ -163,63 +164,63 @@ const RetailerProfile = () => {
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-semibold text-[#6B716D] uppercase tracking-wider mb-4">
+              <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
                 Contact Information
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <FiPhone className="w-4 h-4 text-[#6B716D]" />
-                  <span className="text-sm text-[#151A17]">{profile.phone}</span>
+                  <FiPhone className="w-4 h-4 text-muted" />
+                  <span className="text-sm text-ink">{profile.phone}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <FiMail className="w-4 h-4 text-[#6B716D]" />
-                  <span className="text-sm text-[#151A17]">{profile.email}</span>
+                  <FiMail className="w-4 h-4 text-muted" />
+                  <span className="text-sm text-ink">{profile.email}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <FiMapPin className="w-4 h-4 text-[#6B716D]" />
-                  <span className="text-sm text-[#151A17]">{profile.address}</span>
+                  <FiMapPin className="w-4 h-4 text-muted" />
+                  <span className="text-sm text-ink">{profile.address}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <FiCalendar className="w-4 h-4 text-[#6B716D]" />
-                  <span className="text-sm text-[#151A17]">Joined: {profile.joined}</span>
+                  <FiCalendar className="w-4 h-4 text-muted" />
+                  <span className="text-sm text-ink">Joined: {profile.joined}</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-[#6B716D] uppercase tracking-wider mb-4">
+              <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
                 Account Summary
               </h3>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-[#FDEEEE] rounded-lg border border-[#D14343]/20">
-                  <span className="text-sm font-medium text-[#D14343]">Outstanding</span>
-                  <span className="text-sm font-bold text-[#D14343]">
+                <div className="flex items-center justify-between p-3 bg-danger-soft rounded-lg border border-danger/20">
+                  <span className="text-sm font-medium text-danger">Outstanding</span>
+                  <span className="text-sm font-bold text-danger">
                     {formatCurrency(profile.outstanding)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[#6B716D]">Status</span>
+                  <span className="text-sm text-muted">Status</span>
                   <Badge variant={profile.status?.toLowerCase() === 'active' ? 'success' : 'default'}>
                     {profile.status}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-[#F6F7F6] rounded-lg">
-                  <span className="text-sm text-[#6B716D]">Shop Area</span>
-                  <span className="text-sm font-medium text-[#151A17]">
+                <div className="flex items-center justify-between p-3 bg-cream rounded-lg">
+                  <span className="text-sm text-muted">Shop Area</span>
+                  <span className="text-sm font-medium text-ink">
                     {profile.area}, {profile.city}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-[#F6F7F6] rounded-lg">
-                  <span className="text-sm text-[#6B716D]">Pincode</span>
-                  <span className="text-sm font-medium text-[#151A17]">{profile.pincode}</span>
+                <div className="flex items-center justify-between p-3 bg-cream rounded-lg">
+                  <span className="text-sm text-muted">Pincode</span>
+                  <span className="text-sm font-medium text-ink">{profile.pincode}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Note */}
-          <div className="mt-6 pt-6 border-t border-[#E5E8E6]">
-            <p className="text-xs text-[#6B716D] text-center">
+          <div className="mt-6 pt-6 border-t border-line">
+            <p className="text-xs text-muted text-center">
               <FiUser className="inline w-3 h-3 mr-1" />
               Contact your administrator to update your profile information
             </p>

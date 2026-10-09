@@ -22,7 +22,8 @@ import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 // YYYY-MM-DD in the browser's local timezone, matching what <input type=date>
 // and <input type=month> read/write.
@@ -383,8 +384,8 @@ const Payments = () => {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <FiLoader className="w-12 h-12 animate-spin text-[#16834B] mx-auto mb-4" />
-          <p className="text-[#6B716D]">Loading payments data...</p>
+          <BrandLoader />
+          <p className="text-muted">Loading payments data...</p>
         </div>
       </div>
     );
@@ -395,13 +396,13 @@ const Payments = () => {
   // ============================================
   if (error) {
     return (
-      <div className="bg-[#FDEEEE] border border-[#D14343]/20 rounded-xl p-8 text-center max-w-lg mx-auto mt-8">
-        <FiAlertCircle className="w-16 h-16 text-[#D14343] mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-[#D14343] mb-2">Unable to Load Payments</h3>
-        <p className="text-sm text-[#D14343]/80 mb-4">{error}</p>
+      <div className="bg-danger-soft border border-danger/20 rounded-xl p-8 text-center max-w-lg mx-auto mt-8">
+        <FiAlertCircle className="w-16 h-16 text-danger mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-danger mb-2">Unable to Load Payments</h3>
+        <p className="text-sm text-danger/80 mb-4">{error}</p>
         <button 
           onClick={fetchPaymentData} 
-          className="px-4 py-2 bg-[#D14343] text-white rounded-lg hover:bg-[#b03939] transition"
+          className="px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger-dark transition"
         >
           Retry
         </button>
@@ -417,8 +418,8 @@ const Payments = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Payments</h1>
-          <p className="text-sm text-[#6B716D] mt-1">All collections across drivers and office</p>
+          <h1 className="text-2xl font-semibold text-ink">Payments</h1>
+          <p className="text-sm text-muted mt-1">All collections across drivers and office</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" icon={FiDownload} onClick={exportToCsv}>
@@ -435,62 +436,62 @@ const Payments = () => {
           desktop); the actual mobile breakage was in the Summary Row below,
           which never wrapped and pushed content past the viewport. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8">
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 sm:p-6">
+        <div className="bg-white rounded-xl border border-line p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#F6F7F6] rounded-lg shrink-0">
-              <FiShoppingBag className="w-5 h-5 text-[#151A17]" />
+            <div className="p-3 bg-cream rounded-lg shrink-0">
+              <FiShoppingBag className="w-5 h-5 text-ink" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm text-[#6B716D]">Total Orders</p>
-              <p className="text-2xl font-semibold text-[#151A17] truncate">{formatCurrency(totalOrdersAmount)}</p>
+              <p className="text-sm text-muted">Total Orders</p>
+              <p className="text-2xl font-semibold text-ink truncate">{formatCurrency(totalOrdersAmount)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 sm:p-6">
+        <div className="bg-white rounded-xl border border-line p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#F6F7F6] rounded-lg shrink-0">
-              <FiDollarSign className="w-5 h-5 text-[#111714]" />
+            <div className="p-3 bg-cream rounded-lg shrink-0">
+              <FiDollarSign className="w-5 h-5 text-brand" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm text-[#6B716D]">Cash Collected</p>
-              <p className="text-2xl font-semibold text-[#151A17] truncate">{formatCurrency(totalCash)}</p>
+              <p className="text-sm text-muted">Cash Collected</p>
+              <p className="text-2xl font-semibold text-ink truncate">{formatCurrency(totalCash)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 sm:p-6">
+        <div className="bg-white rounded-xl border border-line p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#F6F7F6] rounded-lg shrink-0">
+            <div className="p-3 bg-cream rounded-lg shrink-0">
               <FiCreditCard className="w-5 h-5 text-[#3B6FD8]" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm text-[#6B716D]">UPI Collected</p>
-              <p className="text-2xl font-semibold text-[#151A17] truncate">{formatCurrency(totalUPI)}</p>
+              <p className="text-sm text-muted">UPI Collected</p>
+              <p className="text-2xl font-semibold text-ink truncate">{formatCurrency(totalUPI)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 sm:p-6">
+        <div className="bg-white rounded-xl border border-line p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#F6F7F6] rounded-lg shrink-0">
+            <div className="p-3 bg-cream rounded-lg shrink-0">
               <FiFileText className="w-5 h-5 text-[#C47A13]" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm text-[#6B716D]">Office Payments</p>
-              <p className="text-2xl font-semibold text-[#151A17] truncate">{formatCurrency(totalOfficePayments)}</p>
+              <p className="text-sm text-muted">Office Payments</p>
+              <p className="text-2xl font-semibold text-ink truncate">{formatCurrency(totalOfficePayments)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 sm:p-6">
+        <div className="bg-white rounded-xl border border-line p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#F6F7F6] rounded-lg shrink-0">
-              <FiUsers className="w-5 h-5 text-[#D14343]" />
+            <div className="p-3 bg-cream rounded-lg shrink-0">
+              <FiUsers className="w-5 h-5 text-danger" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm text-[#6B716D]">Outstanding</p>
-              <p className="text-2xl font-semibold text-[#D14343] truncate">{formatCurrency(totalOutstanding)}</p>
+              <p className="text-sm text-muted">Outstanding</p>
+              <p className="text-2xl font-semibold text-danger truncate">{formatCurrency(totalOutstanding)}</p>
             </div>
           </div>
         </div>
@@ -499,27 +500,27 @@ const Payments = () => {
       {/* Summary Row -- this is what was actually overflowing on mobile:
           a single flex row with no wrap and fixed vertical dividers. Now
           stacks vertically on small screens and drops the dividers there. */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-[#6B716D]">Total Collected:</span>
-              <span className="text-lg font-semibold text-[#16834B]">{formatCurrency(totalCollected)}</span>
+              <span className="text-sm text-muted">Total Collected:</span>
+              <span className="text-lg font-semibold text-success">{formatCurrency(totalCollected)}</span>
             </div>
-            <div className="hidden sm:block w-px h-8 bg-[#E5E8E6]"></div>
+            <div className="hidden sm:block w-px h-8 bg-line"></div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-[#6B716D]">Total Orders:</span>
-              <span className="text-lg font-semibold text-[#151A17]">{formatCurrency(totalOrdersAmount)}</span>
+              <span className="text-sm text-muted">Total Orders:</span>
+              <span className="text-lg font-semibold text-ink">{formatCurrency(totalOrdersAmount)}</span>
             </div>
-            <div className="hidden sm:block w-px h-8 bg-[#E5E8E6]"></div>
+            <div className="hidden sm:block w-px h-8 bg-line"></div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-[#6B716D]">Outstanding:</span>
-              <span className="text-lg font-semibold text-[#D14343]">{formatCurrency(totalOutstanding)}</span>
+              <span className="text-sm text-muted">Outstanding:</span>
+              <span className="text-lg font-semibold text-danger">{formatCurrency(totalOutstanding)}</span>
             </div>
           </div>
-          <div className="text-sm text-[#6B716D]">
+          <div className="text-sm text-muted">
             <span className="font-medium">Collection Rate:</span>{' '}
-            <span className="font-semibold text-[#16834B]">
+            <span className="font-semibold text-success">
               {totalOrdersAmount > 0 
                 ? `${Math.round((totalCollected / totalOrdersAmount) * 100)}%` 
                 : '0%'}
@@ -529,7 +530,7 @@ const Payments = () => {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6 space-y-4">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6 space-y-4">
         <SearchInput
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -539,11 +540,11 @@ const Payments = () => {
 
         <div className="flex flex-wrap items-end gap-3">
           <div>
-            <label className="block text-xs font-medium text-[#6B716D] mb-1">Retailer</label>
+            <label className="block text-xs font-medium text-muted mb-1">Retailer</label>
             <select
               value={retailerFilter}
               onChange={(e) => setRetailerFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[150px]"
+              className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition min-w-[150px]"
             >
               <option value="all">All Retailers</option>
               {retailerOptions.map((name) => (
@@ -553,11 +554,11 @@ const Payments = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#6B716D] mb-1">Method</label>
+            <label className="block text-xs font-medium text-muted mb-1">Method</label>
             <select
               value={methodFilter}
               onChange={(e) => setMethodFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[140px]"
+              className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition min-w-[140px]"
             >
               {METHOD_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -566,11 +567,11 @@ const Payments = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#6B716D] mb-1">Collected By</label>
+            <label className="block text-xs font-medium text-muted mb-1">Collected By</label>
             <select
               value={collectedByFilter}
               onChange={(e) => setCollectedByFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[150px]"
+              className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition min-w-[150px]"
             >
               {COLLECTED_BY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -579,11 +580,11 @@ const Payments = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[#6B716D] mb-1">Date</label>
+            <label className="block text-xs font-medium text-muted mb-1">Date</label>
             <select
               value={dateMode}
               onChange={(e) => setDateMode(e.target.value)}
-              className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[130px]"
+              className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition min-w-[130px]"
             >
               {DATE_MODE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -593,14 +594,14 @@ const Payments = () => {
 
           {dateMode === 'day' && (
             <div>
-              <label className="block text-xs font-medium text-[#6B716D] mb-1">Pick a date</label>
+              <label className="block text-xs font-medium text-muted mb-1">Pick a date</label>
               <div className="relative">
-                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B716D] pointer-events-none" />
+                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
                 <input
                   type="date"
                   value={singleDate}
                   onChange={(e) => setSingleDate(e.target.value)}
-                  className="pl-9 pr-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition"
+                  className="pl-9 pr-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition"
                 />
               </div>
             </div>
@@ -608,14 +609,14 @@ const Payments = () => {
 
           {dateMode === 'month' && (
             <div>
-              <label className="block text-xs font-medium text-[#6B716D] mb-1">Pick a month</label>
+              <label className="block text-xs font-medium text-muted mb-1">Pick a month</label>
               <div className="relative">
-                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B716D] pointer-events-none" />
+                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
                 <input
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="pl-9 pr-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition"
+                  className="pl-9 pr-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition"
                 />
               </div>
             </div>
@@ -624,21 +625,21 @@ const Payments = () => {
           {dateMode === 'range' && (
             <>
               <div>
-                <label className="block text-xs font-medium text-[#6B716D] mb-1">From</label>
+                <label className="block text-xs font-medium text-muted mb-1">From</label>
                 <input
                   type="date"
                   value={rangeFrom}
                   onChange={(e) => setRangeFrom(e.target.value)}
-                  className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition"
+                  className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#6B716D] mb-1">To</label>
+                <label className="block text-xs font-medium text-muted mb-1">To</label>
                 <input
                   type="date"
                   value={rangeTo}
                   onChange={(e) => setRangeTo(e.target.value)}
-                  className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition"
+                  className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition"
                 />
               </div>
             </>
@@ -647,7 +648,7 @@ const Payments = () => {
           {hasActiveFilters && (
             <button
               onClick={clearAllFilters}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-[#6B716D] hover:text-[#D14343] transition"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted hover:text-danger transition"
             >
               <FiX className="w-4 h-4" /> Clear filters
             </button>
@@ -656,9 +657,9 @@ const Payments = () => {
       </div>
 
       {/* Payments Table */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E5E8E6]">
-          <h2 className="text-lg font-semibold text-[#151A17]">
+      <div className="bg-white rounded-xl border border-line overflow-hidden">
+        <div className="px-6 py-4 border-b border-line">
+          <h2 className="text-lg font-semibold text-ink">
             Recent Collections ({filteredPayments.length})
           </h2>
         </div>
@@ -666,30 +667,30 @@ const Payments = () => {
         {filteredPayments.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#F6F7F6]">
+              <thead className="bg-cream">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Payment</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Retailer</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Order</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Method</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Collected By</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Payment</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Retailer</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Order</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Method</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Collected By</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E8E6]">
+              <tbody className="divide-y divide-line">
                 {filteredPayments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-[#F6F7F6] transition">
-                    <td className="px-6 py-4 text-sm font-medium text-[#151A17]">
+                  <tr key={payment.id} className="hover:bg-cream transition">
+                    <td className="px-6 py-4 text-sm font-medium text-ink">
                       {payment.payment_number}
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#151A17]">
+                    <td className="px-6 py-4 text-sm text-ink">
                       {payment.shop_name || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#6B716D]">
+                    <td className="px-6 py-4 text-sm text-muted">
                       {payment.order_number || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-[#16834B]">
+                    <td className="px-6 py-4 text-sm font-semibold text-success">
                       {formatCurrency(payment.amount)}
                     </td>
                     <td className="px-6 py-4">
@@ -697,13 +698,13 @@ const Payments = () => {
                         {getMethodLabel(payment.method)}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#151A17]">
+                    <td className="px-6 py-4 text-sm text-ink">
                       {payment.collected_by || 'N/A'}
-                      <span className="text-xs text-[#6B716D] ml-1">
+                      <span className="text-xs text-muted ml-1">
                         ({payment.collected_by_role === 'admin' ? 'Office' : 'Driver'})
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#6B716D]">
+                    <td className="px-6 py-4 text-sm text-muted">
                       {formatDate(payment.date || payment.created_at)}
                     </td>
                   </tr>
@@ -779,13 +780,13 @@ const Payments = () => {
         <div className="space-y-4">
           {/* Customer Selection */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Customer <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Customer <span className="text-danger">*</span>
             </label>
             <select
               value={paymentForm.customer}
               onChange={(e) => setPaymentForm({ ...paymentForm, customer: e.target.value })}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="">Select customer...</option>
               {retailers.map((retailer) => (
@@ -798,17 +799,17 @@ const Payments = () => {
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Amount <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Amount <span className="text-danger">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B716D]">₹</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">₹</span>
               <input
                 type="number"
                 value={paymentForm.amount}
                 onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
                 placeholder="Enter amount"
-                className="w-full pl-8 pr-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+                className="w-full pl-8 pr-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
                 min="0"
                 step="1"
               />
@@ -817,13 +818,13 @@ const Payments = () => {
 
           {/* Payment Method */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Payment Method <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Payment Method <span className="text-danger">*</span>
             </label>
             <select
               value={paymentForm.method}
               onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="Cash">Cash</option>
               <option value="UPI">UPI</option>
@@ -834,13 +835,13 @@ const Payments = () => {
 
           {/* Collected By */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Collected By <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Collected By <span className="text-danger">*</span>
             </label>
             <select
               value={paymentForm.collectedBy}
               onChange={(e) => setPaymentForm({ ...paymentForm, collectedBy: e.target.value })}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="Office">Office</option>
               <option value="D001">Driver 1</option>
@@ -851,27 +852,27 @@ const Payments = () => {
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Date
             </label>
             <input
               type="date"
               value={paymentForm.date}
               onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Notes (Optional)
             </label>
             <textarea
               value={paymentForm.notes}
               onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
               placeholder="Add any additional notes..."
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
               rows="2"
             />
           </div>

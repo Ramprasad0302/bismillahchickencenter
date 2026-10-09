@@ -378,7 +378,17 @@ const failTransaction = async ({ reference, reason, status = 'failed' }) => {
 // ============================================
 const STALE_MINUTES = 15;
 
+// This sweep is an UPDATE across the orders table, and it used to run on
+// every single orders-list request -- every page load paid for a write and
+// its row locks. Running it at most once a minute is plenty for a
+// STALE_MINUTES-scale timeout and keeps list reads fast.
+const SWEEP_INTERVAL_MS = 60 * 1000;
+let lastSweepAt = 0;
+
 const expireStalePendingOrders = async () => {
+  const now = Date.now();
+  if (now - lastSweepAt < SWEEP_INTERVAL_MS) return;
+  lastSweepAt = now;
   try {
     await pool.query(
       `UPDATE orders o

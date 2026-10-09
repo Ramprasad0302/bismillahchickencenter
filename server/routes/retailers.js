@@ -20,8 +20,8 @@ router.get('/customers', requireRole('admin'), retailerController.getRetailerCus
 // ============================================
 // Retailer dashboard
 // ============================================
-router.get('/me', retailerController.getRetailerInfo);
-router.get('/orders', retailerController.getRetailerOrders);
-router.get('/stats', retailerController.getRetailerStats);
+router.get('/me', requireRole('retailer'), retailerController.getRetailerInfo);
+router.get('/orders', requireRole('retailer'), retailerController.getRetailerOrders);
+router.get('/stats', requireRole('retailer'), retailerController.getRetailerStats);
 
 module.exports = router;

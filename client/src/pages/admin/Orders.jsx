@@ -15,7 +15,8 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 // YYYY-MM-DD in the browser's local timezone, matching what <input type=date>
 // and <input type=month> read/write -- avoids the UTC-shift bug where a
@@ -332,8 +333,8 @@ const Orders = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiLoader className="w-12 h-12 text-[#111714] animate-spin" />
-        <p className="mt-4 text-[#6B716D]">Loading orders...</p>
+        <BrandLoader />
+        <p className="mt-4 text-muted">Loading orders...</p>
       </div>
     );
   }
@@ -341,8 +342,8 @@ const Orders = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#D14343]" />
-        <p className="mt-4 text-[#D14343] font-medium">{error}</p>
+        <FiAlertCircle className="w-12 h-12 text-danger" />
+        <p className="mt-4 text-danger font-medium">{error}</p>
         <Button 
           variant="outline" 
           className="mt-4"
@@ -359,8 +360,8 @@ const Orders = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Orders</h1>
-          <p className="text-sm text-[#6B716D] mt-1">
+          <h1 className="text-2xl font-semibold text-ink">Orders</h1>
+          <p className="text-sm text-muted mt-1">
             All orders across cash, UPI, and store credit ({orders.length} total, showing {filteredOrders.length})
           </p>
         </div>
@@ -377,7 +378,7 @@ const Orders = () => {
           onClick={() => setActiveFilter('all')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'all'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -387,7 +388,7 @@ const Orders = () => {
           onClick={() => setActiveFilter('pending')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'pending'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -397,7 +398,7 @@ const Orders = () => {
           onClick={() => setActiveFilter('inTransit')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'inTransit'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -407,7 +408,7 @@ const Orders = () => {
           onClick={() => setActiveFilter('delivered')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'delivered'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -416,7 +417,7 @@ const Orders = () => {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6 space-y-4">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6 space-y-4">
         {/* Search */}
         <SearchInput
           value={searchTerm}
@@ -428,11 +429,11 @@ const Orders = () => {
         <div className="flex flex-wrap items-end gap-3">
           {/* Retailer */}
           <div>
-            <label className="block text-xs font-medium text-[#6B716D] mb-1">Retailer</label>
+            <label className="block text-xs font-medium text-muted mb-1">Retailer</label>
             <select
               value={retailerFilter}
               onChange={(e) => setRetailerFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[160px]"
+              className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition min-w-[160px]"
             >
               <option value="all">All Retailers</option>
               {retailerOptions.map((name) => (
@@ -443,11 +444,11 @@ const Orders = () => {
 
           {/* Payment Method */}
           <div>
-            <label className="block text-xs font-medium text-[#6B716D] mb-1">Payment Method</label>
+            <label className="block text-xs font-medium text-muted mb-1">Payment Method</label>
             <select
               value={paymentMethodFilter}
               onChange={(e) => setPaymentMethodFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[130px]"
+              className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition min-w-[130px]"
             >
               {PAYMENT_METHOD_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -457,11 +458,11 @@ const Orders = () => {
 
           {/* Payment Status */}
           <div>
-            <label className="block text-xs font-medium text-[#6B716D] mb-1">Payment Status</label>
+            <label className="block text-xs font-medium text-muted mb-1">Payment Status</label>
             <select
               value={paymentStatusFilter}
               onChange={(e) => setPaymentStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[150px]"
+              className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition min-w-[150px]"
             >
               {PAYMENT_STATUS_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -471,11 +472,11 @@ const Orders = () => {
 
           {/* Date mode */}
           <div>
-            <label className="block text-xs font-medium text-[#6B716D] mb-1">Date</label>
+            <label className="block text-xs font-medium text-muted mb-1">Date</label>
             <select
               value={dateMode}
               onChange={(e) => setDateMode(e.target.value)}
-              className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[140px]"
+              className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition min-w-[140px]"
             >
               {DATE_MODE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -486,14 +487,14 @@ const Orders = () => {
           {/* Date mode's extra input(s) */}
           {dateMode === 'day' && (
             <div>
-              <label className="block text-xs font-medium text-[#6B716D] mb-1">Pick a date</label>
+              <label className="block text-xs font-medium text-muted mb-1">Pick a date</label>
               <div className="relative">
-                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B716D] pointer-events-none" />
+                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
                 <input
                   type="date"
                   value={singleDate}
                   onChange={(e) => setSingleDate(e.target.value)}
-                  className="pl-9 pr-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition"
+                  className="pl-9 pr-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition"
                 />
               </div>
             </div>
@@ -501,14 +502,14 @@ const Orders = () => {
 
           {dateMode === 'month' && (
             <div>
-              <label className="block text-xs font-medium text-[#6B716D] mb-1">Pick a month</label>
+              <label className="block text-xs font-medium text-muted mb-1">Pick a month</label>
               <div className="relative">
-                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B716D] pointer-events-none" />
+                <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
                 <input
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="pl-9 pr-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition"
+                  className="pl-9 pr-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition"
                 />
               </div>
             </div>
@@ -517,21 +518,21 @@ const Orders = () => {
           {dateMode === 'range' && (
             <>
               <div>
-                <label className="block text-xs font-medium text-[#6B716D] mb-1">From</label>
+                <label className="block text-xs font-medium text-muted mb-1">From</label>
                 <input
                   type="date"
                   value={rangeFrom}
                   onChange={(e) => setRangeFrom(e.target.value)}
-                  className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition"
+                  className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#6B716D] mb-1">To</label>
+                <label className="block text-xs font-medium text-muted mb-1">To</label>
                 <input
                   type="date"
                   value={rangeTo}
                   onChange={(e) => setRangeTo(e.target.value)}
-                  className="px-3 py-2 border border-[#E5E8E6] rounded-lg text-sm focus:ring-2 focus:ring-[#111714] outline-none transition"
+                  className="px-3 py-2 border border-line rounded-lg text-sm focus:ring-2 focus:ring-gold outline-none transition"
                 />
               </div>
             </>
@@ -540,7 +541,7 @@ const Orders = () => {
           {hasActiveFilters && (
             <button
               onClick={clearAllFilters}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-[#6B716D] hover:text-[#D14343] transition"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-muted hover:text-danger transition"
             >
               <FiX className="w-4 h-4" /> Clear filters
             </button>
@@ -549,50 +550,50 @@ const Orders = () => {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
+      <div className="bg-white rounded-xl border border-line overflow-hidden">
         {filteredOrders.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#F6F7F6]">
+              <thead className="bg-cream">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Order</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Retailer</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">KG</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Rate</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Payment</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Action</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Order</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Retailer</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">KG</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Rate</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Payment</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E8E6]">
+              <tbody className="divide-y divide-line">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-[#F6F7F6] transition">
-                    <td className="px-6 py-4 text-sm font-medium text-[#151A17]">
+                  <tr key={order.id} className="hover:bg-cream transition">
+                    <td className="px-6 py-4 text-sm font-medium text-ink">
                       {order.order_number}
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <p className="text-sm font-medium text-[#151A17]">
+                        <p className="text-sm font-medium text-ink">
                           {order.shop_name || 'Unknown Retailer'}
                         </p>
-                        <p className="text-xs text-[#6B716D] flex items-center gap-1">
+                        <p className="text-xs text-muted flex items-center gap-1">
                           <FiPhone className="w-3 h-3" />
                           {order.retailer_phone || 'N/A'}
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#6B716D]">
+                    <td className="px-6 py-4 text-sm text-muted">
                       {formatDate(order.created_at)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#151A17]">
+                    <td className="px-6 py-4 text-sm text-ink">
                       {order.kg_ordered} kg
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#151A17]">
+                    <td className="px-6 py-4 text-sm text-ink">
                       ₹{order.rate_per_kg}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-[#151A17]">
+                    <td className="px-6 py-4 text-sm font-medium text-ink">
                       {formatCurrency(order.total_amount)}
                     </td>
                     <td className="px-6 py-4">

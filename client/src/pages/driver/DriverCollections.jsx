@@ -10,7 +10,8 @@ import {
   FiAlertCircle
 } from 'react-icons/fi';
 import Badge from '../../components/common/Badge';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const DriverCollections = () => {
   const [loading, setLoading] = useState(true);
@@ -67,8 +68,8 @@ const DriverCollections = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiLoader className="w-12 h-12 animate-spin text-[#16834B]" />
-        <p className="mt-4 text-[#6B716D]">Loading your collections...</p>
+        <BrandLoader />
+        <p className="mt-4 text-muted">Loading your collections...</p>
       </div>
     );
   }
@@ -76,8 +77,8 @@ const DriverCollections = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#D14343]" />
-        <p className="mt-4 text-[#D14343] font-medium">{error}</p>
+        <FiAlertCircle className="w-12 h-12 text-danger" />
+        <p className="mt-4 text-danger font-medium">{error}</p>
       </div>
     );
   }
@@ -86,61 +87,61 @@ const DriverCollections = () => {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#151A17]">Collections</h1>
-        <p className="text-sm text-[#6B716D] mt-1">Track all your cash collections</p>
+        <h1 className="text-2xl font-semibold text-ink">Collections</h1>
+        <p className="text-sm text-muted mt-1">Track all your cash collections</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
-          <p className="text-sm text-[#6B716D]">Total Collected</p>
-          <p className="text-2xl font-bold text-[#16834B]">{formatCurrency(totalCollected)}</p>
+        <div className="bg-white rounded-xl border border-line p-4">
+          <p className="text-sm text-muted">Total Collected</p>
+          <p className="text-2xl font-bold text-success">{formatCurrency(totalCollected)}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
-          <p className="text-sm text-[#6B716D]">Pending Verification</p>
+        <div className="bg-white rounded-xl border border-line p-4">
+          <p className="text-sm text-muted">Pending Verification</p>
           <p className="text-2xl font-bold text-[#C47A13]">{pendingVerification}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
-          <p className="text-sm text-[#6B716D]">Verified</p>
-          <p className="text-2xl font-bold text-[#16834B]">{verified}</p>
+        <div className="bg-white rounded-xl border border-line p-4">
+          <p className="text-sm text-muted">Verified</p>
+          <p className="text-2xl font-bold text-success">{verified}</p>
         </div>
       </div>
 
       {/* Collections List */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E5E8E6]">
-          <h2 className="text-lg font-semibold text-[#151A17]">Collection History</h2>
+      <div className="bg-white rounded-xl border border-line overflow-hidden">
+        <div className="px-6 py-4 border-b border-line">
+          <h2 className="text-lg font-semibold text-ink">Collection History</h2>
         </div>
 
         {collections.length === 0 ? (
-          <div className="p-10 text-center text-[#6B716D]">
-            <FiDollarSign className="w-12 h-12 mx-auto mb-3 text-[#E5E8E6]" />
+          <div className="p-10 text-center text-muted">
+            <FiDollarSign className="w-12 h-12 mx-auto mb-3 text-line" />
             <p>No cash collections found.</p>
             <p className="text-sm">Complete a trip to submit cash for verification.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#F6F7F6]">
+              <thead className="bg-cream">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Collection ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Trip</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Retailer</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Method</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Collection ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Trip</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Retailer</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Method</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-muted uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E8E6]">
+              <tbody className="divide-y divide-line">
                 {collections.map((collection) => (
-                  <tr key={collection.id} className="hover:bg-[#F6F7F6] transition">
-                    <td className="px-6 py-4 text-sm font-medium text-[#151A17]">{collection.id}</td>
-                    <td className="px-6 py-4 text-sm text-[#6B716D]">{collection.orderId}</td>
-                    <td className="px-6 py-4 text-sm text-[#151A17]">{collection.retailer}</td>
-                    <td className="px-6 py-4 text-sm text-[#6B716D]">{collection.method}</td>
-                    <td className="px-6 py-4 text-sm text-[#6B716D]">{collection.date}</td>
-                    <td className="px-6 py-4 text-right text-sm font-medium text-[#16834B]">
+                  <tr key={collection.id} className="hover:bg-cream transition">
+                    <td className="px-6 py-4 text-sm font-medium text-ink">{collection.id}</td>
+                    <td className="px-6 py-4 text-sm text-muted">{collection.orderId}</td>
+                    <td className="px-6 py-4 text-sm text-ink">{collection.retailer}</td>
+                    <td className="px-6 py-4 text-sm text-muted">{collection.method}</td>
+                    <td className="px-6 py-4 text-sm text-muted">{collection.date}</td>
+                    <td className="px-6 py-4 text-right text-sm font-medium text-success">
                       {formatCurrency(collection.amount)}
                     </td>
                     <td className="px-6 py-4">

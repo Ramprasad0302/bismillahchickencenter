@@ -30,6 +30,34 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.join(__dirname, 'dist');
 
+app.disable('x-powered-by');
+
+// Where the browser is allowed to load things from. The API origin comes from
+// API_ORIGIN (defaults to the live backend).
+const API_ORIGIN = process.env.API_ORIGIN || 'https://backend.bismillahchickencenter.com';
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  `img-src 'self' data: blob: ${API_ORIGIN}`,
+  `connect-src 'self' ${API_ORIGIN}`,
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join('; ');
+
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', CSP);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
+
 // Real built files (JS, CSS, images, favicon, etc.) — served as-is, with
 // long-lived caching since Vite fingerprints filenames on every build.
 app.use(
@@ -41,6 +69,10 @@ app.use(
       // old build after you deploy a new one.
       if (filePath.endsWith('index.html')) {
         res.setHeader('Cache-Control', 'no-cache');
+      } else if (!filePath.includes(`${path.sep}assets${path.sep}`)) {
+        // Only Vite's hashed /assets files are safe to cache forever; the
+        // logo, favicon etc. keep their names between deploys.
+        res.setHeader('Cache-Control', 'public, max-age=86400');
       }
     },
   })

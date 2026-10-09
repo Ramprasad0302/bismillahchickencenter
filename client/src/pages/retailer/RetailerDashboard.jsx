@@ -14,7 +14,8 @@ import {
   FiMapPin
 } from 'react-icons/fi';
 import Button from '../../components/common/Button';
-import Badge from '../../components/common/Badge';
+import Badge from '../../components/common/Badge';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const RetailerDashboard = () => {
   const { user } = useAuth();
@@ -232,8 +233,8 @@ const RetailerDashboard = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <FiLoader className="w-12 h-12 animate-spin text-[#16834B] mx-auto mb-4" />
-          <p className="text-[#6B716D]">Loading dashboard...</p>
+          <BrandLoader />
+          <p className="text-muted">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -241,10 +242,10 @@ const RetailerDashboard = () => {
 
   if (error) {
     return (
-      <div className="bg-[#FDEEEE] border border-[#D14343]/20 rounded-xl p-8 text-center max-w-md mx-auto">
-        <FiAlertCircle className="w-16 h-16 text-[#D14343] mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-[#D14343] mb-2">Unable to Load Dashboard</h3>
-        <p className="text-sm text-[#D14343]/80 mb-4">{error}</p>
+      <div className="bg-danger-soft border border-danger/20 rounded-xl p-8 text-center max-w-md mx-auto">
+        <FiAlertCircle className="w-16 h-16 text-danger mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-danger mb-2">Unable to Load Dashboard</h3>
+        <p className="text-sm text-danger/80 mb-4">{error}</p>
         <div className="flex flex-col gap-3">
           <Button onClick={loadDashboardData} className="w-full">
             <FiRefreshCw className="w-4 h-4 mr-2" />
@@ -264,14 +265,14 @@ const RetailerDashboard = () => {
     <div className="max-w-4xl mx-auto">
       {/* Header - Assalamu Alaikum */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#151A17]">
+        <h1 className="text-2xl font-semibold text-ink">
           {getGreeting()}, {retailer?.owner_name || user?.name || 'Retailer'} 👋
         </h1>
-        <p className="text-sm text-[#6B716D] mt-1">{retailer?.shop_name || 'Your Shop'}</p>
+        <p className="text-sm text-muted mt-1">{retailer?.shop_name || 'Your Shop'}</p>
       </div>
 
       {/* Pricing Card - Cash Price (UPDATED with loading state) */}
-      <div className="bg-[#111714] text-white rounded-xl p-6 mb-6 relative">
+      <div className="bg-brand text-white rounded-xl p-6 mb-6 relative">
         <p className="text-sm text-white/60">CASH PRICE</p>
         
         {priceLoading ? (
@@ -306,17 +307,17 @@ const RetailerDashboard = () => {
 
       {/* Outstanding Balance - Highlighted */}
       {(stats.outstandingBalance > 0 || retailer?.outstanding > 0) && (
-        <div className="bg-[#FDEEEE] border-2 border-[#D14343] rounded-xl p-6 mb-6">
+        <div className="bg-danger-soft border-2 border-danger rounded-xl p-6 mb-6">
           <div className="flex items-center gap-3">
-            <FiAlertCircle className="w-6 h-6 text-[#D14343]" />
+            <FiAlertCircle className="w-6 h-6 text-danger" />
             <div>
-              <p className="text-sm font-medium text-[#D14343]">OUTSTANDING BALANCE</p>
-              <p className="text-3xl font-bold text-[#D14343]">
+              <p className="text-sm font-medium text-danger">OUTSTANDING BALANCE</p>
+              <p className="text-3xl font-bold text-danger">
                 {formatCurrency(stats.outstandingBalance || retailer?.outstanding || 0)}
               </p>
             </div>
           </div>
-          <p className="text-xs text-[#D14343]/70 mt-2">
+          <p className="text-xs text-danger/70 mt-2">
             Please clear your outstanding balance to continue placing orders
           </p>
         </div>
@@ -324,17 +325,17 @@ const RetailerDashboard = () => {
 
       {/* Current Order */}
       {currentOrder && (
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
+        <div className="bg-white rounded-xl border border-line p-6 mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-[#151A17]">Current Order</h3>
+            <h3 className="font-semibold text-ink">Current Order</h3>
             <Badge variant={getStatusVariant(currentOrder.order_status)}>
               {getStatusLabel(currentOrder.order_status)}
             </Badge>
           </div>
-          <p className="text-sm text-[#6B716D]">{currentOrder.order_number}</p>
+          <p className="text-sm text-muted">{currentOrder.order_number}</p>
           <div className="flex items-center justify-between mt-2">
-            <span className="text-sm text-[#6B716D]">{currentOrder.kg_ordered} kg</span>
-            <span className="text-lg font-semibold text-[#151A17]">
+            <span className="text-sm text-muted">{currentOrder.kg_ordered} kg</span>
+            <span className="text-lg font-semibold text-ink">
               {formatCurrency(currentOrder.total_amount)}
             </span>
           </div>
@@ -343,42 +344,42 @@ const RetailerDashboard = () => {
 
       {/* Stats Cards - Quick Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <p className="text-xs text-[#6B716D]">Total Orders</p>
-          <p className="text-xl font-semibold text-[#151A17]">{stats.totalOrders}</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <p className="text-xs text-muted">Total Orders</p>
+          <p className="text-xl font-semibold text-ink">{stats.totalOrders}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <p className="text-xs text-[#6B716D]">Pending</p>
-          <p className="text-xl font-semibold text-[#151A17]">{stats.pendingOrders}</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <p className="text-xs text-muted">Pending</p>
+          <p className="text-xl font-semibold text-ink">{stats.pendingOrders}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <p className="text-xs text-[#6B716D]">Total Spent</p>
-          <p className="text-xl font-semibold text-[#151A17]">{formatCurrency(stats.totalSpent)}</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <p className="text-xs text-muted">Total Spent</p>
+          <p className="text-xl font-semibold text-ink">{formatCurrency(stats.totalSpent)}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <p className="text-xs text-[#6B716D]">Credit Limit</p>
-          <p className="text-xl font-semibold text-[#151A17]">{formatCurrency(stats.creditLimit)}</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <p className="text-xs text-muted">Credit Limit</p>
+          <p className="text-xl font-semibold text-ink">{formatCurrency(stats.creditLimit)}</p>
         </div>
       </div>
 
       {/* Recent Orders - Optional */}
       {recentOrders.length > 0 && (
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
+        <div className="bg-white rounded-xl border border-line p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#151A17]">Recent Orders</h3>
+            <h3 className="font-semibold text-ink">Recent Orders</h3>
             <Link to="/retailer/orders">
-              <button className="text-sm text-[#16834B] hover:underline">View All</button>
+              <button className="text-sm text-success hover:underline">View All</button>
             </Link>
           </div>
           <div className="space-y-3">
             {recentOrders.slice(0, 3).map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-3 bg-[#F6F7F6] rounded-lg">
+              <div key={order.id} className="flex items-center justify-between p-3 bg-cream rounded-lg">
                 <div>
-                  <p className="text-sm font-medium text-[#151A17]">{order.order_number}</p>
-                  <p className="text-xs text-[#6B716D]">{formatDate(order.created_at)}</p>
+                  <p className="text-sm font-medium text-ink">{order.order_number}</p>
+                  <p className="text-xs text-muted">{formatDate(order.created_at)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-[#151A17]">{order.kg_ordered} kg</p>
+                  <p className="text-sm font-medium text-ink">{order.kg_ordered} kg</p>
                   <Badge variant={getStatusVariant(order.order_status)}>
                     {getStatusLabel(order.order_status)}
                   </Badge>
@@ -391,39 +392,39 @@ const RetailerDashboard = () => {
 
       {/* Navigation Cards - Quick Actions */}
       <div className="grid grid-cols-3 gap-3">
-        <Link to="/retailer/orders" className="bg-white rounded-xl border border-[#E5E8E6] p-4 hover:shadow-md transition text-center">
-          <FiPackage className="w-6 h-6 mx-auto text-[#111714] mb-2" />
-          <p className="text-sm font-medium text-[#151A17]">My Orders</p>
-          <p className="text-xs text-[#6B716D]">View all orders</p>
+        <Link to="/retailer/orders" className="bg-white rounded-xl border border-line p-4 hover:shadow-md transition text-center">
+          <FiPackage className="w-6 h-6 mx-auto text-brand mb-2" />
+          <p className="text-sm font-medium text-ink">My Orders</p>
+          <p className="text-xs text-muted">View all orders</p>
         </Link>
-        <Link to="/retailer/payments" className="bg-white rounded-xl border border-[#E5E8E6] p-4 hover:shadow-md transition text-center">
-          <FiCreditCard className="w-6 h-6 mx-auto text-[#111714] mb-2" />
-          <p className="text-sm font-medium text-[#151A17]">Payments</p>
-          <p className="text-xs text-[#6B716D]">Track payments</p>
+        <Link to="/retailer/payments" className="bg-white rounded-xl border border-line p-4 hover:shadow-md transition text-center">
+          <FiCreditCard className="w-6 h-6 mx-auto text-brand mb-2" />
+          <p className="text-sm font-medium text-ink">Payments</p>
+          <p className="text-xs text-muted">Track payments</p>
         </Link>
-        <Link to="/retailer/profile" className="bg-white rounded-xl border border-[#E5E8E6] p-4 hover:shadow-md transition text-center">
-          <FiUser className="w-6 h-6 mx-auto text-[#111714] mb-2" />
-          <p className="text-sm font-medium text-[#151A17]">Profile</p>
-          <p className="text-xs text-[#6B716D]">Your account</p>
+        <Link to="/retailer/profile" className="bg-white rounded-xl border border-line p-4 hover:shadow-md transition text-center">
+          <FiUser className="w-6 h-6 mx-auto text-brand mb-2" />
+          <p className="text-sm font-medium text-ink">Profile</p>
+          <p className="text-xs text-muted">Your account</p>
         </Link>
       </div>
 
       {/* Shop Info - Footer */}
       {retailer && (
-        <div className="mt-6 p-4 bg-[#F6F7F6] rounded-xl">
+        <div className="mt-6 p-4 bg-cream rounded-xl">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-xs text-[#6B716D]">Shop</p>
-              <p className="font-medium text-[#151A17]">{retailer.shop_name}</p>
+              <p className="text-xs text-muted">Shop</p>
+              <p className="font-medium text-ink">{retailer.shop_name}</p>
             </div>
             <div>
-              <p className="text-xs text-[#6B716D]">Phone</p>
-              <p className="font-medium text-[#151A17]">{retailer.phone}</p>
+              <p className="text-xs text-muted">Phone</p>
+              <p className="font-medium text-ink">{retailer.phone}</p>
             </div>
             {retailer.address && (
               <div className="col-span-2">
-                <p className="text-xs text-[#6B716D]">Address</p>
-                <p className="font-medium text-[#151A17]">{retailer.address}</p>
+                <p className="text-xs text-muted">Address</p>
+                <p className="font-medium text-ink">{retailer.address}</p>
               </div>
             )}
           </div>

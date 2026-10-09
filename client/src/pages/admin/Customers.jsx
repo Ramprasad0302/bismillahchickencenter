@@ -12,7 +12,8 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
@@ -137,8 +138,8 @@ const Customers = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiLoader className="w-12 h-12 text-[#111714] animate-spin" />
-        <p className="mt-4 text-[#6B716D]">Loading customers...</p>
+        <BrandLoader />
+        <p className="mt-4 text-muted">Loading customers...</p>
       </div>
     );
   }
@@ -147,8 +148,8 @@ const Customers = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#D14343]" />
-        <p className="mt-4 text-[#D14343] font-medium">{error}</p>
+        <FiAlertCircle className="w-12 h-12 text-danger" />
+        <p className="mt-4 text-danger font-medium">{error}</p>
         <div className="flex gap-3 mt-4">
           <Button 
             variant="outline" 
@@ -172,8 +173,8 @@ const Customers = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Customers</h1>
-          <p className="text-sm text-[#6B716D] mt-1">
+          <h1 className="text-2xl font-semibold text-ink">Customers</h1>
+          <p className="text-sm text-muted mt-1">
             {customers.length} retailers on the network
           </p>
         </div>
@@ -194,7 +195,7 @@ const Customers = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
@@ -207,7 +208,7 @@ const Customers = () => {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-4 py-2.5 border border-[#E5E8E6] rounded-lg bg-white focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="px-4 py-2.5 border border-line rounded-lg bg-white focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -218,52 +219,52 @@ const Customers = () => {
       </div>
 
       {/* Customers Table */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
+      <div className="bg-white rounded-xl border border-line overflow-hidden">
         {filteredCustomers.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#F6F7F6]">
+              <thead className="bg-cream">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Phone</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Outstanding</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Total Purchase</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Orders</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Phone</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Outstanding</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Total Purchase</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Orders</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E8E6]">
+              <tbody className="divide-y divide-line">
                 {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-[#F6F7F6] transition">
+                  <tr key={customer.id} className="hover:bg-cream transition">
                     <td className="px-6 py-4">
                       <div>
-                        <p className="text-sm font-medium text-[#151A17]">{customer.shop_name}</p>
-                        <p className="text-xs text-[#6B716D]">{customer.owner_name}</p>
+                        <p className="text-sm font-medium text-ink">{customer.shop_name}</p>
+                        <p className="text-xs text-muted">{customer.owner_name}</p>
                         {customer.city && (
-                          <p className="text-xs text-[#6B716D] mt-0.5">{customer.city}</p>
+                          <p className="text-xs text-muted mt-0.5">{customer.city}</p>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <FiPhone className="w-3 h-3 text-[#6B716D]" />
-                        <span className="text-sm text-[#151A17]">{customer.phone}</span>
+                        <FiPhone className="w-3 h-3 text-muted" />
+                        <span className="text-sm text-ink">{customer.phone}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`text-sm font-medium ${
-                        parseFloat(customer.outstanding) > 0 ? 'text-[#D14343]' : 'text-[#16834B]'
+                        parseFloat(customer.outstanding) > 0 ? 'text-danger' : 'text-success'
                       }`}>
                         {formatCurrency(customer.outstanding)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-[#151A17]">
+                    <td className="px-6 py-4 text-sm font-medium text-ink">
                       {formatCurrency(customer.total_purchase)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <FiShoppingBag className="w-3 h-3 text-[#6B716D]" />
-                        <span className="text-sm text-[#151A17]">{customer.total_orders || 0}</span>
+                        <FiShoppingBag className="w-3 h-3 text-muted" />
+                        <span className="text-sm text-ink">{customer.total_orders || 0}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">

@@ -9,7 +9,12 @@ const pool = mysql.createPool({
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  enableKeepAlive: true,
+  // A JSON body like {"phone": {"phone": 1}} would otherwise be expanded by
+  // mysql2 into `phone = `phone` = 1` (always true). Turning objects into
+  // strings closes that injection trick for every query in the app.
+  stringifyObjects: true
 });
 
 module.exports = pool;

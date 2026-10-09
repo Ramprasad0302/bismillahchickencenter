@@ -25,8 +25,8 @@ export default defineConfig(({ mode }) => {
             output: {
               minify: {
                 compress: {
-                  drop_console: true,
-                  drop_debugger: true,
+                  dropConsole: true,
+                  dropDebugger: true,
                 },
               },
             },

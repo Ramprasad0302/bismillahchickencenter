@@ -17,7 +17,8 @@ import {
 } from 'react-icons/fi';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
@@ -247,7 +248,7 @@ const DriverDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <FiLoader className="w-10 h-10 animate-spin text-[#16834B]" />
+        <BrandLoader />
       </div>
     );
   }
@@ -260,48 +261,48 @@ const DriverDashboard = () => {
       <div className="max-w-3xl mx-auto pb-10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-[#151A17]">{activeTrip.id}</h1>
-            <p className="text-sm text-[#6B716D] mt-1">{activeTrip.date}</p>
+            <h1 className="text-2xl font-semibold text-ink">{activeTrip.id}</h1>
+            <p className="text-sm text-muted mt-1">{activeTrip.date}</p>
           </div>
           <Badge variant="info">In Progress</Badge>
         </div>
 
         {error && (
-          <div className="bg-[#FDEEEE] border border-[#D14343] rounded-xl p-4 mb-6 flex items-center gap-2">
-            <FiAlertCircle className="w-5 h-5 text-[#D14343]" />
-            <p className="text-sm text-[#D14343]">{error}</p>
+          <div className="bg-danger-soft border border-danger rounded-xl p-4 mb-6 flex items-center gap-2">
+            <FiAlertCircle className="w-5 h-5 text-danger" />
+            <p className="text-sm text-danger">{error}</p>
           </div>
         )}
 
         {/* Assigned staff */}
         {(activeTrip.driverName || activeTrip.cleaners?.length > 0) && (
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
-            <h3 className="font-semibold text-[#151A17] mb-3">Assigned Staff</h3>
+          <div className="bg-white rounded-xl border border-line p-6 mb-6">
+            <h3 className="font-semibold text-ink mb-3">Assigned Staff</h3>
             <div className="flex flex-wrap gap-2">
               {activeTrip.driverName && (
-                <span className="inline-flex items-center px-3 py-1.5 bg-[#F6F7F6] rounded-full text-sm text-[#151A17]">
-                  🚚 {activeTrip.driverName} <span className="text-[#6B716D] ml-1">(Driver)</span>
+                <span className="inline-flex items-center px-3 py-1.5 bg-cream rounded-full text-sm text-ink">
+                  🚚 {activeTrip.driverName} <span className="text-muted ml-1">(Driver)</span>
                 </span>
               )}
               {activeTrip?.cleaners?.map((c) => (
-                <span key={c.id} className="inline-flex items-center px-3 py-1.5 bg-[#F6F7F6] rounded-full text-sm text-[#151A17]">
-                  🧹 {c.name} <span className="text-[#6B716D] ml-1">(Cleaner)</span>
+                <span key={c.id} className="inline-flex items-center px-3 py-1.5 bg-cream rounded-full text-sm text-ink">
+                  🧹 {c.name} <span className="text-muted ml-1">(Cleaner)</span>
                 </span>
               ))}
             </div>
-            <p className="text-xs text-[#6B716D] mt-3">
+            <p className="text-xs text-muted mt-3">
               Food allowance on completion: {foodHeadCount} head × ₹{FOOD_RATE_PER_HEAD} ={' '}
-              <span className="font-medium text-[#151A17]">₹{foodAllowance}</span>
+              <span className="font-medium text-ink">₹{foodAllowance}</span>
             </p>
           </div>
         )}
 
         {/* Loading Details: company + hens loaded + kg loaded, locked together */}
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
+        <div className="bg-white rounded-xl border border-line p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#151A17]">Loading Details</h3>
+            <h3 className="font-semibold text-ink">Loading Details</h3>
             {isHensLocked && (
-              <button onClick={() => setIsHensLocked(false)} className="flex items-center gap-1.5 text-sm text-[#16834B] hover:underline">
+              <button onClick={() => setIsHensLocked(false)} className="flex items-center gap-1.5 text-sm text-success hover:underline">
                 <FiEdit2 className="w-4 h-4" /> Edit
               </button>
             )}
@@ -310,12 +311,12 @@ const DriverDashboard = () => {
           <div className="space-y-4">
             {/* Company dropdown */}
             <div>
-              <label className="block text-sm text-[#6B716D] mb-1.5">Company</label>
+              <label className="block text-sm text-muted mb-1.5">Company</label>
               <select
                 value={tripData.companyId}
                 onChange={(e) => setTripData({ ...tripData, companyId: e.target.value })}
                 disabled={isHensLocked}
-                className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
+                className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-gold outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-line'}`}
               >
                 <option value="">Select company</option>
                 {companies.map((c) => (
@@ -323,43 +324,43 @@ const DriverDashboard = () => {
                 ))}
               </select>
               {companiesError && (
-                <p className="text-xs text-[#D14343] mt-1">{companiesError}</p>
+                <p className="text-xs text-danger mt-1">{companiesError}</p>
               )}
             </div>
 
             {/* Total Hens */}
             <div>
-              <label className="block text-sm text-[#6B716D] mb-1.5">Total Hens Loaded</label>
+              <label className="block text-sm text-muted mb-1.5">Total Hens Loaded</label>
               <div className="flex items-center gap-3">
                 <input
                   type="number"
                   value={tripData.totalHens}
                   onChange={(e) => setTripData({ ...tripData, totalHens: e.target.value })}
                   placeholder="e.g. 1000"
-                  className={`flex-1 px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
+                  className={`flex-1 px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-gold outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-line'}`}
                   disabled={isHensLocked}
                   min="0"
                   step="1"
                 />
-                <span className="text-sm font-medium text-[#6B716D] whitespace-nowrap">hens</span>
+                <span className="text-sm font-medium text-muted whitespace-nowrap">hens</span>
               </div>
             </div>
 
             {/* Total Loaded KG */}
             <div>
-              <label className="block text-sm text-[#6B716D] mb-1.5">Total Weight Loaded</label>
+              <label className="block text-sm text-muted mb-1.5">Total Weight Loaded</label>
               <div className="flex items-center gap-3">
                 <input
                   type="number"
                   value={tripData.totalLoadedKg}
                   onChange={(e) => setTripData({ ...tripData, totalLoadedKg: e.target.value })}
                   placeholder="e.g. 1800"
-                  className={`flex-1 px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
+                  className={`flex-1 px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-gold outline-none transition ${isHensLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-line'}`}
                   disabled={isHensLocked}
                   min="0"
                   step="0.5"
                 />
-                <span className="text-sm font-medium text-[#6B716D] whitespace-nowrap">kg</span>
+                <span className="text-sm font-medium text-muted whitespace-nowrap">kg</span>
               </div>
             </div>
 
@@ -377,11 +378,11 @@ const DriverDashboard = () => {
           {/* Loading charge readout -- in rupees, matching what the server stores
               as the "loading" expense against this trip. */}
           {tripData.totalHens && parseFloat(tripData.totalHens) > 0 && (
-            <div className="mt-4 p-3 bg-[#F6F7F6] rounded-lg flex items-center justify-between">
-              <span className="text-sm text-[#6B716D]">
+            <div className="mt-4 p-3 bg-cream rounded-lg flex items-center justify-between">
+              <span className="text-sm text-muted">
                 {tripData.totalHens} hens × ₹{LOADING_RATE_PER_HEN}
               </span>
-              <span className="font-semibold text-[#151A17]">
+              <span className="font-semibold text-ink">
                 {formatCurrency(loadingCharge)}
               </span>
             </div>
@@ -389,11 +390,11 @@ const DriverDashboard = () => {
         </div>
 
         {/* Expenses Section */}
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
-          <h3 className="font-semibold text-[#151A17] mb-4 flex justify-between items-center">
+        <div className="bg-white rounded-xl border border-line p-6 mb-6">
+          <h3 className="font-semibold text-ink mb-4 flex justify-between items-center">
             Expenses
             {isDieselLocked && (
-              <button onClick={() => setIsDieselLocked(false)} className="flex items-center gap-2 text-sm text-[#16834B] hover:underline">
+              <button onClick={() => setIsDieselLocked(false)} className="flex items-center gap-2 text-sm text-success hover:underline">
                 <FiEdit2 className="w-4 h-4" /> Edit
               </button>
             )}
@@ -402,7 +403,7 @@ const DriverDashboard = () => {
           <div className="space-y-4">
             {/* Diesel Input */}
             <div className="max-w-xs">
-              <label className="block text-sm text-[#6B716D] mb-1.5">Diesel Amount</label>
+              <label className="block text-sm text-muted mb-1.5">Diesel Amount</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -410,7 +411,7 @@ const DriverDashboard = () => {
                   onChange={(e) => setTripData({ ...tripData, dieselAmount: e.target.value })}
                   onKeyDown={(e) => { if (e.key === 'Enter' && tripData.dieselAmount) setIsDieselLocked(true); }}
                   placeholder="e.g. 500"
-                  className={`flex-1 px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition ${isDieselLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-[#E5E8E6]'}`}
+                  className={`flex-1 px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold outline-none transition ${isDieselLocked ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200' : 'border-line'}`}
                   disabled={isDieselLocked}
                   min="0"
                   step="1"
@@ -429,8 +430,8 @@ const DriverDashboard = () => {
 
             {/* Diesel Bill Image Upload */}
             <div>
-              <label className="block text-sm text-[#6B716D] mb-1.5">Upload Bill Image</label>
-              <div className="border-2 border-dashed border-[#E5E8E6] rounded-lg p-6 text-center hover:border-[#111714] transition">
+              <label className="block text-sm text-muted mb-1.5">Upload Bill Image</label>
+              <div className="border-2 border-dashed border-line rounded-lg p-6 text-center hover:border-brand transition">
                 <input
                   type="file"
                   accept="image/*"
@@ -442,8 +443,8 @@ const DriverDashboard = () => {
                 />
                 {!tripData.dieselPhotoPreview ? (
                   <label htmlFor="diesel-photo-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                    <FiUploadCloud className="w-8 h-8 text-[#6B716D]" />
-                    <span className="text-sm text-[#6B716D]">
+                    <FiUploadCloud className="w-8 h-8 text-muted" />
+                    <span className="text-sm text-muted">
                       {isUploadingPhoto ? 'Uploading...' : 'Tap to upload bill photo'}
                     </span>
                   </label>
@@ -452,71 +453,71 @@ const DriverDashboard = () => {
                     <img src={tripData.dieselPhotoPreview} alt="Diesel bill" className="max-h-40 rounded-lg mx-auto" />
                     <button
                       onClick={removePhoto}
-                      className="absolute -top-2 -right-2 bg-[#D14343] text-white rounded-full p-1"
+                      className="absolute -top-2 -right-2 bg-danger text-white rounded-full p-1"
                     >
                       <FiX className="w-4 h-4" />
                     </button>
                     {isUploadingPhoto && (
                       <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg">
-                        <FiLoader className="w-6 h-6 animate-spin text-[#16834B]" />
+                        <FiLoader className="w-6 h-6 animate-spin text-success" />
                       </div>
                     )}
                   </div>
                 )}
               </div>
-              {uploadError && <p className="text-xs text-[#D14343] mt-1">{uploadError}</p>}
+              {uploadError && <p className="text-xs text-danger mt-1">{uploadError}</p>}
             </div>
           </div>
         </div>
 
         {/* Orders to Deliver */}
         <div className="space-y-4 mb-6">
-          <h3 className="font-semibold text-[#151A17]">Orders to Deliver</h3>
+          <h3 className="font-semibold text-ink">Orders to Deliver</h3>
           {tripData.orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-xl border border-[#E5E8E6] p-6">
+            <div key={order.id} className="bg-white rounded-xl border border-line p-6">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h4 className="font-semibold text-[#151A17]">{order.id}</h4>
+                    <h4 className="font-semibold text-ink">{order.id}</h4>
                     <Badge variant={order.delivered ? 'success' : 'warning'}>{order.delivered ? 'Delivered' : 'Pending'}</Badge>
                   </div>
-                  <p className="text-sm font-medium text-[#151A17] mt-1">{order.retailer}</p>
+                  <p className="text-sm font-medium text-ink mt-1">{order.retailer}</p>
                 </div>
-                <span className="text-sm font-medium text-[#151A17]">{formatCurrency(order.amount)}</span>
+                <span className="text-sm font-medium text-ink">{formatCurrency(order.amount)}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <div className="flex items-center gap-2 text-sm text-[#6B716D]"><FiMapPin className="w-4 h-4" />{order.address}</div>
-                <div className="flex items-center gap-2 text-sm text-[#6B716D]"><FiPhone className="w-4 h-4" />{order.phone}</div>
+                <div className="flex items-center gap-2 text-sm text-muted"><FiMapPin className="w-4 h-4" />{order.address}</div>
+                <div className="flex items-center gap-2 text-sm text-muted"><FiPhone className="w-4 h-4" />{order.phone}</div>
               </div>
 
               {!order.delivered ? (
-                <div className="space-y-3 pt-3 border-t border-[#E5E8E6]">
+                <div className="space-y-3 pt-3 border-t border-line">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-[#6B716D] mb-1">Ordered KG</label>
-                      <input type="number" value={order.kg} disabled className="w-full px-3 py-2 border border-[#E5E8E6] rounded-lg bg-gray-50 text-[#6B716D]" />
+                      <label className="block text-xs text-muted mb-1">Ordered KG</label>
+                      <input type="number" value={order.kg} disabled className="w-full px-3 py-2 border border-line rounded-lg bg-gray-50 text-muted" />
                     </div>
                     <div>
-                      <label className="block text-xs text-[#6B716D] mb-1">Actual Delivered (KG)</label>
-                      <input type="number" value={order.actualKg || ''} onChange={(e) => updateOrderKg(order.id, e.target.value)} placeholder="Enter actual kg" className="w-full px-3 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition" min="0" step="0.5" />
+                      <label className="block text-xs text-muted mb-1">Actual Delivered (KG)</label>
+                      <input type="number" value={order.actualKg || ''} onChange={(e) => updateOrderKg(order.id, e.target.value)} placeholder="Enter actual kg" className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold outline-none transition" min="0" step="0.5" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs text-[#6B716D] mb-1">Hens Delivered</label>
-                    <input type="number" value={order.hensDelivered || ''} onChange={(e) => updateOrderHens(order.id, e.target.value)} placeholder="Enter hens delivered" className="w-full px-3 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition" min="0" step="1" />
+                    <label className="block text-xs text-muted mb-1">Hens Delivered</label>
+                    <input type="number" value={order.hensDelivered || ''} onChange={(e) => updateOrderHens(order.id, e.target.value)} placeholder="Enter hens delivered" className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold outline-none transition" min="0" step="1" />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#6B716D] mb-1">Cash Collected (₹)</label>
-                    <input type="number" value={order.cashCollected || ''} onChange={(e) => updateCashCollected(order.id, e.target.value)} placeholder="Enter cash collected" className="w-full px-3 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] outline-none transition" min="0" step="1" />
+                    <label className="block text-xs text-muted mb-1">Cash Collected (₹)</label>
+                    <input type="number" value={order.cashCollected || ''} onChange={(e) => updateCashCollected(order.id, e.target.value)} placeholder="Enter cash collected" className="w-full px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold outline-none transition" min="0" step="1" />
                   </div>
                   <Button size="sm" className="w-full mt-2" onClick={() => handleOrderDelivered(order.id)}><FiCheckCircle className="w-4 h-4 mr-2" />Mark as Delivered</Button>
                 </div>
               ) : (
-                <div className="pt-3 border-t border-[#E5E8E6]">
+                <div className="pt-3 border-t border-line">
                   <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div><p className="text-[#6B716D]">Delivered KG</p><p className="font-medium text-[#151A17]">{order.actualKg || order.kg} kg</p></div>
-                    <div><p className="text-[#6B716D]">Hens Delivered</p><p className="font-medium text-[#151A17]">{order.hensDelivered || 0}</p></div>
-                    <div><p className="text-[#6B716D]">Cash Collected</p><p className="font-medium text-[#16834B]">{formatCurrency(order.cashCollected || 0)}</p></div>
+                    <div><p className="text-muted">Delivered KG</p><p className="font-medium text-ink">{order.actualKg || order.kg} kg</p></div>
+                    <div><p className="text-muted">Hens Delivered</p><p className="font-medium text-ink">{order.hensDelivered || 0}</p></div>
+                    <div><p className="text-muted">Cash Collected</p><p className="font-medium text-success">{formatCurrency(order.cashCollected || 0)}</p></div>
                   </div>
                 </div>
               )}
@@ -526,13 +527,13 @@ const DriverDashboard = () => {
 
         {/* Summary & Complete Trip */}
         {getDeliveredCount() > 0 && (
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 sticky bottom-0 shadow-lg">
+          <div className="bg-white rounded-xl border border-line p-6 sticky bottom-0 shadow-lg">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-              <div className="text-center"><p className="text-xs text-[#6B716D]">Orders</p><p className="text-lg font-semibold">{getDeliveredCount()}/{totalOrders}</p></div>
-              <div className="text-center"><p className="text-xs text-[#6B716D]">Total KG</p><p className="text-lg font-semibold">{getTotalDeliveredKg().toFixed(1)} kg</p></div>
-              <div className="text-center"><p className="text-xs text-[#6B716D]">Hens Delivered</p><p className="text-lg font-semibold">{getTotalDeliveredHens()}</p></div>
-              <div className="text-center"><p className="text-xs text-[#6B716D]">Cash Collected</p><p className="text-lg font-semibold text-[#16834B]">{formatCurrency(getTotalCashCollected())}</p></div>
-              <div className="text-center"><p className="text-xs text-[#6B716D]">Total Hens</p><p className="text-lg font-semibold">{tripData.totalHens || 0}</p></div>
+              <div className="text-center"><p className="text-xs text-muted">Orders</p><p className="text-lg font-semibold">{getDeliveredCount()}/{totalOrders}</p></div>
+              <div className="text-center"><p className="text-xs text-muted">Total KG</p><p className="text-lg font-semibold">{getTotalDeliveredKg().toFixed(1)} kg</p></div>
+              <div className="text-center"><p className="text-xs text-muted">Hens Delivered</p><p className="text-lg font-semibold">{getTotalDeliveredHens()}</p></div>
+              <div className="text-center"><p className="text-xs text-muted">Cash Collected</p><p className="text-lg font-semibold text-success">{formatCurrency(getTotalCashCollected())}</p></div>
+              <div className="text-center"><p className="text-xs text-muted">Total Hens</p><p className="text-lg font-semibold">{tripData.totalHens || 0}</p></div>
             </div>
             <Button className="w-full py-3 text-base" onClick={handleCompleteTrip} disabled={!allDelivered}>
               {allDelivered ? <><FiCheckCircle className="w-5 h-5 mr-2" />Complete Trip</> : <><FiAlertCircle className="w-5 h-5 mr-2" />Deliver all orders to complete</>}
@@ -550,30 +551,30 @@ const DriverDashboard = () => {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">{getGreeting()}, {user?.name || 'Driver'} 👋</h1>
-          <p className="text-sm text-[#6B716D] mt-1">{trips.length > 0 ? 'Your assigned trips for today' : 'No trips assigned for today'}</p>
+          <h1 className="text-2xl font-semibold text-ink">{getGreeting()}, {user?.name || 'Driver'} 👋</h1>
+          <p className="text-sm text-muted mt-1">{trips.length > 0 ? 'Your assigned trips for today' : 'No trips assigned for today'}</p>
         </div>
-        <button onClick={() => { logout(); navigate('/login'); }} className="flex items-center gap-2 px-4 py-2 text-sm text-[#6B716D] hover:text-[#D14343] transition"><FiLogOut className="w-4 h-4" />Logout</button>
+        <button onClick={() => { logout(); navigate('/login'); }} className="flex items-center gap-2 px-4 py-2 text-sm text-muted hover:text-danger transition"><FiLogOut className="w-4 h-4" />Logout</button>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center"><FiTruck className="w-5 h-5 mx-auto text-[#6B716D] mb-1" /><p className="text-xl font-semibold">{trips.length}</p><p className="text-xs text-[#6B716D]">Trips Today</p></div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center"><FiPackage className="w-5 h-5 mx-auto text-[#6B716D] mb-1" /><p className="text-xl font-semibold">{totalOrders}</p><p className="text-xs text-[#6B716D]">Total Orders</p></div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center"><FiDollarSign className="w-5 h-5 mx-auto text-[#6B716D] mb-1" /><p className="text-xl font-semibold">{totalKg} kg</p><p className="text-xs text-[#6B716D]">Total Weight</p></div>
+        <div className="bg-white rounded-xl border border-line p-4 text-center"><FiTruck className="w-5 h-5 mx-auto text-muted mb-1" /><p className="text-xl font-semibold">{trips.length}</p><p className="text-xs text-muted">Trips Today</p></div>
+        <div className="bg-white rounded-xl border border-line p-4 text-center"><FiPackage className="w-5 h-5 mx-auto text-muted mb-1" /><p className="text-xl font-semibold">{totalOrders}</p><p className="text-xs text-muted">Total Orders</p></div>
+        <div className="bg-white rounded-xl border border-line p-4 text-center"><FiDollarSign className="w-5 h-5 mx-auto text-muted mb-1" /><p className="text-xl font-semibold">{totalKg} kg</p><p className="text-xs text-muted">Total Weight</p></div>
       </div>
 
       {trips.length > 0 ? (
         <div className="space-y-4">
           {trips.map((trip) => (
-            <div key={trip.id} className="bg-white rounded-xl border border-[#E5E8E6] p-6 hover:shadow-md transition">
+            <div key={trip.id} className="bg-white rounded-xl border border-line p-6 hover:shadow-md transition">
               <div className="flex items-start justify-between mb-3">
-                <div><div className="flex items-center gap-3"><h3 className="font-semibold">{trip.id}</h3><Badge variant="info">Assigned</Badge></div><p className="text-sm text-[#6B716D] mt-1">{trip.date}</p></div>
-                <div className="text-right"><p className="text-sm text-[#6B716D]">Orders</p><p className="font-semibold">{trip.totalOrders}</p></div>
+                <div><div className="flex items-center gap-3"><h3 className="font-semibold">{trip.id}</h3><Badge variant="info">Assigned</Badge></div><p className="text-sm text-muted mt-1">{trip.date}</p></div>
+                <div className="text-right"><p className="text-sm text-muted">Orders</p><p className="font-semibold">{trip.totalOrders}</p></div>
               </div>
               <div className="space-y-2 mb-4">
                 {trip.orders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between text-sm bg-[#F6F7F6] p-3 rounded-lg">
-                    <div><p className="font-medium">{order.retailer}</p><p className="text-xs text-[#6B716D]">{order.id} • {order.kg} kg</p></div>
+                  <div key={order.id} className="flex items-center justify-between text-sm bg-cream p-3 rounded-lg">
+                    <div><p className="font-medium">{order.retailer}</p><p className="text-xs text-muted">{order.id} • {order.kg} kg</p></div>
                     <span className="text-sm font-medium">{formatCurrency(order.amount)}</span>
                   </div>
                 ))}
@@ -583,10 +584,10 @@ const DriverDashboard = () => {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-12 text-center">
-          <FiCheckCircle className="w-12 h-12 mx-auto text-[#16834B] mb-3" />
+        <div className="bg-white rounded-xl border border-line p-12 text-center">
+          <FiCheckCircle className="w-12 h-12 mx-auto text-success mb-3" />
           <p className="text-lg font-medium">No trips assigned</p>
-          <p className="text-sm text-[#6B716D]">You have no trips scheduled for today</p>
+          <p className="text-sm text-muted">You have no trips scheduled for today</p>
         </div>
       )}
     </div>

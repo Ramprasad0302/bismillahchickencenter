@@ -89,7 +89,10 @@ const parseWebhook = ({ rawBody, signature }) => {
     .update(rawBody)
     .digest('hex');
 
-  if (expected !== signature) {
+  // Constant-time comparison so the signature can't be guessed byte by byte.
+  const a = Buffer.from(expected);
+  const b = Buffer.from(String(signature || ''));
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
     throw new Error('Invalid Razorpay webhook signature');
   }
 

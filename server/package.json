@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "node --watch server.js",
     "db:setup": "node scripts/createTables.js",
     "db:payments": "node scripts/createPaymentTables.js",
     "db:migrate-ledger": "node scripts/migrateLedger.js",
@@ -34,8 +34,11 @@
     "razorpay": "^2.9.8",
     "stripe": "^18.5.0"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.14"
+  "type": "commonjs",
+  "overrides": {
+    "uuid": "^11.1.1"
   },
-  "type": "commonjs"
+  "engines": {
+    "node": ">=20"
+  }
 }
