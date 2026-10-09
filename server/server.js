@@ -8,6 +8,13 @@ const cors = require('cors');
 const path = require('path');
 const zlib = require('zlib');
 const ensureIndexes = require('./config/ensureIndexes');
+const {
+  securityHeaders,
+  scrubServerErrors,
+  loginLimiter,
+  apiLimiter,
+  countApiRequests,
+} = require('./middleware/security');
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
@@ -51,6 +58,17 @@ const tripOverviewRoutes = require('./routes/tripOverview'); // admin loaded-vs-
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Don't advertise the framework.
+app.disable('x-powered-by');
+
+// Behind Hostinger's / any reverse proxy, req.ip must come from the proxy's
+// X-Forwarded-For header or every visitor looks like the same IP (which
+// would make the rate limits below hit everyone at once). Override with
+// TRUST_PROXY=0 if the app is ever exposed directly.
+app.set('trust proxy', process.env.TRUST_PROXY !== undefined ? Number(process.env.TRUST_PROXY) : 1);
+
+app.use(securityHeaders);
 
 // ============================================
 // CORS
@@ -99,8 +117,16 @@ app.use(
 // is present.
 app.use('/api/payments/webhook', express.raw({ type: '*/*' }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Size limits stop oversized bodies being used to exhaust memory.
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+
+// Rate limits: a general per-IP ceiling, plus brute-force protection on login.
+app.use('/api', apiLimiter, countApiRequests);
+app.use('/api/auth/login', (req, res, next) => (req.method === 'POST' ? loginLimiter(req, res, next) : next()));
+
+// Never send SQL/stack details to the browser in production.
+app.use(scrubServerErrors);
 
 // ============================================
 // Gzip JSON responses
@@ -141,7 +167,10 @@ app.use((req, res, next) => {
 // Served at /uploads/trip-bills/<filename>, written by
 // middleware/uploadMiddleware.js via the POST /api/driver/upload-photo route.
 // ============================================
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, 'uploads'), { dotfiles: 'deny', index: false, fallthrough: true })
+);
 
 // ============================================
 // Request logging -- dev only. In production this line would otherwise be
@@ -234,6 +263,18 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   if (err && err.message === 'Not allowed by CORS') {
     return res.status(403).json({ success: false, message: 'Origin not allowed' });
+  }
+
+  // Client mistakes (bad JSON, body too large, rejected upload) are 4xx, not 500.
+  const status = err?.status || err?.statusCode;
+  if (status >= 400 && status < 500) {
+    return res.status(status).json({ success: false, message: status === 413 ? 'Request is too large' : 'Invalid request' });
+  }
+  if (err?.name === 'MulterError' || /Only JPG, PNG, or WEBP/.test(err?.message || '')) {
+    return res.status(400).json({
+      success: false,
+      message: err.code === 'LIMIT_FILE_SIZE' ? 'Photo must be 5 MB or smaller' : err.message,
+    });
   }
 
   console.error('❌ Unhandled error:', err);
