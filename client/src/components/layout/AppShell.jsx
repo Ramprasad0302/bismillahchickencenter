@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import Logo from '../brand/Logo';
 import BrandLoader from '../brand/BrandLoader';
+import DesignedBy from '../brand/DesignedBy';
 
 const flatten = (groups) => groups.flatMap((g) => g.items);
 
@@ -104,6 +105,9 @@ const SidebarContent = ({ groups, portal, onNavigate, onLogout, displayName, rol
         >
           <FiLogOut className="w-4 h-4" />
         </button>
+      </div>
+      <div className="mt-3 text-center">
+        <DesignedBy tone="dark" />
       </div>
     </div>
   </div>
@@ -312,19 +316,23 @@ const AppShell = ({ groups, portal, profilePath, refreshProfile = false }) => {
           </div>
         </header>
 
-        <main className="relative flex-1 overflow-y-auto">
+        <main className="relative flex-1 overflow-y-auto flex flex-col">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-gold-soft/70 to-transparent" />
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="relative p-4 sm:p-6 lg:p-8"
+            className="relative flex-1 p-4 sm:p-6 lg:p-8"
           >
             <Suspense fallback={<BrandLoader />}>
               <Outlet />
             </Suspense>
           </motion.div>
+          <footer className="relative flex flex-col sm:flex-row items-center justify-between gap-2 px-4 sm:px-6 lg:px-8 py-4 border-t border-line/70 text-[11px] text-muted">
+            <span>© {new Date().getFullYear()} Bismillah Chicken Center, Bhimavaram</span>
+            <DesignedBy />
+          </footer>
         </main>
       </div>
     </div>

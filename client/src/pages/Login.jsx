@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Logo from "../components/brand/Logo";
+import DesignedBy from "../components/brand/DesignedBy";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import {
@@ -295,6 +296,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
             <p className="mt-4 text-center text-[11px] leading-5 text-muted">
               Having trouble signing in? Contact your administrator.
             </p>
+          </div>
+
+          <div className="mt-6 text-center">
+            <DesignedBy />
           </div>
 
           {import.meta.env.DEV && (

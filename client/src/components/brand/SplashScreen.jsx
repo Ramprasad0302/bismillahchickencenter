@@ -146,6 +146,15 @@ const SplashScreen = ({ onDone }) => {
           />
         </div>
       </div>
+
+      <motion.p
+        className="absolute bottom-8 inset-x-0 text-center text-[10px] tracking-[0.3em] text-white/40"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 2 }}
+      >
+        DESIGNED BY <span className="text-gold/80 font-semibold">NIRMAAN DIGITAL</span>
+      </motion.p>
     </motion.div>
   );
 };
