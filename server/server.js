@@ -86,12 +86,19 @@ const allowedOrigins = (
   .map((o) => o.trim())
   .filter(Boolean);
 
+const APP_ORIGINS = ['https://localhost', 'capacitor://localhost', 'http://localhost'];
+
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // The Android app (Capacitor) loads its bundled pages from these
+      // origins. Always allowed so ALLOWED_ORIGINS on the host doesn't have
+      // to be edited for the app; requests still need a valid login token.
+      if (APP_ORIGINS.includes(origin)) return callback(null, true);
 
       if (IS_DEV && /^http:\/\/localhost(:\d+)?$/.test(origin)) {
         return callback(null, true);
