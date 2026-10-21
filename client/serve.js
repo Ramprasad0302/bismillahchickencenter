@@ -67,7 +67,7 @@ app.use(
     setHeaders: (res, filePath) => {
       // index.html itself must never be cached, or people get stuck on an
       // old build after you deploy a new one.
-      if (filePath.endsWith('index.html')) {
+      if (filePath.endsWith('index.html') || filePath.endsWith('sw.js') || filePath.endsWith('manifest.webmanifest')) {
         res.setHeader('Cache-Control', 'no-cache');
       } else if (!filePath.includes(`${path.sep}assets${path.sep}`)) {
         // Only Vite's hashed /assets files are safe to cache forever; the

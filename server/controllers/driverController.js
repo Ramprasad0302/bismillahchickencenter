@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const notifications = require('../services/notificationService');
 
 // Anything under ₹1 left on a bill isn't real money owed at this business's
 // whole-rupee pricing — it's rounding dust from kg × rate math (e.g. a
@@ -357,6 +358,51 @@ exports.updateTripStatus = async (req, res) => {
 
         await connection.commit();
         console.log(`🎉 Trip ${tripNumber} completed successfully. MAIN ORDERS TABLE UPDATED.`);
+
+        // Alerts: each retailer hears about their own order; admins get the
+        // trip summary when it is completed.
+        if (tripId && (status === 'completed' || status === 'in_progress')) {
+            setImmediate(async () => {
+                try {
+                    const [rows] = await pool.query(
+                        `SELECT o.id, o.order_number, o.total_amount, o.balance, tos.actual_delivered_kg, r.user_id
+                           FROM trip_orders tos
+                           JOIN orders o ON o.id = tos.order_id
+                           JOIN retailers r ON r.id = o.retailer_id
+                          WHERE tos.trip_id = ?`,
+                        [tripId]
+                    );
+                    for (const row of rows) {
+                        if (status === 'completed') {
+                            await notifications.deliver([row.user_id], {
+                                title: `Order ${row.order_number} delivered ✅`,
+                                body: `${parseFloat(row.actual_delivered_kg) || 0} kg delivered · bill ${notifications.inr(row.total_amount)}` +
+                                    (parseFloat(row.balance) > 0 ? ` · due ${notifications.inr(row.balance)}` : ' · fully paid'),
+                                link: `/retailer/orders/${row.id}`,
+                                type: 'delivered',
+                            });
+                        } else {
+                            await notifications.deliver([row.user_id], {
+                                title: 'Your order is on the way 🚚',
+                                body: `The driver has started trip ${tripNumber} with order ${row.order_number}.`,
+                                link: `/retailer/orders/${row.id}`,
+                                type: 'out_for_delivery',
+                            });
+                        }
+                    }
+                    if (status === 'completed') {
+                        await notifications.deliver(await notifications.adminUserIds(), {
+                            title: `Trip ${tripNumber} completed`,
+                            body: `${req.user.name || 'Driver'} delivered ${rows.length} order${rows.length === 1 ? '' : 's'} · cash collected ${notifications.inr(totalCashCollected)}`,
+                            link: '/admin/trip-overview',
+                            type: 'trip_completed',
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Trip notifications failed:', error.message);
+                }
+            });
+        }
         res.json({ success: true, message: `Trip ${status === 'completed' ? 'completed' : 'started'} successfully!` });
 
     } catch (error) {

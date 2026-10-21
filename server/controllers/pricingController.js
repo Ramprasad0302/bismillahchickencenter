@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const notifications = require('../services/notificationService');
 
 // ============================================
 // 1. GET: Public Current Pricing
@@ -178,6 +179,14 @@ exports.updateGlobalPrice = async (req, res) => {
             [price, weightToStore, transportFeeToStore, req.user.name || 'Admin']
         );
 
+        // Retailers on the standard rate hear about it immediately.
+        notifications.notifyWhen(notifications.retailersOnGlobalPrice, {
+            title: 'Chicken price updated',
+            body: `Today's rate is ${notifications.inr(price)} per kg. Tap to place your order.`,
+            link: '/retailer/place-order',
+            type: 'price',
+        });
+
         res.json({ success: true, message: 'Global pricing updated successfully!' });
 
     } catch (error) {
@@ -233,6 +242,13 @@ exports.updateCustomPrice = async (req, res) => {
             );
         }
 
+        notifications.notifyWhen(() => notifications.retailerUserIds(retailer_id), {
+            title: 'Your special price was updated',
+            body: `Your rate is now ${notifications.inr(custom_price)} per kg.`,
+            link: '/retailer/place-order',
+            type: 'price',
+        });
+
         res.json({ success: true, message: 'Custom price updated successfully!' });
 
     } catch (error) {
@@ -255,6 +271,13 @@ exports.deleteCustomPrice = async (req, res) => {
 
         const { retailerId } = req.params;
         await pool.query('DELETE FROM retailer_pricing WHERE retailer_id = ?', [retailerId]);
+
+        notifications.notifyWhen(() => notifications.retailerUserIds(retailerId), {
+            title: 'Your price was updated',
+            body: 'You are now on the standard daily rate. Tap to see today\'s price.',
+            link: '/retailer/place-order',
+            type: 'price',
+        });
 
         res.json({ success: true, message: 'Reverted to global default price.' });
 

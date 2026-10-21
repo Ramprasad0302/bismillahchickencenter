@@ -7,6 +7,13 @@ import api from '../../services/api';
 import Logo from '../brand/Logo';
 import BrandLoader from '../brand/BrandLoader';
 import DesignedBy from '../brand/DesignedBy';
+import NotificationBell from './NotificationBell';
+import {
+  disablePush,
+  initPushListeners,
+  resumePush,
+  setNotificationTapHandler,
+} from '../../services/pushNotifications';
 
 const flatten = (groups) => groups.flatMap((g) => g.items);
 
@@ -164,7 +171,17 @@ const AppShell = ({ groups, portal, profilePath, refreshProfile = false }) => {
     );
   }, [groups, location.pathname]);
 
-  const handleLogout = () => {
+  // Push alerts: keep this device registered for the signed-in user, and
+  // open the right page when an alert is tapped in the Android app.
+  useEffect(() => {
+    initPushListeners();
+    setNotificationTapHandler((link) => navigate(link));
+    resumePush();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    // Stop this device receiving this user's alerts before signing out.
+    await disablePush();
     logout();
     navigate('/login');
   };
@@ -257,6 +274,8 @@ const AppShell = ({ groups, portal, profilePath, refreshProfile = false }) => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              <NotificationBell />
+
               <div className="hidden md:flex items-center gap-2 px-3.5 py-2 rounded-full bg-gold-soft border border-gold/20 text-xs font-medium text-gold-dark">
                 <FiCalendar className="w-3.5 h-3.5" />
                 {today}

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const notifications = require('./notificationService');
 const config = require('../config/payment');
 
 // Anything under ₹1 left on a bill isn't real money owed at this business's
@@ -260,6 +261,21 @@ const settleTransaction = async ({
     );
 
     await connection.commit();
+
+    // Alerts: the retailer gets a receipt; admins see the money arrive (and,
+    // for a UPI order, that it is now a real order to fulfil).
+    notifications.notifyWhen(() => notifications.retailerUserIds(retailerId), {
+      title: 'Payment successful',
+      body: `Your online payment of ${notifications.inr(amount)} was received. Receipt ${paymentNumber}.`,
+      link: '/retailer/payments',
+      type: 'payment',
+    });
+    notifications.notifyWhen(notifications.adminUserIds, {
+      title: txn.order_id ? 'New UPI order paid' : 'Online payment received',
+      body: `${notifications.inr(amount)} received online (${paymentNumber}).`,
+      link: txn.order_id ? `/admin/orders/${txn.order_id}` : '/admin/payments',
+      type: txn.order_id ? 'order' : 'payment',
+    });
 
     // Overpayment is worth knowing about — it means the retailer paid more
     // than the bills on file and the surplus is not sitting anywhere.

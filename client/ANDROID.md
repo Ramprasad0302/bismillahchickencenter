@@ -30,6 +30,8 @@ installs the SDK for you.
 
    The upload file is `android/app/build/outputs/bundle/release/app-release.aab`.
 
+Push notifications need Firebase first — see ../NOTIFICATIONS.md.
+
 Website-only changes (pages, styles) need a rebuild and a new Play release to
 reach the app. Backend changes do not.
 
