@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "802534411240",
+    "project_id": "bismillah-chicken-center",
+    "storage_bucket": "bismillah-chicken-center.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802534411240:android:3498ad89f946f25b0cb25d",
+        "android_client_info": {
+          "package_name": "com.bismillahchickencenter.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQt4qN3i7HsAQcEZShewm6Tp3a62X3AJ4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
