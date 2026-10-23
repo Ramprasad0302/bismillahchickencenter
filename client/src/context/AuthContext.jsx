@@ -1,38 +1,25 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+// Read the saved session synchronously so protected pages render on the very
+// first paint instead of flashing a spinner while an effect runs.
+const readSession = () => {
+  try {
     const savedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    
-    console.log('🔍 AuthProvider - Checking localStorage...');
-    console.log('📦 savedUser:', savedUser);
-    console.log('📦 token exists:', !!token);
-    
-    if (savedUser && token) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        console.log('✅ Parsed user:', parsedUser);
-        setUser({ ...parsedUser, token });
-      } catch (error) {
-        console.error('❌ Error parsing user:', error);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      }
-    } else {
-      console.log('ℹ️ No saved session found');
-    }
-    setLoading(false);
-  }, []);
+    if (savedUser && token) return { ...JSON.parse(savedUser), token };
+  } catch {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+  }
+  return null;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(readSession);
 
   const login = (userData) => {
-    console.log('🔐 Login called with:', userData);
-    
     const userWithToken = {
       id: userData.id,
       name: userData.name,
@@ -41,34 +28,30 @@ export const AuthProvider = ({ children }) => {
       role: userData.role,
       token: userData.token,
     };
-    
-    console.log('📝 Saving user:', userWithToken);
+
     setUser(userWithToken);
     localStorage.setItem('user', JSON.stringify(userWithToken));
     if (userData.token) {
       localStorage.setItem('token', userData.token);
     }
-    
-    console.log('✅ User saved to localStorage');
   };
 
   const logout = () => {
-    console.log('🚪 Logging out...');
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
   };
 
-  // Calculate isAuthenticated
   const isAuthenticated = !!user && !!localStorage.getItem('token');
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, logout, loading: false, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

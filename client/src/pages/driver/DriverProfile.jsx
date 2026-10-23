@@ -10,7 +10,8 @@ import {
 } from 'react-icons/fi';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const DriverProfile = () => {
   const [loading, setLoading] = useState(true);
@@ -74,8 +75,8 @@ const DriverProfile = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiLoader className="w-12 h-12 animate-spin text-[#16834B]" />
-        <p className="mt-4 text-[#6B716D]">Loading profile...</p>
+        <BrandLoader />
+        <p className="mt-4 text-muted">Loading profile...</p>
       </div>
     );
   }
@@ -84,8 +85,8 @@ const DriverProfile = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#D14343]" />
-        <p className="mt-4 text-[#D14343] font-medium">{error}</p>
+        <FiAlertCircle className="w-12 h-12 text-danger" />
+        <p className="mt-4 text-danger font-medium">{error}</p>
         <Button onClick={() => window.location.reload()} className="mt-4">
           Retry
         </Button>
@@ -97,21 +98,21 @@ const DriverProfile = () => {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#151A17]">Profile</h1>
-        <p className="text-sm text-[#6B716D] mt-1">View your profile information</p>
+        <h1 className="text-2xl font-semibold text-ink">Profile</h1>
+        <p className="text-sm text-muted mt-1">View your profile information</p>
       </div>
 
       {/* Profile Card */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
+      <div className="bg-white rounded-xl border border-line overflow-hidden">
         {/* Header with status */}
-        <div className="px-6 py-4 border-b border-[#E5E8E6] flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-line flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-16 h-16 bg-[#111714] rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-brand rounded-full flex items-center justify-center">
               <span className="text-2xl font-bold text-white">{profile.name[0]}</span>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-[#151A17]">{profile.name}</h2>
-              <p className="text-sm text-[#6B716D]">{profile.vehicle_name}</p>
+              <h2 className="text-xl font-semibold text-ink">{profile.name}</h2>
+              <p className="text-sm text-muted">{profile.vehicle_name}</p>
             </div>
           </div>
           <Badge variant={getStatusVariant(profile.status)}>
@@ -121,29 +122,29 @@ const DriverProfile = () => {
 
         {/* Profile Info */}
         <div className="p-6">
-          <h3 className="text-sm font-semibold text-[#6B716D] uppercase tracking-wider mb-4">
+          <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
             Personal Information
           </h3>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <FiPhone className="w-4 h-4 text-[#6B716D]" />
-              <span className="text-sm text-[#151A17]">{profile.phone}</span>
+              <FiPhone className="w-4 h-4 text-muted" />
+              <span className="text-sm text-ink">{profile.phone}</span>
             </div>
             <div className="flex items-center gap-3">
-              <FiTruck className="w-4 h-4 text-[#6B716D]" />
-              <span className="text-sm text-[#151A17]">
+              <FiTruck className="w-4 h-4 text-muted" />
+              <span className="text-sm text-ink">
                 {profile.vehicle_number} ({profile.vehicle_type})
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <FiCalendar className="w-4 h-4 text-[#6B716D]" />
-              <span className="text-sm text-[#151A17]">Joined: {profile.joined}</span>
+              <FiCalendar className="w-4 h-4 text-muted" />
+              <span className="text-sm text-ink">Joined: {profile.joined}</span>
             </div>
           </div>
 
           {/* Note */}
-          <div className="mt-6 pt-6 border-t border-[#E5E8E6]">
-            <p className="text-xs text-[#6B716D] text-center">
+          <div className="mt-6 pt-6 border-t border-line">
+            <p className="text-xs text-muted text-center">
               <FiUser className="inline w-3 h-3 mr-1" />
               Contact your administrator to update your profile information
             </p>

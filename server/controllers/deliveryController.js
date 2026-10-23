@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const notifications = require('../services/notificationService');
 
 // ============================================
 // GET PENDING ORDERS (Unassigned)
@@ -401,6 +402,29 @@ const assignTrip = async (req, res) => {
     `, [vehicleId]);
 
     await connection.commit();
+
+    // Driver: new trip. Retailers: their order is on its way.
+    notifications.notify([driverId], {
+      title: `New trip assigned: ${tripNumber}`,
+      body: `${orderIds.length} order${orderIds.length === 1 ? '' : 's'} · ${parseFloat(totalKg) || 0} kg · vehicle ${vehicle[0].number}`,
+      link: '/driver/deliveries',
+      type: 'trip_assigned',
+    });
+    notifications.notifyWhen(
+      async () => {
+        const [rows] = await pool.query(
+          'SELECT DISTINCT r.user_id FROM orders o JOIN retailers r ON r.id = o.retailer_id WHERE o.id IN (?)',
+          [orderIds]
+        );
+        return rows.map((r) => r.user_id);
+      },
+      {
+        title: 'Your order is out for delivery 🚚',
+        body: `Driver ${driver[0].name} is bringing your order. Call ${driver[0].phone} if needed.`,
+        link: '/retailer/orders',
+        type: 'out_for_delivery',
+      }
+    );
 
     res.status(201).json({
       success: true,

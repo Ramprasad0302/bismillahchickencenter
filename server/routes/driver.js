@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const driverController = require('../controllers/driverController');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 const upload = require('../middleware/uploadMiddleware');
 
-router.use(authMiddleware);
+router.use(authMiddleware, requireRole('driver'));
 
 router.get('/dashboard', driverController.getDriverDashboard);
 router.get('/companies', driverController.getCompanies);

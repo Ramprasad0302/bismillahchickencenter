@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const { authMiddleware, requireRole } = require('../middleware/auth');
 const userController = require('../controllers/userController');
+
+// Admin only: every route below needs a signed-in admin.
+router.use(authMiddleware, requireRole('admin'));
 
 // User CRUD routes
 router.route('/')
@@ -14,6 +18,5 @@ router.route('/:id')
 
 router.patch('/:id/status', userController.toggleUserStatus);
 router.patch('/:id/password', userController.updatePassword);
-router.patch('/:id/lastlogin', userController.updateLastLogin);
 
 module.exports = router;

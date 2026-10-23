@@ -15,7 +15,8 @@ import {
 } from 'react-icons/fi';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const DriverDeliveries = () => {
   const [loading, setLoading] = useState(true);
@@ -83,8 +84,8 @@ const DriverDeliveries = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <FiLoader className="w-12 h-12 animate-spin text-[#16834B] mx-auto mb-4" />
-          <p className="text-[#6B716D]">Loading trips...</p>
+          <BrandLoader />
+          <p className="text-muted">Loading trips...</p>
         </div>
       </div>
     );
@@ -95,10 +96,10 @@ const DriverDeliveries = () => {
   // ============================================
   if (error) {
     return (
-      <div className="bg-[#FDEEEE] border border-[#D14343]/20 rounded-xl p-8 text-center max-w-md mx-auto">
-        <FiAlertCircle className="w-16 h-16 text-[#D14343] mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-[#D14343] mb-2">Unable to Load Trips</h3>
-        <p className="text-sm text-[#D14343]/80 mb-4">{error}</p>
+      <div className="bg-danger-soft border border-danger/20 rounded-xl p-8 text-center max-w-md mx-auto">
+        <FiAlertCircle className="w-16 h-16 text-danger mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-danger mb-2">Unable to Load Trips</h3>
+        <p className="text-sm text-danger/80 mb-4">{error}</p>
         <Button onClick={fetchTrips} className="mt-4">
           Retry
         </Button>
@@ -113,8 +114,8 @@ const DriverDeliveries = () => {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#151A17]">My Trips</h1>
-        <p className="text-sm text-[#6B716D] mt-1">View all your assigned trips</p>
+        <h1 className="text-2xl font-semibold text-ink">My Trips</h1>
+        <p className="text-sm text-muted mt-1">View all your assigned trips</p>
       </div>
 
       {/* Filters */}
@@ -123,7 +124,7 @@ const DriverDeliveries = () => {
           onClick={() => setFilter('all')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             filter === 'all'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -133,7 +134,7 @@ const DriverDeliveries = () => {
           onClick={() => setFilter('in-progress')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             filter === 'in-progress'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -143,7 +144,7 @@ const DriverDeliveries = () => {
           onClick={() => setFilter('completed')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             filter === 'completed'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -155,36 +156,36 @@ const DriverDeliveries = () => {
       <div className="space-y-4">
         {filteredDeliveries.length > 0 ? (
           filteredDeliveries.map((trip) => (
-            <div key={trip.id} className="bg-white rounded-xl border border-[#E5E8E6] p-6 hover:shadow-md transition">
+            <div key={trip.id} className="bg-white rounded-xl border border-line p-6 hover:shadow-md transition">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-[#151A17]">{trip.id}</h3>
+                    <h3 className="font-semibold text-ink">{trip.id}</h3>
                     <Badge variant={getStatusVariant(trip.status)}>
                       {trip.status}
                     </Badge>
                   </div>
-                  <p className="text-sm text-[#6B716D] mt-1">{trip.date}</p>
+                  <p className="text-sm text-muted mt-1">{trip.date}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-[#6B716D]">Orders</p>
-                  <p className="font-semibold text-[#151A17]">{trip.orders.length}</p>
+                  <p className="text-sm text-muted">Orders</p>
+                  <p className="font-semibold text-ink">{trip.orders.length}</p>
                 </div>
               </div>
 
               {/* Orders List */}
               <div className="space-y-3">
                 {trip.orders.map((order) => (
-                  <div key={order.id} className="bg-[#F6F7F6] rounded-lg p-4">
+                  <div key={order.id} className="bg-cream rounded-lg p-4">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-[#151A17]">{order.retailer}</p>
+                          <p className="font-medium text-ink">{order.retailer}</p>
                           <Badge variant={getOrderStatusVariant(order.status)}>
                             {order.status}
                           </Badge>
                         </div>
-                        <div className="mt-1 space-y-1 text-sm text-[#6B716D]">
+                        <div className="mt-1 space-y-1 text-sm text-muted">
                           <p className="flex items-center gap-1">
                             <FiMapPin className="w-3 h-3" />
                             {order.address}
@@ -212,10 +213,10 @@ const DriverDeliveries = () => {
             </div>
           ))
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-12 text-center">
-            <FiTruck className="w-12 h-12 mx-auto text-[#6B716D] mb-3" />
-            <p className="text-lg font-medium text-[#151A17]">No trips found</p>
-            <p className="text-sm text-[#6B716D]">Try adjusting your filter</p>
+          <div className="bg-white rounded-xl border border-line p-12 text-center">
+            <FiTruck className="w-12 h-12 mx-auto text-muted mb-3" />
+            <p className="text-lg font-medium text-ink">No trips found</p>
+            <p className="text-sm text-muted">Try adjusting your filter</p>
           </div>
         )}
       </div>

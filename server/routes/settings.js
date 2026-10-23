@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const settingsController = require('../controllers/settingsController');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 
 // All routes require authentication
 router.use(authMiddleware);
 
 // Business Settings
-router.get('/business', settingsController.getBusinessSettings);
-router.put('/business', settingsController.updateBusinessSettings);
+router.get('/business', requireRole('admin'), settingsController.getBusinessSettings);
+router.put('/business', requireRole('admin'), settingsController.updateBusinessSettings);
 
 // Account Settings
 router.get('/account', settingsController.getAccountSettings);

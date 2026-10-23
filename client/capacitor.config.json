@@ -1,0 +1,18 @@
+{
+  "appId": "com.bismillahchickencenter.app",
+  "appName": "Bismillah Chicken Center",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#15110e",
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK"
+    }
+  }
+}

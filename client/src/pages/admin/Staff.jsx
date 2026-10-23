@@ -24,7 +24,8 @@ import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
-import { staffService } from '../../services/staffService';
+import { staffService } from '../../services/staffService';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const Staff = () => {
   const [staff, setStaff] = useState([]);
@@ -284,8 +285,8 @@ const Staff = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <FiLoader className="w-12 h-12 animate-spin text-[#16834B] mx-auto mb-4" />
-          <p className="text-[#6B716D]">Loading staff members...</p>
+          <BrandLoader />
+          <p className="text-muted">Loading staff members...</p>
         </div>
       </div>
     );
@@ -296,8 +297,8 @@ const Staff = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Staff Management</h1>
-          <p className="text-sm text-[#6B716D] mt-1">Manage drivers, cleaners, and their salaries</p>
+          <h1 className="text-2xl font-semibold text-ink">Staff Management</h1>
+          <p className="text-sm text-muted mt-1">Manage drivers, cleaners, and their salaries</p>
         </div>
         <Button onClick={() => {
           resetForm();
@@ -310,30 +311,30 @@ const Staff = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <p className="text-xs text-[#6B716D]">Total Staff</p>
-          <p className="text-xl font-semibold text-[#151A17]">{totalStaff}</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <p className="text-xs text-muted">Total Staff</p>
+          <p className="text-xl font-semibold text-ink">{totalStaff}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <p className="text-xs text-[#6B716D]">Drivers</p>
-          <p className="text-xl font-semibold text-[#151A17]">{totalDrivers}</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <p className="text-xs text-muted">Drivers</p>
+          <p className="text-xl font-semibold text-ink">{totalDrivers}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <p className="text-xs text-[#6B716D]">Cleaners</p>
-          <p className="text-xl font-semibold text-[#151A17]">{totalCleaners}</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <p className="text-xs text-muted">Cleaners</p>
+          <p className="text-xl font-semibold text-ink">{totalCleaners}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <p className="text-xs text-[#6B716D]">Active</p>
-          <p className="text-xl font-semibold text-[#16834B]">{activeStaff}</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <p className="text-xs text-muted">Active</p>
+          <p className="text-xl font-semibold text-success">{activeStaff}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <p className="text-xs text-[#6B716D]">Salary This Month</p>
-          <p className="text-xl font-semibold text-[#151A17]">{formatCurrency(totalSalaryThisMonth)}</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <p className="text-xs text-muted">Salary This Month</p>
+          <p className="text-xl font-semibold text-ink">{formatCurrency(totalSalaryThisMonth)}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchInput
@@ -347,7 +348,7 @@ const Staff = () => {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="px-4 py-2.5 border border-[#E5E8E6] rounded-lg bg-white focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="px-4 py-2.5 border border-line rounded-lg bg-white focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="all">All Roles</option>
               <option value="Driver">Driver</option>
@@ -361,7 +362,7 @@ const Staff = () => {
       {filteredStaff.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredStaff.map((staffMember) => (
-            <div key={staffMember.id} className="bg-white rounded-xl border border-[#E5E8E6] p-6 hover:shadow-md transition">
+            <div key={staffMember.id} className="bg-white rounded-xl border border-line p-6 hover:shadow-md transition">
               {/* Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -375,8 +376,8 @@ const Staff = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[#151A17]">{staffMember.name}</h3>
-                    <p className="text-xs text-[#6B716D]">{staffMember.phone}</p>
+                    <h3 className="font-semibold text-ink">{staffMember.name}</h3>
+                    <p className="text-xs text-muted">{staffMember.phone}</p>
                   </div>
                 </div>
                 <Badge variant={staffMember.status === 'Active' ? 'success' : 'default'}>
@@ -387,40 +388,40 @@ const Staff = () => {
               {/* Details */}
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-[#6B716D]">Role</span>
-                  <span className="font-medium text-[#151A17]">{staffMember.role}</span>
+                  <span className="text-muted">Role</span>
+                  <span className="font-medium text-ink">{staffMember.role}</span>
                 </div>
                 {staffMember.role === 'Driver' && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#6B716D]">Vehicle</span>
-                    <span className="font-medium text-[#151A17]">{staffMember.vehicle || 'Not assigned'}</span>
+                    <span className="text-muted">Vehicle</span>
+                    <span className="font-medium text-ink">{staffMember.vehicle || 'Not assigned'}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-[#6B716D]">Daily Salary</span>
-                  <span className="font-medium text-[#151A17]">{formatCurrency(staffMember.dailySalary)}</span>
+                  <span className="text-muted">Daily Salary</span>
+                  <span className="font-medium text-ink">{formatCurrency(staffMember.dailySalary)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-[#6B716D]">Join Date</span>
-                  <span className="font-medium text-[#151A17]">{staffMember.joinDate}</span>
+                  <span className="text-muted">Join Date</span>
+                  <span className="font-medium text-ink">{staffMember.joinDate}</span>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E5E8E6]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
                 <button
                   onClick={() => openViewModal(staffMember)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition"
                   title="View Details"
                 >
-                  <FiEye className="w-4 h-4 text-[#6B716D]" />
+                  <FiEye className="w-4 h-4 text-muted" />
                 </button>
                 <button
                   onClick={() => toggleStatus(staffMember.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                     staffMember.status === 'Active'
                       ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'bg-[#16834B] text-white hover:bg-[#13703A]'
+                      : 'bg-success text-white hover:bg-success-dark'
                   }`}
                 >
                   {staffMember.status === 'Active' ? 'Deactivate' : 'Activate'}
@@ -430,14 +431,14 @@ const Staff = () => {
                   className="p-2 hover:bg-gray-100 rounded-lg transition"
                   title="Edit Staff"
                 >
-                  <FiEdit2 className="w-4 h-4 text-[#6B716D]" />
+                  <FiEdit2 className="w-4 h-4 text-muted" />
                 </button>
                 <button
                   onClick={() => openDeleteModal(staffMember)}
                   className="p-2 hover:bg-red-50 rounded-lg transition"
                   title="Remove Staff"
                 >
-                  <FiTrash2 className="w-4 h-4 text-[#D14343]" />
+                  <FiTrash2 className="w-4 h-4 text-danger" />
                 </button>
               </div>
             </div>
@@ -501,8 +502,8 @@ const Staff = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Full Name <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Full Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -510,21 +511,21 @@ const Staff = () => {
               value={formData.name}
               onChange={handleInputChange}
               placeholder="Enter full name"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.name ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.name ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.name && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.name}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.name}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Phone Number <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Phone Number <span className="text-danger">*</span>
             </label>
             <div className="flex">
-              <span className="inline-flex items-center px-3 border border-r-0 border-[#E5E8E6] rounded-l-lg bg-gray-50 text-[#6B716D]">
+              <span className="inline-flex items-center px-3 border border-r-0 border-line rounded-l-lg bg-gray-50 text-muted">
                 +91
               </span>
               <input
@@ -533,25 +534,25 @@ const Staff = () => {
                 value={formData.phone}
                 onChange={handleInputChange}
                 placeholder="10-digit phone number"
-                className={`flex-1 px-4 py-2.5 border rounded-r-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                  formErrors.phone ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+                className={`flex-1 px-4 py-2.5 border rounded-r-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                  formErrors.phone ? 'border-danger' : 'border-line'
                 }`}
               />
             </div>
             {formErrors.phone && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.phone}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.phone}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Role <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Role <span className="text-danger">*</span>
             </label>
             <select
               name="role"
               value={formData.role}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="Driver">Driver</option>
               <option value="Cleaner">Cleaner</option>
@@ -559,8 +560,8 @@ const Staff = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Daily Salary (₹) <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Daily Salary (₹) <span className="text-danger">*</span>
             </label>
             <input
               type="number"
@@ -568,26 +569,26 @@ const Staff = () => {
               value={formData.dailySalary}
               onChange={handleInputChange}
               placeholder="e.g., 500"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.dailySalary ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.dailySalary ? 'border-danger' : 'border-line'
               }`}
               min="0"
               step="1"
             />
             {formErrors.dailySalary && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.dailySalary}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.dailySalary}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Status
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -636,29 +637,29 @@ const Staff = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Full Name <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Full Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.name ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.name ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.name && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.name}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.name}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Phone Number <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Phone Number <span className="text-danger">*</span>
             </label>
             <div className="flex">
-              <span className="inline-flex items-center px-3 border border-r-0 border-[#E5E8E6] rounded-l-lg bg-gray-50 text-[#6B716D]">
+              <span className="inline-flex items-center px-3 border border-r-0 border-line rounded-l-lg bg-gray-50 text-muted">
                 +91
               </span>
               <input
@@ -666,25 +667,25 @@ const Staff = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className={`flex-1 px-4 py-2.5 border rounded-r-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                  formErrors.phone ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+                className={`flex-1 px-4 py-2.5 border rounded-r-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                  formErrors.phone ? 'border-danger' : 'border-line'
                 }`}
               />
             </div>
             {formErrors.phone && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.phone}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.phone}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Role <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Role <span className="text-danger">*</span>
             </label>
             <select
               name="role"
               value={formData.role}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="Driver">Driver</option>
               <option value="Cleaner">Cleaner</option>
@@ -692,34 +693,34 @@ const Staff = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Daily Salary (₹) <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Daily Salary (₹) <span className="text-danger">*</span>
             </label>
             <input
               type="number"
               name="dailySalary"
               value={formData.dailySalary}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.dailySalary ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.dailySalary ? 'border-danger' : 'border-line'
               }`}
               min="0"
               step="1"
             />
             {formErrors.dailySalary && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.dailySalary}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.dailySalary}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Status
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -766,8 +767,8 @@ const Staff = () => {
           </>
         }
       >
-        <div className="p-4 bg-[#FDEEEE] rounded-lg border border-[#D14343]/20">
-          <p className="text-sm text-[#D14343]">
+        <div className="p-4 bg-danger-soft rounded-lg border border-danger/20">
+          <p className="text-sm text-danger">
             <FiTrash2 className="inline w-4 h-4 mr-2" />
             This will permanently remove {selectedStaff?.name} from the staff list.
           </p>
@@ -797,44 +798,44 @@ const Staff = () => {
           <div className="space-y-6">
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-[#F6F7F6] rounded-lg p-3 text-center">
-                <p className="text-xs text-[#6B716D]">Daily Salary</p>
-                <p className="text-lg font-semibold text-[#151A17]">{formatCurrency(selectedStaff.dailySalary)}</p>
+              <div className="bg-cream rounded-lg p-3 text-center">
+                <p className="text-xs text-muted">Daily Salary</p>
+                <p className="text-lg font-semibold text-ink">{formatCurrency(selectedStaff.dailySalary)}</p>
               </div>
-              <div className="bg-[#F6F7F6] rounded-lg p-3 text-center">
-                <p className="text-xs text-[#6B716D]">Total Trips</p>
-                <p className="text-lg font-semibold text-[#151A17]">{selectedStaff.totalTrips}</p>
+              <div className="bg-cream rounded-lg p-3 text-center">
+                <p className="text-xs text-muted">Total Trips</p>
+                <p className="text-lg font-semibold text-ink">{selectedStaff.totalTrips}</p>
               </div>
-              <div className="bg-[#F6F7F6] rounded-lg p-3 text-center">
-                <p className="text-xs text-[#6B716D]">Trips This Month</p>
-                <p className="text-lg font-semibold text-[#151A17]">{selectedStaff.tripsThisMonth}</p>
+              <div className="bg-cream rounded-lg p-3 text-center">
+                <p className="text-xs text-muted">Trips This Month</p>
+                <p className="text-lg font-semibold text-ink">{selectedStaff.tripsThisMonth}</p>
               </div>
-              <div className="bg-[#F6F7F6] rounded-lg p-3 text-center">
-                <p className="text-xs text-[#6B716D]">Salary This Month</p>
-                <p className="text-lg font-semibold text-[#16834B]">{formatCurrency(selectedStaff.salaryThisMonth)}</p>
+              <div className="bg-cream rounded-lg p-3 text-center">
+                <p className="text-xs text-muted">Salary This Month</p>
+                <p className="text-lg font-semibold text-success">{formatCurrency(selectedStaff.salaryThisMonth)}</p>
               </div>
             </div>
 
             {/* Trip History */}
             <div>
-              <h4 className="font-medium text-[#151A17] mb-3">Trip History</h4>
+              <h4 className="font-medium text-ink mb-3">Trip History</h4>
               {selectedStaff.trips && selectedStaff.trips.length > 0 ? (
-                <div className="border border-[#E5E8E6] rounded-lg overflow-hidden">
+                <div className="border border-line rounded-lg overflow-hidden">
                   <table className="w-full">
-                    <thead className="bg-[#F6F7F6]">
+                    <thead className="bg-cream">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Date</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Trip ID</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Role</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Trip ID</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Role</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E5E8E6]">
+                    <tbody className="divide-y divide-line">
                       {selectedStaff.trips.map((trip) => (
-                        <tr key={trip.tripId} className="hover:bg-[#F6F7F6] transition">
-                          <td className="px-4 py-2 text-sm text-[#6B716D]">{trip.date}</td>
-                          <td className="px-4 py-2 text-sm font-medium text-[#151A17]">{trip.tripId}</td>
-                          <td className="px-4 py-2 text-sm text-[#151A17]">{trip.role}</td>
+                        <tr key={trip.tripId} className="hover:bg-cream transition">
+                          <td className="px-4 py-2 text-sm text-muted">{trip.date}</td>
+                          <td className="px-4 py-2 text-sm font-medium text-ink">{trip.tripId}</td>
+                          <td className="px-4 py-2 text-sm text-ink">{trip.role}</td>
                           <td className="px-4 py-2">
                             <Badge variant={trip.status === 'Completed' ? 'success' : 'warning'}>
                               {trip.status}
@@ -846,7 +847,7 @@ const Staff = () => {
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-8 text-[#6B716D]">
+                <div className="text-center py-8 text-muted">
                   <p>No trips assigned yet</p>
                 </div>
               )}

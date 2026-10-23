@@ -105,8 +105,8 @@ const Reports = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Reports</h1>
-          <p className="text-sm text-[#6B716D]">Generate and view business reports</p>
+          <h1 className="text-2xl font-semibold text-ink">Reports</h1>
+          <p className="text-sm text-muted">Generate and view business reports</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -129,7 +129,7 @@ const Reports = () => {
       </div>
 
       {/* Date Filter */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <div className="flex flex-wrap gap-2">
           {['today', 'yesterday', 'week', 'month'].map((range) => (
             <button
@@ -137,7 +137,7 @@ const Reports = () => {
               onClick={() => setDateRange(range)}
               className={`px-4 py-2 rounded-lg text-sm capitalize transition ${
                 dateRange === range
-                  ? 'bg-[#111714] text-white'
+                  ? 'bg-brand text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -150,15 +150,15 @@ const Reports = () => {
       {/* Loading State */}
       {loading && (
         <div className="flex justify-center py-10">
-          <FiLoader className="w-8 h-8 animate-spin text-[#16834B]" />
+          <FiLoader className="w-8 h-8 animate-spin text-success" />
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-[#FDEEEE] border border-[#D14343]/20 rounded-xl p-4 mb-6 flex items-center gap-3">
-          <FiAlertCircle className="w-5 h-5 text-[#D14343]" />
-          <p className="text-sm text-[#D14343]">{error}</p>
+        <div className="bg-danger-soft border border-danger/20 rounded-xl p-4 mb-6 flex items-center gap-3">
+          <FiAlertCircle className="w-5 h-5 text-danger" />
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
@@ -166,54 +166,54 @@ const Reports = () => {
       {!loading && !error && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-              <p className="text-sm text-[#6B716D]">Total Sales</p>
-              <p className="text-2xl font-semibold text-[#151A17]">{formatCurrency(stats.totalSales)}</p>
+            <div className="bg-white rounded-xl border border-line p-6">
+              <p className="text-sm text-muted">Total Sales</p>
+              <p className="text-2xl font-semibold text-ink">{formatCurrency(stats.totalSales)}</p>
             </div>
-            <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-              <p className="text-sm text-[#6B716D]">Total Orders</p>
-              <p className="text-2xl font-semibold text-[#151A17]">{stats.totalOrders}</p>
+            <div className="bg-white rounded-xl border border-line p-6">
+              <p className="text-sm text-muted">Total Orders</p>
+              <p className="text-2xl font-semibold text-ink">{stats.totalOrders}</p>
             </div>
-            <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-              <p className="text-sm text-[#6B716D]">Avg. Order Value</p>
-              <p className="text-2xl font-semibold text-[#151A17]">{formatCurrency(stats.avgOrderValue)}</p>
+            <div className="bg-white rounded-xl border border-line p-6">
+              <p className="text-sm text-muted">Avg. Order Value</p>
+              <p className="text-2xl font-semibold text-ink">{formatCurrency(stats.avgOrderValue)}</p>
             </div>
-            <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-              <p className="text-sm text-[#6B716D]">Outstanding</p>
-              <p className="text-2xl font-semibold text-[#151A17]">{formatCurrency(stats.outstanding)}</p>
+            <div className="bg-white rounded-xl border border-line p-6">
+              <p className="text-sm text-muted">Outstanding</p>
+              <p className="text-2xl font-semibold text-ink">{formatCurrency(stats.outstanding)}</p>
             </div>
           </div>
 
           {/* Outstanding Retailers Table */}
-          <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden mb-8">
-            <div className="px-6 py-4 border-b border-[#E5E8E6]">
-              <h2 className="text-lg font-semibold text-[#151A17]">Retailers with Outstanding Balance</h2>
+          <div className="bg-white rounded-xl border border-line overflow-hidden mb-8">
+            <div className="px-6 py-4 border-b border-line">
+              <h2 className="text-lg font-semibold text-ink">Retailers with Outstanding Balance</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-[#F6F7F6]">
+                <thead className="bg-cream">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Shop Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Owner</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Phone</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Outstanding</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Shop Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Owner</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Phone</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-muted uppercase tracking-wider">Outstanding</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E5E8E6]">
+                <tbody className="divide-y divide-line">
                   {retailers.length > 0 ? (
                     retailers.map((retailer) => (
-                      <tr key={retailer.id} className="hover:bg-[#F6F7F6] transition">
-                        <td className="px-6 py-4 text-sm font-medium text-[#151A17]">{retailer.shop_name}</td>
-                        <td className="px-6 py-4 text-sm text-[#6B716D]">{retailer.owner_name}</td>
-                        <td className="px-6 py-4 text-sm text-[#6B716D]">{retailer.phone}</td>
-                        <td className="px-6 py-4 text-right text-sm font-semibold text-[#D14343]">
+                      <tr key={retailer.id} className="hover:bg-cream transition">
+                        <td className="px-6 py-4 text-sm font-medium text-ink">{retailer.shop_name}</td>
+                        <td className="px-6 py-4 text-sm text-muted">{retailer.owner_name}</td>
+                        <td className="px-6 py-4 text-sm text-muted">{retailer.phone}</td>
+                        <td className="px-6 py-4 text-right text-sm font-semibold text-danger">
                           {formatCurrency(retailer.outstanding)}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="px-6 py-8 text-center text-[#6B716D] text-sm">
+                      <td colSpan="4" className="px-6 py-8 text-center text-muted text-sm">
                         No outstanding balances found for this date range.
                       </td>
                     </tr>
@@ -224,41 +224,41 @@ const Reports = () => {
           </div>
 
           {/* Recent Orders Table */}
-          <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#E5E8E6]">
-              <h2 className="text-lg font-semibold text-[#151A17]">Recent Orders</h2>
+          <div className="bg-white rounded-xl border border-line overflow-hidden">
+            <div className="px-6 py-4 border-b border-line">
+              <h2 className="text-lg font-semibold text-ink">Recent Orders</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-[#F6F7F6]">
+                <thead className="bg-cream">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Order</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Retailer</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Kg</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Total</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Balance</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Order</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Retailer</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Kg</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-muted uppercase tracking-wider">Total</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-muted uppercase tracking-wider">Balance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E5E8E6]">
+                <tbody className="divide-y divide-line">
                   {orders.length > 0 ? (
                     orders.map((order) => (
-                      <tr key={order.order_number} className="hover:bg-[#F6F7F6] transition">
-                        <td className="px-6 py-4 text-sm font-medium text-[#151A17]">{order.order_number}</td>
-                        <td className="px-6 py-4 text-sm text-[#151A17]">{order.shop_name}</td>
-                        <td className="px-6 py-4 text-sm text-[#6B716D]">{formatDate(order.created_at)}</td>
-                        <td className="px-6 py-4 text-sm text-[#6B716D]">{order.kg_ordered}</td>
-                        <td className="px-6 py-4 text-right text-sm font-semibold text-[#16834B]">
+                      <tr key={order.order_number} className="hover:bg-cream transition">
+                        <td className="px-6 py-4 text-sm font-medium text-ink">{order.order_number}</td>
+                        <td className="px-6 py-4 text-sm text-ink">{order.shop_name}</td>
+                        <td className="px-6 py-4 text-sm text-muted">{formatDate(order.created_at)}</td>
+                        <td className="px-6 py-4 text-sm text-muted">{order.kg_ordered}</td>
+                        <td className="px-6 py-4 text-right text-sm font-semibold text-success">
                           {formatCurrency(order.total_amount)}
                         </td>
-                        <td className="px-6 py-4 text-right text-sm font-semibold text-[#D14343]">
+                        <td className="px-6 py-4 text-right text-sm font-semibold text-danger">
                           {formatCurrency(order.balance)}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="px-6 py-8 text-center text-[#6B716D] text-sm">
+                      <td colSpan="6" className="px-6 py-8 text-center text-muted text-sm">
                         No orders found for this date range.
                       </td>
                     </tr>

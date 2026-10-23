@@ -11,15 +11,15 @@ const Pagination = ({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-[#E5E8E6]">
-      <p className="text-sm text-[#6B716D]">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-line">
+      <p className="text-sm text-muted">
         Showing {startItem}-{endItem} of {totalItems}
       </p>
       <div className="flex items-center gap-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg border border-[#E5E8E6] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="p-2 rounded-lg border border-line hover:bg-gold-soft hover:border-gold/40 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           <FiChevronLeft className="w-4 h-4" />
         </button>
@@ -39,10 +39,10 @@ const Pagination = ({
             <button
               key={pageNum}
               onClick={() => onPageChange(pageNum)}
-              className={`w-8 h-8 rounded-lg text-sm font-medium transition ${
+              className={`w-8 h-8 rounded-lg text-sm font-semibold transition ${
                 currentPage === pageNum
-                  ? 'bg-[#111714] text-white'
-                  : 'text-[#6B716D] hover:bg-gray-100'
+                  ? 'bg-brand text-white'
+                  : 'text-muted hover:bg-gold-soft hover:text-ink'
               }`}
             >
               {pageNum}
@@ -52,7 +52,7 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg border border-[#E5E8E6] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="p-2 rounded-lg border border-line hover:bg-gold-soft hover:border-gold/40 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           <FiChevronRight className="w-4 h-4" />
         </button>

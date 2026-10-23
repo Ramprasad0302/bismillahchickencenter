@@ -17,7 +17,8 @@ import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
-import { vehicleService } from '../../services/vehicleService';
+import { vehicleService } from '../../services/vehicleService';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -250,8 +251,8 @@ const Vehicles = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <FiLoader className="w-12 h-12 animate-spin text-[#16834B] mx-auto mb-4" />
-          <p className="text-[#6B716D]">Loading vehicles...</p>
+          <BrandLoader />
+          <p className="text-muted">Loading vehicles...</p>
         </div>
       </div>
     );
@@ -262,8 +263,8 @@ const Vehicles = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Fleet</h1>
-          <p className="text-sm text-[#6B716D] mt-1">{vehicles.length} vehicles across the delivery network</p>
+          <h1 className="text-2xl font-semibold text-ink">Fleet</h1>
+          <p className="text-sm text-muted mt-1">{vehicles.length} vehicles across the delivery network</p>
         </div>
         <Button onClick={() => {
           resetForm();
@@ -275,7 +276,7 @@ const Vehicles = () => {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <SearchInput
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -288,16 +289,16 @@ const Vehicles = () => {
       {filteredVehicles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredVehicles.map((vehicle) => (
-            <div key={vehicle.id} className="bg-white rounded-xl border border-[#E5E8E6] p-6 hover:shadow-md transition">
+            <div key={vehicle.id} className="bg-white rounded-xl border border-line p-6 hover:shadow-md transition">
               {/* Vehicle Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-[#F6F7F6] rounded-lg">
-                    <FiTruck className="w-5 h-5 text-[#111714]" />
+                  <div className="p-3 bg-cream rounded-lg">
+                    <FiTruck className="w-5 h-5 text-brand" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-[#151A17]">{vehicle.name}</h3>
-                    <p className="text-sm text-[#6B716D]">{vehicle.number}</p>
+                    <h3 className="font-semibold text-ink">{vehicle.name}</h3>
+                    <p className="text-sm text-muted">{vehicle.number}</p>
                   </div>
                 </div>
                 <Badge variant={vehicle.status === 'Active' ? 'success' : 'default'}>
@@ -308,43 +309,43 @@ const Vehicles = () => {
               {/* Vehicle Details */}
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-[#6B716D]">Type</span>
-                  <span className="font-medium text-[#151A17]">{vehicle.type}</span>
+                  <span className="text-muted">Type</span>
+                  <span className="font-medium text-ink">{vehicle.type}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-[#6B716D]">Capacity</span>
-                  <span className="font-medium text-[#151A17]">{vehicle.capacity} kg</span>
+                  <span className="text-muted">Capacity</span>
+                  <span className="font-medium text-ink">{vehicle.capacity} kg</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-[#6B716D]">Fuel Type</span>
-                  <span className="font-medium text-[#151A17]">{vehicle.fuelType}</span>
+                  <span className="text-muted">Fuel Type</span>
+                  <span className="font-medium text-ink">{vehicle.fuelType}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-[#6B716D]">Last Maintenance</span>
-                  <span className="font-medium text-[#151A17]">{vehicle.lastMaintenance}</span>
+                  <span className="text-muted">Last Maintenance</span>
+                  <span className="font-medium text-ink">{vehicle.lastMaintenance}</span>
                 </div>
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#E5E8E6]">
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-line">
                 <div className="text-center">
-                  <p className="text-sm text-[#6B716D]">Today's Trips</p>
-                  <p className="text-lg font-semibold text-[#151A17]">{vehicle.todayTrips}</p>
+                  <p className="text-sm text-muted">Today's Trips</p>
+                  <p className="text-lg font-semibold text-ink">{vehicle.todayTrips}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-[#6B716D]">Total Trips</p>
-                  <p className="text-lg font-semibold text-[#151A17]">{vehicle.totalTrips}</p>
+                  <p className="text-sm text-muted">Total Trips</p>
+                  <p className="text-lg font-semibold text-ink">{vehicle.totalTrips}</p>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-[#E5E8E6]">
+              <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-line">
                 <button
                   onClick={() => toggleStatus(vehicle.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                     vehicle.status === 'Active'
                       ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'bg-[#16834B] text-white hover:bg-[#13703A]'
+                      : 'bg-success text-white hover:bg-success-dark'
                   }`}
                 >
                   {vehicle.status === 'Active' ? 'Deactivate' : 'Activate'}
@@ -354,14 +355,14 @@ const Vehicles = () => {
                   className="p-2 hover:bg-gray-100 rounded-lg transition"
                   title="Edit Vehicle"
                 >
-                  <FiEdit2 className="w-4 h-4 text-[#6B716D]" />
+                  <FiEdit2 className="w-4 h-4 text-muted" />
                 </button>
                 <button
                   onClick={() => openDeleteModal(vehicle)}
                   className="p-2 hover:bg-red-50 rounded-lg transition"
                   title="Remove Vehicle"
                 >
-                  <FiTrash2 className="w-4 h-4 text-[#D14343]" />
+                  <FiTrash2 className="w-4 h-4 text-danger" />
                 </button>
               </div>
             </div>
@@ -425,8 +426,8 @@ const Vehicles = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Vehicle Name <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Vehicle Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -434,18 +435,18 @@ const Vehicles = () => {
               value={formData.name}
               onChange={handleInputChange}
               placeholder="e.g., Tata Ace 1"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.name ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.name ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.name && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.name}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.name}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Vehicle Number <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Vehicle Number <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -453,18 +454,18 @@ const Vehicles = () => {
               value={formData.number}
               onChange={handleInputChange}
               placeholder="e.g., KA-01-AB-1234"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.number ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.number ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.number && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.number}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.number}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Vehicle Type <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Vehicle Type <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -472,18 +473,18 @@ const Vehicles = () => {
               value={formData.type}
               onChange={handleInputChange}
               placeholder="e.g., Tata Ace, Mahindra Bolero"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.type ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.type ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.type && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.type}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.type}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Capacity (kg) <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Capacity (kg) <span className="text-danger">*</span>
             </label>
             <input
               type="number"
@@ -491,24 +492,24 @@ const Vehicles = () => {
               value={formData.capacity}
               onChange={handleInputChange}
               placeholder="e.g., 800"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.capacity ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.capacity ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.capacity && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.capacity}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.capacity}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Fuel Type
             </label>
             <select
               name="fuelType"
               value={formData.fuelType}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="Diesel">Diesel</option>
               <option value="Petrol">Petrol</option>
@@ -518,14 +519,14 @@ const Vehicles = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Status
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -573,86 +574,86 @@ const Vehicles = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Vehicle Name <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Vehicle Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.name ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.name ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.name && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.name}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.name}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Vehicle Number <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Vehicle Number <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               name="number"
               value={formData.number}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.number ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.number ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.number && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.number}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.number}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Vehicle Type <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Vehicle Type <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               name="type"
               value={formData.type}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.type ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.type ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.type && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.type}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.type}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Capacity (kg) <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Capacity (kg) <span className="text-danger">*</span>
             </label>
             <input
               type="number"
               name="capacity"
               value={formData.capacity}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition ${
-                formErrors.capacity ? 'border-[#D14343]' : 'border-[#E5E8E6]'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition ${
+                formErrors.capacity ? 'border-danger' : 'border-line'
               }`}
             />
             {formErrors.capacity && (
-              <p className="mt-1 text-sm text-[#D14343]">{formErrors.capacity}</p>
+              <p className="mt-1 text-sm text-danger">{formErrors.capacity}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Fuel Type
             </label>
             <select
               name="fuelType"
               value={formData.fuelType}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="Diesel">Diesel</option>
               <option value="Petrol">Petrol</option>
@@ -662,14 +663,14 @@ const Vehicles = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
+            <label className="block text-sm font-medium text-ink mb-1.5">
               Status
             </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -715,8 +716,8 @@ const Vehicles = () => {
           </>
         }
       >
-        <div className="p-4 bg-[#FDEEEE] rounded-lg border border-[#D14343]/20">
-          <p className="text-sm text-[#D14343]">
+        <div className="p-4 bg-danger-soft rounded-lg border border-danger/20">
+          <p className="text-sm text-danger">
             <FiTrash2 className="inline w-4 h-4 mr-2" />
             This will permanently remove {selectedVehicle?.name} from the fleet.
           </p>

@@ -135,11 +135,11 @@ const Settings = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-[#151A17] mb-6">Settings</h1>
+      <h1 className="text-2xl font-semibold text-ink mb-6">Settings</h1>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
-        <div className="border-b border-[#E5E8E6]">
+      <div className="bg-white rounded-xl border border-line overflow-hidden">
+        <div className="border-b border-line">
           <div className="flex gap-1 px-6 py-3 overflow-x-auto">
             {tabs.map((tab) => (
               <button
@@ -147,7 +147,7 @@ const Settings = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
                   activeTab === tab.id
-                    ? 'bg-[#111714] text-white'
+                    ? 'bg-brand text-white'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -160,13 +160,13 @@ const Settings = () => {
         <div className="p-6">
           {/* Status Messages */}
           {error && (
-            <div className="mb-4 p-3 bg-[#FDEEEE] border border-[#D14343]/20 rounded-lg flex items-center gap-2 text-[#D14343] text-sm">
+            <div className="mb-4 p-3 bg-danger-soft border border-danger/20 rounded-lg flex items-center gap-2 text-danger text-sm">
               <FiAlertCircle className="w-4 h-4" />
               {error}
             </div>
           )}
           {success && (
-            <div className="mb-4 p-3 bg-[#E8F5E9] border border-[#16834B]/20 rounded-lg flex items-center gap-2 text-[#16834B] text-sm">
+            <div className="mb-4 p-3 bg-success-soft border border-success/20 rounded-lg flex items-center gap-2 text-success text-sm">
               <FiCheck className="w-4 h-4" />
               {success}
             </div>
@@ -175,7 +175,7 @@ const Settings = () => {
           {/* Loading Spinner */}
           {loading && (
             <div className="flex justify-center py-4">
-              <FiLoader className="w-6 h-6 animate-spin text-[#16834B]" />
+              <FiLoader className="w-6 h-6 animate-spin text-success" />
             </div>
           )}
 
@@ -183,39 +183,39 @@ const Settings = () => {
           {activeTab === 'business' && !loading && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <label className="block text-sm font-medium text-[#151A17] mb-2">Business Name</label>
+                <label className="block text-sm font-medium text-ink mb-2">Business Name</label>
                 <input
                   type="text"
                   value={businessData.businessName}
                   onChange={(e) => setBusinessData({ ...businessData, businessName: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#151A17] mb-2">Phone</label>
+                <label className="block text-sm font-medium text-ink mb-2">Phone</label>
                 <input
                   type="text"
                   value={businessData.phone}
                   onChange={(e) => setBusinessData({ ...businessData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#151A17] mb-2">Email</label>
+                <label className="block text-sm font-medium text-ink mb-2">Email</label>
                 <input
                   type="email"
                   value={businessData.email}
                   onChange={(e) => setBusinessData({ ...businessData, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#151A17] mb-2">Address</label>
+                <label className="block text-sm font-medium text-ink mb-2">Address</label>
                 <textarea
                   rows="3"
                   value={businessData.address}
                   onChange={(e) => setBusinessData({ ...businessData, address: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
               <Button onClick={handleSaveBusiness} disabled={saving}>
@@ -228,21 +228,21 @@ const Settings = () => {
           {activeTab === 'account' && !loading && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <label className="block text-sm font-medium text-[#151A17] mb-2">Admin Name</label>
+                <label className="block text-sm font-medium text-ink mb-2">Admin Name</label>
                 <input
                   type="text"
                   value={accountData.name}
                   onChange={(e) => setAccountData({ ...accountData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#151A17] mb-2">Phone</label>
+                <label className="block text-sm font-medium text-ink mb-2">Phone</label>
                 <input
                   type="text"
                   value={accountData.phone}
                   onChange={(e) => setAccountData({ ...accountData, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
               <Button onClick={handleSaveAccount} disabled={saving}>
@@ -255,30 +255,30 @@ const Settings = () => {
           {activeTab === 'security' && !loading && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <label className="block text-sm font-medium text-[#151A17] mb-2">Current Password</label>
+                <label className="block text-sm font-medium text-ink mb-2">Current Password</label>
                 <input
                   type="password"
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#151A17] mb-2">New Password</label>
+                <label className="block text-sm font-medium text-ink mb-2">New Password</label>
                 <input
                   type="password"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#151A17] mb-2">Confirm New Password</label>
+                <label className="block text-sm font-medium text-ink mb-2">Confirm New Password</label>
                 <input
                   type="password"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
                 />
               </div>
               <Button onClick={handleChangePassword} disabled={saving}>
@@ -292,41 +292,41 @@ const Settings = () => {
             <div className="space-y-6 max-w-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-[#151A17]">Order Notifications</p>
-                  <p className="text-sm text-[#6B716D]">Receive alerts when new orders are placed</p>
+                  <p className="font-medium text-ink">Order Notifications</p>
+                  <p className="text-sm text-muted">Receive alerts when new orders are placed</p>
                 </div>
                 <button 
                   onClick={() => toggleNotification('order')}
-                  className={`relative w-12 h-6 rounded-full transition ${notifications.order ? 'bg-[#111714]' : 'bg-gray-300'}`}
+                  className={`relative w-12 h-6 rounded-full transition ${notifications.order ? 'bg-brand' : 'bg-gray-300'}`}
                 >
                   <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${notifications.order ? 'right-1' : 'left-1'}`}></span>
                 </button>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-[#151A17]">Payment Notifications</p>
-                  <p className="text-sm text-[#6B716D]">Receive alerts for payment receipts</p>
+                  <p className="font-medium text-ink">Payment Notifications</p>
+                  <p className="text-sm text-muted">Receive alerts for payment receipts</p>
                 </div>
                 <button 
                   onClick={() => toggleNotification('payment')}
-                  className={`relative w-12 h-6 rounded-full transition ${notifications.payment ? 'bg-[#111714]' : 'bg-gray-300'}`}
+                  className={`relative w-12 h-6 rounded-full transition ${notifications.payment ? 'bg-brand' : 'bg-gray-300'}`}
                 >
                   <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${notifications.payment ? 'right-1' : 'left-1'}`}></span>
                 </button>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-[#151A17]">Delivery Notifications</p>
-                  <p className="text-sm text-[#6B716D]">Receive updates on delivery status</p>
+                  <p className="font-medium text-ink">Delivery Notifications</p>
+                  <p className="text-sm text-muted">Receive updates on delivery status</p>
                 </div>
                 <button 
                   onClick={() => toggleNotification('delivery')}
-                  className={`relative w-12 h-6 rounded-full transition ${notifications.delivery ? 'bg-[#111714]' : 'bg-gray-300'}`}
+                  className={`relative w-12 h-6 rounded-full transition ${notifications.delivery ? 'bg-brand' : 'bg-gray-300'}`}
                 >
                   <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${notifications.delivery ? 'right-1' : 'left-1'}`}></span>
                 </button>
               </div>
-              <div className="pt-4 border-t border-[#E5E8E6]">
+              <div className="pt-4 border-t border-line">
                 <Button onClick={handleSaveNotifications} disabled={saving}>
                   {saving ? <><FiLoader className="animate-spin mr-2 w-4 h-4" /> Saving...</> : 'Save Preferences'}
                 </Button>

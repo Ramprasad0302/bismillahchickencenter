@@ -15,7 +15,8 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const RetailerOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -147,8 +148,8 @@ const RetailerOrders = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiLoader className="w-12 h-12 text-[#111714] animate-spin" />
-        <p className="mt-4 text-[#6B716D]">Loading your orders...</p>
+        <BrandLoader />
+        <p className="mt-4 text-muted">Loading your orders...</p>
       </div>
     );
   }
@@ -157,8 +158,8 @@ const RetailerOrders = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#D14343]" />
-        <p className="mt-4 text-[#D14343] font-medium">{error}</p>
+        <FiAlertCircle className="w-12 h-12 text-danger" />
+        <p className="mt-4 text-danger font-medium">{error}</p>
         <Button 
           variant="outline" 
           className="mt-4"
@@ -175,8 +176,8 @@ const RetailerOrders = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">My Orders</h1>
-          <p className="text-sm text-[#6B716D] mt-1">
+          <h1 className="text-2xl font-semibold text-ink">My Orders</h1>
+          <p className="text-sm text-muted mt-1">
             View all your orders ({orders.length} total)
           </p>
         </div>
@@ -194,7 +195,7 @@ const RetailerOrders = () => {
           onClick={() => setActiveFilter('all')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'all'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -204,7 +205,7 @@ const RetailerOrders = () => {
           onClick={() => setActiveFilter('pending')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'pending'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -214,7 +215,7 @@ const RetailerOrders = () => {
           onClick={() => setActiveFilter('processing')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'processing'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -224,7 +225,7 @@ const RetailerOrders = () => {
           onClick={() => setActiveFilter('enroute')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'enroute'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -234,7 +235,7 @@ const RetailerOrders = () => {
           onClick={() => setActiveFilter('delivered')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'delivered'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -244,7 +245,7 @@ const RetailerOrders = () => {
           onClick={() => setActiveFilter('cancelled')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
             activeFilter === 'cancelled'
-              ? 'bg-[#111714] text-white'
+              ? 'bg-brand text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -253,7 +254,7 @@ const RetailerOrders = () => {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <SearchInput
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -272,11 +273,11 @@ const RetailerOrders = () => {
             const isPartiallyPaid = order.cash_collected > 0 && order.cash_collected < order.total_amount;
             
             return (
-              <div key={order.id} className="bg-white rounded-xl border border-[#E5E8E6] p-4 hover:shadow-md transition">
+              <div key={order.id} className="bg-white rounded-xl border border-line p-4 hover:shadow-md transition">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="font-semibold text-[#151A17]">{order.order_number}</h3>
+                      <h3 className="font-semibold text-ink">{order.order_number}</h3>
                       <Badge variant={statusInfo.color}>
                         {statusInfo.label}
                       </Badge>
@@ -285,7 +286,7 @@ const RetailerOrders = () => {
                       </Badge>
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-[#6B716D]">
+                    <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted">
                       <span className="flex items-center gap-1">
                         <FiCalendar className="w-3 h-3" />
                         {formatDate(order.order_date)}
@@ -294,7 +295,7 @@ const RetailerOrders = () => {
                         <FiPackage className="w-3 h-3" />
                         {order.kg_ordered} kg ordered
                       </span>
-                      <span className="font-medium text-[#151A17]">
+                      <span className="font-medium text-ink">
                         {formatCurrency(order.total_amount)}
                       </span>
                       
@@ -302,7 +303,7 @@ const RetailerOrders = () => {
                       {isDelivered && (
                         <div className="flex flex-wrap items-center gap-3">
                           {/* Delivered KG with Green Tag */}
-                          <span className="text-xs flex items-center gap-1 text-[#16834B] bg-[#E8F5E9] px-3 py-1 rounded-full">
+                          <span className="text-xs flex items-center gap-1 text-success bg-success-soft px-3 py-1 rounded-full">
                             <FiCheckCircle className="w-3 h-3" />
                             {order.kg_delivered || order.kg_ordered} kg delivered
                             {order.delivered_date && (
@@ -315,7 +316,7 @@ const RetailerOrders = () => {
                             <span className={`text-xs flex items-center gap-1 px-3 py-1 rounded-full ${
                               isPartiallyPaid 
                                 ? 'text-[#C47A13] bg-[#FFF8E1]' 
-                                : 'text-[#16834B] bg-[#E8F5E9]'
+                                : 'text-success bg-success-soft'
                             }`}>
                               <FiDollarSign className="w-3 h-3" />
                               {formatCurrency(order.cash_collected)} collected
@@ -327,7 +328,7 @@ const RetailerOrders = () => {
 
                       {/* Show trip number if assigned */}
                       {order.trip_number && (
-                        <span className="text-xs text-[#6B716D] border border-[#E5E8E6] px-2 py-1 rounded-full">
+                        <span className="text-xs text-muted border border-line px-2 py-1 rounded-full">
                           Trip: {order.trip_number}
                         </span>
                       )}
@@ -335,7 +336,7 @@ const RetailerOrders = () => {
 
                     {/* Delivery Address */}
                     {order.delivery_address && (
-                      <div className="mt-1 text-xs text-[#6B716D]">
+                      <div className="mt-1 text-xs text-muted">
                         📍 {order.delivery_address}
                       </div>
                     )}

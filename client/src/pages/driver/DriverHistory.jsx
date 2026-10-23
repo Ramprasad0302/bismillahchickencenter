@@ -13,7 +13,8 @@ import {
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import SearchInput from '../../components/common/SearchInput';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const DriverHistory = () => {
   const [loading, setLoading] = useState(true);
@@ -78,8 +79,8 @@ const DriverHistory = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiLoader className="w-12 h-12 animate-spin text-[#16834B]" />
-        <p className="mt-4 text-[#6B716D]">Loading history...</p>
+        <BrandLoader />
+        <p className="mt-4 text-muted">Loading history...</p>
       </div>
     );
   }
@@ -88,8 +89,8 @@ const DriverHistory = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#D14343]" />
-        <p className="mt-4 text-[#D14343] font-medium">{error}</p>
+        <FiAlertCircle className="w-12 h-12 text-danger" />
+        <p className="mt-4 text-danger font-medium">{error}</p>
         <Button onClick={fetchHistory} className="mt-4">Retry</Button>
       </div>
     );
@@ -99,31 +100,31 @@ const DriverHistory = () => {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#151A17]">History</h1>
-        <p className="text-sm text-[#6B716D] mt-1">View all your completed trips</p>
+        <h1 className="text-2xl font-semibold text-ink">History</h1>
+        <p className="text-sm text-muted mt-1">View all your completed trips</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <FiTruck className="w-5 h-5 mx-auto text-[#6B716D] mb-1" />
-          <p className="text-xl font-semibold text-[#151A17]">{totalTrips}</p>
-          <p className="text-xs text-[#6B716D]">Total Trips</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <FiTruck className="w-5 h-5 mx-auto text-muted mb-1" />
+          <p className="text-xl font-semibold text-ink">{totalTrips}</p>
+          <p className="text-xs text-muted">Total Trips</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <FiPackage className="w-5 h-5 mx-auto text-[#6B716D] mb-1" />
-          <p className="text-xl font-semibold text-[#151A17]">{Math.round(totalKg)} kg</p>
-          <p className="text-xs text-[#6B716D]">Total KG Delivered</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <FiPackage className="w-5 h-5 mx-auto text-muted mb-1" />
+          <p className="text-xl font-semibold text-ink">{Math.round(totalKg)} kg</p>
+          <p className="text-xs text-muted">Total KG Delivered</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 text-center">
-          <FiDollarSign className="w-5 h-5 mx-auto text-[#6B716D] mb-1" />
-          <p className="text-xl font-semibold text-[#16834B]">{formatCurrency(totalCollected)}</p>
-          <p className="text-xs text-[#6B716D]">Total Collected</p>
+        <div className="bg-white rounded-xl border border-line p-4 text-center">
+          <FiDollarSign className="w-5 h-5 mx-auto text-muted mb-1" />
+          <p className="text-xl font-semibold text-success">{formatCurrency(totalCollected)}</p>
+          <p className="text-xs text-muted">Total Collected</p>
         </div>
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <SearchInput
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -140,48 +141,48 @@ const DriverHistory = () => {
             const totalAmt = parseFloat(trip.total_amount || 0);
             
             return (
-              <div key={trip.trip_number} className="bg-white rounded-xl border border-[#E5E8E6] p-6 hover:shadow-md transition">
+              <div key={trip.trip_number} className="bg-white rounded-xl border border-line p-6 hover:shadow-md transition">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-[#151A17]">{trip.trip_number}</h3>
+                      <h3 className="font-semibold text-ink">{trip.trip_number}</h3>
                       <Badge variant="success">Completed</Badge>
                     </div>
-                    <p className="text-sm text-[#6B716D] mt-1">{formatDate(trip.date)}</p>
+                    <p className="text-sm text-muted mt-1">{formatDate(trip.date)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-[#16834B]">{formatCurrency(totalCash)}</p>
-                    <p className="text-xs text-[#6B716D]">Collected</p>
+                    <p className="text-lg font-bold text-success">{formatCurrency(totalCash)}</p>
+                    <p className="text-xs text-muted">Collected</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-[#E5E8E6]">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-line">
                   <div>
-                    <p className="text-xs text-[#6B716D]">Orders</p>
-                    <p className="font-medium text-[#151A17]">{trip.total_orders}</p>
+                    <p className="text-xs text-muted">Orders</p>
+                    <p className="font-medium text-ink">{trip.total_orders}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-[#6B716D]">Total KG</p>
-                    <p className="font-medium text-[#151A17]">{Math.round(trip.total_kg)} kg</p>
+                    <p className="text-xs text-muted">Total KG</p>
+                    <p className="font-medium text-ink">{Math.round(trip.total_kg)} kg</p>
                   </div>
                   <div>
-                    <p className="text-xs text-[#6B716D]">Total Amount</p>
-                    <p className="font-medium text-[#151A17]">{formatCurrency(totalAmt)}</p>
+                    <p className="text-xs text-muted">Total Amount</p>
+                    <p className="font-medium text-ink">{formatCurrency(totalAmt)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-[#6B716D]">Expenses</p>
-                    <p className="font-medium text-[#151A17]">{formatCurrency(trip.diesel_amount || 0)}</p>
-                    <p className="text-xs text-[#6B716D]">{trip.total_hens || 0} hens</p>
+                    <p className="text-xs text-muted">Expenses</p>
+                    <p className="font-medium text-ink">{formatCurrency(trip.diesel_amount || 0)}</p>
+                    <p className="text-xs text-muted">{trip.total_hens || 0} hens</p>
                   </div>
                 </div>
               </div>
             );
           })
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-12 text-center">
-            <FiClock className="w-12 h-12 mx-auto text-[#6B716D] mb-3" />
-            <p className="text-lg font-medium text-[#151A17]">No history found</p>
-            <p className="text-sm text-[#6B716D]">{searchTerm ? 'Try adjusting your search' : 'Complete your first trip to see history'}</p>
+          <div className="bg-white rounded-xl border border-line p-12 text-center">
+            <FiClock className="w-12 h-12 mx-auto text-muted mb-3" />
+            <p className="text-lg font-medium text-ink">No history found</p>
+            <p className="text-sm text-muted">{searchTerm ? 'Try adjusting your search' : 'Complete your first trip to see history'}</p>
           </div>
         )}
       </div>

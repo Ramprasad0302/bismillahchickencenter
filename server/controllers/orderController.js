@@ -1,4 +1,15 @@
 const pool = require('../config/db');
+const notifications = require('../services/notificationService');
+
+const ORDER_STATUS_TEXT = {
+    pending: 'is pending',
+    confirmed: 'has been confirmed',
+    processing: 'is being prepared',
+    out_for_delivery: 'is out for delivery',
+    delivered: 'has been delivered',
+    cancelled: 'was cancelled',
+};
+
 const paymentService = require('../services/paymentService');
 
 // createTables.js creates `ledger`; the old recordPayment inserted into
@@ -262,6 +273,19 @@ const createOrder = async (req, res) => {
             JOIN retailers r ON o.retailer_id = r.id
             WHERE o.id = ?
         `, [result.insertId]);
+
+        // Tell the admins. UPI orders are announced once the payment
+        // actually succeeds (paymentService.settleTransaction), so abandoned
+        // checkouts don't ring every admin's phone.
+        const placed = newOrder[0];
+        if (placed && placed.payment_method !== 'upi') {
+            notifications.notifyWhen(notifications.adminUserIds, {
+                title: `New order ${placed.order_number}`,
+                body: `${placed.shop_name} ordered ${parseFloat(placed.kg_ordered) || 0} kg · ${notifications.inr(placed.total_amount)} · ${String(placed.payment_method || '').toUpperCase()}`,
+                link: `/admin/orders/${placed.id}`,
+                type: 'order',
+            });
+        }
 
         console.log('✅ Order created successfully:', order_number);
         console.log('=================================');
@@ -651,6 +675,19 @@ const updateOrderStatus = async (req, res) => {
             [id]
         );
 
+        if (orderExists[0].order_status !== status) {
+            notifications.notifyWhen(() => notifications.retailerUserIds(orderExists[0].retailer_id), {
+                title: `Order ${orderExists[0].order_number} ${ORDER_STATUS_TEXT[status] || `is now ${status}`}`,
+                body: status === 'out_for_delivery'
+                    ? 'Your chicken is on the way.'
+                    : status === 'delivered'
+                        ? 'Thank you for your order.'
+                        : 'Tap to see the order details.',
+                link: `/retailer/orders/${id}`,
+                type: 'order_status',
+            });
+        }
+
         res.status(200).json({
             success: true,
             message: `Order status updated to ${status}`,
@@ -898,6 +935,13 @@ const recordPayment = async (req, res) => {
         );
 
         await connection.commit();
+
+        notifications.notifyWhen(() => notifications.retailerUserIds(retailer_id), {
+            title: 'Payment received',
+            body: `We received ${notifications.inr(processedAmount)} by ${method}. Outstanding is now ${notifications.inr(outstanding)}.`,
+            link: '/retailer/payments',
+            type: 'payment',
+        });
 
         res.status(200).json({
             success: true,

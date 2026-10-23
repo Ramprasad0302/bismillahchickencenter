@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const { authMiddleware, requireRole } = require('../middleware/auth');
 const vehicleController = require('../controllers/vehicleController');
+
+// Admin only: every route below needs a signed-in admin.
+router.use(authMiddleware, requireRole('admin'));
 
 // Vehicle CRUD routes (without authentication for now)
 router.route('/')

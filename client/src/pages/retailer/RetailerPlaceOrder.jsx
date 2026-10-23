@@ -17,7 +17,8 @@ import {
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import api from '../../services/api';
-import { startCheckout, redirectToGateway, cancelCheckout } from '../../services/paymentService';
+import { startCheckout, redirectToGateway, cancelCheckout } from '../../services/paymentService';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 // Marker written to sessionStorage right before the browser is sent to the
 // gateway for a UPI order. If this page mounts again with the marker still
@@ -341,8 +342,8 @@ const RetailerPlaceOrder = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <FiLoader className="w-12 h-12 animate-spin text-[#16834B] mx-auto mb-4" />
-          <p className="text-[#6B716D]">Loading order page...</p>
+          <BrandLoader />
+          <p className="text-muted">Loading order page...</p>
         </div>
       </div>
     );
@@ -362,72 +363,72 @@ const RetailerPlaceOrder = () => {
       <div className="max-w-2xl mx-auto">
         {/* Success Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#E8F5E9] rounded-full mb-4">
-            <FiCheckCircle className="w-10 h-10 text-[#16834B]" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-success-soft rounded-full mb-4">
+            <FiCheckCircle className="w-10 h-10 text-success" />
           </div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Order Placed Successfully! 🎉</h1>
-          <p className="text-sm text-[#6B716D] mt-1">Thank you for your order. We'll process it shortly.</p>
+          <h1 className="text-2xl font-semibold text-ink">Order Placed Successfully! 🎉</h1>
+          <p className="text-sm text-muted mt-1">Thank you for your order. We'll process it shortly.</p>
         </div>
 
         {/* Order Details Card */}
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
-          <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#E5E8E6]">
+        <div className="bg-white rounded-xl border border-line p-6 mb-6">
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-line">
             <div>
-              <p className="text-xs text-[#6B716D]">Order Number</p>
-              <p className="text-lg font-bold text-[#151A17]">{placedOrder.orderNumber}</p>
+              <p className="text-xs text-muted">Order Number</p>
+              <p className="text-lg font-bold text-ink">{placedOrder.orderNumber}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-[#6B716D]">Date & Time</p>
-              <p className="text-sm font-medium text-[#151A17]">{placedOrder.createdAt}</p>
+              <p className="text-xs text-muted">Date & Time</p>
+              <p className="text-sm font-medium text-ink">{placedOrder.createdAt}</p>
             </div>
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
-              <span className="text-sm text-[#6B716D]">📦 Quantity</span>
-              <span className="font-medium text-[#151A17]">
+            <div className="flex items-center justify-between py-2 border-b border-cream">
+              <span className="text-sm text-muted">📦 Quantity</span>
+              <span className="font-medium text-ink">
                 {placedOrder.hens} hens ({placedOrder.kg} kg)
               </span>
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
-              <span className="text-sm text-[#6B716D]">💰 Chicken Amount</span>
-              <span className="font-medium text-[#151A17]">{formatCurrency(placedOrder.chickenAmount)}</span>
+            <div className="flex items-center justify-between py-2 border-b border-cream">
+              <span className="text-sm text-muted">💰 Chicken Amount</span>
+              <span className="font-medium text-ink">{formatCurrency(placedOrder.chickenAmount)}</span>
             </div>
             {placedOrder.transportFee > 0 && (
-              <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
-                <span className="text-sm text-[#6B716D]">🚚 Transport Fee ({placedOrder.hens} hens × ₹{placedOrder.transportFeePerHen})</span>
-                <span className="font-medium text-[#151A17]">{formatCurrency(placedOrder.transportFee)}</span>
+              <div className="flex items-center justify-between py-2 border-b border-cream">
+                <span className="text-sm text-muted">🚚 Transport Fee ({placedOrder.hens} hens × ₹{placedOrder.transportFeePerHen})</span>
+                <span className="font-medium text-ink">{formatCurrency(placedOrder.transportFee)}</span>
               </div>
             )}
-            <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
-              <span className="text-sm text-[#6B716D]">💳 Payment Method</span>
-              <span className="font-medium text-[#151A17]">{placedOrder.paymentMethod}</span>
+            <div className="flex items-center justify-between py-2 border-b border-cream">
+              <span className="text-sm text-muted">💳 Payment Method</span>
+              <span className="font-medium text-ink">{placedOrder.paymentMethod}</span>
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
-              <span className="text-sm text-[#6B716D]">📍 Delivery Address</span>
-              <span className="font-medium text-[#151A17] text-right max-w-[50%]">
+            <div className="flex items-center justify-between py-2 border-b border-cream">
+              <span className="text-sm text-muted">📍 Delivery Address</span>
+              <span className="font-medium text-ink text-right max-w-[50%]">
                 {placedOrder.deliveryAddress}
               </span>
             </div>
             {placedOrder.notes && placedOrder.notes !== 'No notes' && (
-              <div className="flex items-start justify-between py-2 border-b border-[#F6F7F6]">
-                <span className="text-sm text-[#6B716D]">📝 Notes</span>
-                <span className="font-medium text-[#151A17] text-right max-w-[50%]">
+              <div className="flex items-start justify-between py-2 border-b border-cream">
+                <span className="text-sm text-muted">📝 Notes</span>
+                <span className="font-medium text-ink text-right max-w-[50%]">
                   {placedOrder.notes}
                 </span>
               </div>
             )}
             {placedOrder.customAmount && placedOrder.customAmount > 0 && (
-              <div className="flex items-center justify-between py-2 border-b border-[#F6F7F6]">
-                <span className="text-sm text-[#6B716D]">💳 Partial Payment</span>
+              <div className="flex items-center justify-between py-2 border-b border-cream">
+                <span className="text-sm text-muted">💳 Partial Payment</span>
                 <span className="font-medium text-[#3B6FD8]">
                   ₹{placedOrder.customAmount.toFixed(0)}
                 </span>
               </div>
             )}
-            <div className="flex items-center justify-between py-2 mt-2 border-t-2 border-[#E5E8E6] pt-3">
-              <span className="text-base font-semibold text-[#151A17]">Total Amount</span>
-              <span className="text-xl font-bold text-[#111714]">
+            <div className="flex items-center justify-between py-2 mt-2 border-t-2 border-line pt-3">
+              <span className="text-base font-semibold text-ink">Total Amount</span>
+              <span className="text-xl font-bold text-brand">
                 ₹{totalAmountDisplay.toFixed(0)}
               </span>
             </div>
@@ -435,12 +436,12 @@ const RetailerPlaceOrder = () => {
         </div>
 
         {/* Updated Outstanding Card */}
-        <div className="bg-[#E8F5E9] border border-[#16834B]/30 rounded-xl p-4 mb-6">
+        <div className="bg-success-soft border border-success/30 rounded-xl p-4 mb-6">
           <div className="flex items-center gap-3">
-            <FiCheckCircle className="w-5 h-5 text-[#16834B]" />
+            <FiCheckCircle className="w-5 h-5 text-success" />
             <div>
-              <p className="text-sm font-medium text-[#151A17]">Updated Outstanding Balance</p>
-              <p className="text-xl font-bold text-[#16834B]">
+              <p className="text-sm font-medium text-ink">Updated Outstanding Balance</p>
+              <p className="text-xl font-bold text-success">
                 {formatCurrency(outstanding)}
               </p>
             </div>
@@ -448,12 +449,12 @@ const RetailerPlaceOrder = () => {
         </div>
 
         {/* Status Card */}
-        <div className="bg-[#F6F7F6] rounded-xl p-4 mb-6">
+        <div className="bg-cream rounded-xl p-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-[#F59E0B] rounded-full animate-pulse"></div>
             <div>
-              <p className="text-sm font-medium text-[#151A17]">Order Status: Pending</p>
-              <p className="text-xs text-[#6B716D]">We'll notify you when your order is confirmed</p>
+              <p className="text-sm font-medium text-ink">Order Status: Pending</p>
+              <p className="text-xs text-muted">We'll notify you when your order is confirmed</p>
             </div>
           </div>
         </div>
@@ -487,18 +488,18 @@ const RetailerPlaceOrder = () => {
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[#151A17]">Place Order</h1>
-        <p className="text-sm text-[#6B716D] mt-1">Just enter the number of hens. That's it.</p>
+        <h1 className="text-2xl font-semibold text-ink">Place Order</h1>
+        <p className="text-sm text-muted mt-1">Just enter the number of hens. That's it.</p>
       </div>
 
       {/* Abandoned checkout notice */}
       {paymentFailedNotice && (
-        <div className="bg-[#FDEEEE] border border-[#D14343] rounded-xl p-4 mb-6">
+        <div className="bg-danger-soft border border-danger rounded-xl p-4 mb-6">
           <div className="flex items-center gap-2">
-            <FiAlertCircle className="w-5 h-5 text-[#D14343] shrink-0" />
+            <FiAlertCircle className="w-5 h-5 text-danger shrink-0" />
             <div>
-              <p className="text-sm font-medium text-[#D14343]">Payment Failed</p>
-              <p className="text-xs text-[#151A17] mt-0.5">
+              <p className="text-sm font-medium text-danger">Payment Failed</p>
+              <p className="text-xs text-ink mt-0.5">
                 Order {paymentFailedNotice.orderNumber} was not placed — the payment
                 {paymentFailedNotice.amount ? ` of ₹${paymentFailedNotice.amount}` : ''} was not completed.
                 You can place a new order whenever you're ready.
@@ -510,10 +511,10 @@ const RetailerPlaceOrder = () => {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-[#FDEEEE] border border-[#D14343] rounded-xl p-4 mb-6">
+        <div className="bg-danger-soft border border-danger rounded-xl p-4 mb-6">
           <div className="flex items-center gap-2">
-            <FiAlertCircle className="w-5 h-5 text-[#D14343]" />
-            <p className="text-sm text-[#D14343]">{error}</p>
+            <FiAlertCircle className="w-5 h-5 text-danger" />
+            <p className="text-sm text-danger">{error}</p>
           </div>
         </div>
       )}
@@ -522,8 +523,8 @@ const RetailerPlaceOrder = () => {
       {dataError && (
         <div className="bg-[#FFF3CD] border border-[#FFC107] rounded-xl p-4 mb-6">
           <div className="flex items-center gap-2">
-            <FiAlertCircle className="w-5 h-5 text-[#D14343]" />
-            <p className="text-sm text-[#151A17]">{dataError} Using default fallback values.</p>
+            <FiAlertCircle className="w-5 h-5 text-danger" />
+            <p className="text-sm text-ink">{dataError} Using default fallback values.</p>
           </div>
         </div>
       )}
@@ -534,7 +535,7 @@ const RetailerPlaceOrder = () => {
         <div className="bg-[#FFF8E6] border border-[#E0A32E] rounded-xl p-4 mb-6">
           <div className="flex items-center gap-2">
             <FiAlertCircle className="w-5 h-5 text-[#E0A32E]" />
-            <p className="text-sm text-[#151A17]">
+            <p className="text-sm text-ink">
               Outstanding Balance: <span className="font-bold">{formatCurrency(outstanding)}</span>
             </p>
           </div>
@@ -543,29 +544,29 @@ const RetailerPlaceOrder = () => {
 
       {/* Today's rate — set by the admin, read-only here */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
-          <p className="text-xs font-medium text-[#6B716D]">PRICE PER KG</p>
-          <p className="text-2xl font-bold text-[#151A17] mt-1">₹{pricePerKg}</p>
+        <div className="bg-white rounded-xl border border-line p-4">
+          <p className="text-xs font-medium text-muted">PRICE PER KG</p>
+          <p className="text-2xl font-bold text-ink mt-1">₹{pricePerKg}</p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
-          <p className="text-xs font-medium text-[#6B716D]">AVG WEIGHT / HEN</p>
-          <p className="text-2xl font-bold text-[#151A17] mt-1">
+        <div className="bg-white rounded-xl border border-line p-4">
+          <p className="text-xs font-medium text-muted">AVG WEIGHT / HEN</p>
+          <p className="text-2xl font-bold text-ink mt-1">
             {weightMissing ? '—' : `${avgWeight} kg`}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-[#E5E8E6] p-4">
-          <p className="text-xs font-medium text-[#6B716D]">TRANSPORT / HEN</p>
-          <p className="text-2xl font-bold text-[#151A17] mt-1">₹{transportFeePerHen}</p>
+        <div className="bg-white rounded-xl border border-line p-4">
+          <p className="text-xs font-medium text-muted">TRANSPORT / HEN</p>
+          <p className="text-2xl font-bold text-ink mt-1">₹{transportFeePerHen}</p>
         </div>
       </div>
 
       {/* Average weight is what converts hens into kilograms. Without it the
           order cannot be priced, so say so plainly instead of guessing. */}
       {!isPageLoading && weightMissing && (
-        <div className="bg-[#FDEEEE] border border-[#D14343] rounded-xl p-4 mb-6">
+        <div className="bg-danger-soft border border-danger rounded-xl p-4 mb-6">
           <div className="flex items-center gap-2">
-            <FiAlertCircle className="w-5 h-5 text-[#D14343]" />
-            <p className="text-sm text-[#151A17]">
+            <FiAlertCircle className="w-5 h-5 text-danger" />
+            <p className="text-sm text-ink">
               Today's average weight per hen hasn't been set yet. Please contact the
               admin before ordering.
             </p>
@@ -574,8 +575,8 @@ const RetailerPlaceOrder = () => {
       )}
 
       {/* Hen Count Input */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
-        <label className="block text-sm font-medium text-[#151A17] mb-2">
+      <div className="bg-white rounded-xl border border-line p-6 mb-6">
+        <label className="block text-sm font-medium text-ink mb-2">
           How many hens?
         </label>
         <div className="flex items-center gap-4">
@@ -584,25 +585,25 @@ const RetailerPlaceOrder = () => {
             value={hens}
             onChange={(e) => setHens(e.target.value)}
             placeholder="e.g. 500"
-            className="flex-1 px-4 py-3 text-lg border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+            className="flex-1 px-4 py-3 text-lg border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             min="0"
             step="1"
             disabled={isLoading || weightMissing}
           />
-          <span className="text-lg font-medium text-[#6B716D]">hens</span>
+          <span className="text-lg font-medium text-muted">hens</span>
         </div>
 
         {/* Live weight/transport conversion so the retailer sees what they're getting */}
         {henCount > 0 && !weightMissing && (
           <div className="mt-3 space-y-1">
-            <p className="text-sm text-[#6B716D]">
+            <p className="text-sm text-muted">
               {henCount} hens × {avgWeight} kg ={' '}
-              <span className="font-bold text-[#151A17]">{totalKg.toFixed(2)} kg</span>
+              <span className="font-bold text-ink">{totalKg.toFixed(2)} kg</span>
             </p>
             {transportFeePerHen > 0 && (
-              <p className="text-sm text-[#6B716D]">
+              <p className="text-sm text-muted">
                 Transport: {henCount} hens × ₹{transportFeePerHen} ={' '}
-                <span className="font-bold text-[#151A17]">₹{transportFee.toFixed(0)}</span>
+                <span className="font-bold text-ink">₹{transportFee.toFixed(0)}</span>
               </p>
             )}
           </div>
@@ -614,7 +615,7 @@ const RetailerPlaceOrder = () => {
             <button
               key={option}
               onClick={() => setHens(option.toString())}
-              className="px-4 py-2 bg-[#F6F7F6] rounded-lg text-sm text-[#151A17] hover:bg-[#E5E8E6] transition"
+              className="px-4 py-2 bg-cream rounded-lg text-sm text-ink hover:bg-line transition"
               disabled={isLoading}
             >
               {option}
@@ -624,8 +625,8 @@ const RetailerPlaceOrder = () => {
       </div>
 
       {/* Delivery Address */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
-        <label className="block text-sm font-medium text-[#151A17] mb-2">
+      <div className="bg-white rounded-xl border border-line p-6 mb-6">
+        <label className="block text-sm font-medium text-ink mb-2">
           Delivery Address (Optional)
         </label>
         <input
@@ -633,53 +634,53 @@ const RetailerPlaceOrder = () => {
           value={deliveryAddress}
           onChange={(e) => setDeliveryAddress(e.target.value)}
           placeholder="Enter delivery address"
-          className="w-full px-4 py-3 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+          className="w-full px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
           disabled={isLoading}
         />
       </div>
 
       {/* Notes */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
-        <label className="block text-sm font-medium text-[#151A17] mb-2">
+      <div className="bg-white rounded-xl border border-line p-6 mb-6">
+        <label className="block text-sm font-medium text-ink mb-2">
           Notes (Optional)
         </label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Any special instructions..."
-          className="w-full px-4 py-3 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition resize-none"
+          className="w-full px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition resize-none"
           rows="2"
           disabled={isLoading}
         />
       </div>
 
       {/* Payment Method */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 mb-6">
-        <h3 className="font-semibold text-[#151A17] mb-4">Payment Method</h3>
+      <div className="bg-white rounded-xl border border-line p-6 mb-6">
+        <h3 className="font-semibold text-ink mb-4">Payment Method</h3>
         
         {/* UPI Payment */}
         <button
           onClick={() => setSelectedPayment('upi')}
           className={`w-full flex items-center justify-between p-4 rounded-lg border-2 transition mb-3 ${
             selectedPayment === 'upi'
-              ? 'border-[#111714] bg-[#F6F7F6]'
-              : 'border-[#E5E8E6] hover:border-[#111714]'
+              ? 'border-brand bg-cream'
+              : 'border-line hover:border-brand'
           }`}
           disabled={isLoading}
         >
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${
-              selectedPayment === 'upi' ? 'bg-[#111714] text-white' : 'bg-[#F6F7F6]'
+              selectedPayment === 'upi' ? 'bg-brand text-white' : 'bg-cream'
             }`}>
               <FiSmartphone className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <p className="font-medium text-[#151A17]">UPI</p>
-              <p className="text-sm text-[#6B716D]">₹{pricePerKg}/kg</p>
+              <p className="font-medium text-ink">UPI</p>
+              <p className="text-sm text-muted">₹{pricePerKg}/kg</p>
             </div>
           </div>
           {selectedPayment === 'upi' && (
-            <FiCheck className="w-5 h-5 text-[#16834B]" />
+            <FiCheck className="w-5 h-5 text-success" />
           )}
         </button>
 
@@ -688,57 +689,57 @@ const RetailerPlaceOrder = () => {
           onClick={() => setSelectedPayment('cash')}
           className={`w-full flex items-center justify-between p-4 rounded-lg border-2 transition ${
             selectedPayment === 'cash'
-              ? 'border-[#111714] bg-[#F6F7F6]'
-              : 'border-[#E5E8E6] hover:border-[#111714]'
+              ? 'border-brand bg-cream'
+              : 'border-line hover:border-brand'
           }`}
           disabled={isLoading}
         >
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${
-              selectedPayment === 'cash' ? 'bg-[#111714] text-white' : 'bg-[#F6F7F6]'
+              selectedPayment === 'cash' ? 'bg-brand text-white' : 'bg-cream'
             }`}>
               <FiDollarSign className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <p className="font-medium text-[#151A17]">Credit</p>
-              <p className="text-sm text-[#6B716D]">₹{pricePerKg}/kg</p>
+              <p className="font-medium text-ink">Credit</p>
+              <p className="text-sm text-muted">₹{pricePerKg}/kg</p>
             </div>
           </div>
           {selectedPayment === 'cash' && (
-            <FiCheck className="w-5 h-5 text-[#16834B]" />
+            <FiCheck className="w-5 h-5 text-success" />
           )}
         </button>
 
         {/* Custom Amount - Only Show for UPI */}
         {henCount > 0 && !weightMissing && selectedPayment === 'upi' && (
-          <div className="mt-4 p-4 bg-[#F6F7F6] rounded-lg">
-            <p className="text-sm text-[#6B716D] mb-1">
+          <div className="mt-4 p-4 bg-cream rounded-lg">
+            <p className="text-sm text-muted mb-1">
               Chicken: {totalKg.toFixed(2)} kg × ₹{pricePerKg} = ₹{chickenAmount.toFixed(0)}
             </p>
             {transportFeePerHen > 0 && (
-              <p className="text-sm text-[#6B716D] mb-1">
+              <p className="text-sm text-muted mb-1">
                 Transport: {henCount} hens × ₹{transportFeePerHen} = ₹{transportFee.toFixed(0)}
               </p>
             )}
-            <p className="text-sm font-semibold text-[#151A17] mb-2">
+            <p className="text-sm font-semibold text-ink mb-2">
               Total: ₹{totalAmount.toFixed(0)}
             </p>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-[#151A17]">Pay:</span>
+              <span className="text-sm font-medium text-ink">Pay:</span>
               <input
                 type="number"
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
                 placeholder="Enter amount"
-                className="flex-1 px-3 py-2 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+                className="flex-1 px-3 py-2 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
                 min="0"
                 step="1"
                 max={totalAmount}
                 disabled={isLoading}
               />
-              <span className="text-sm text-[#6B716D]">Max: ₹{totalAmount.toFixed(0)}</span>
+              <span className="text-sm text-muted">Max: ₹{totalAmount.toFixed(0)}</span>
             </div>
-            <p className="text-xs text-[#6B716D] mt-2">
+            <p className="text-xs text-muted mt-2">
               <FiAlertCircle className="inline w-3 h-3 mr-1" />
               Enter custom amount to pay partially, or leave empty for full payment
             </p>
@@ -747,20 +748,20 @@ const RetailerPlaceOrder = () => {
 
         {/* Show total for Credit without custom amount input */}
         {henCount > 0 && !weightMissing && selectedPayment === 'cash' && (
-          <div className="mt-4 p-4 bg-[#F6F7F6] rounded-lg">
-            <p className="text-sm text-[#6B716D]">
+          <div className="mt-4 p-4 bg-cream rounded-lg">
+            <p className="text-sm text-muted">
               Chicken: {totalKg.toFixed(2)} kg × ₹{pricePerKg} = ₹{chickenAmount.toFixed(0)}
             </p>
             {transportFeePerHen > 0 && (
-              <p className="text-sm text-[#6B716D]">
+              <p className="text-sm text-muted">
                 Transport: {henCount} hens × ₹{transportFeePerHen} = ₹{transportFee.toFixed(0)}
               </p>
             )}
-            <p className="text-sm font-semibold text-[#151A17] mt-1">
-              Total: <span className="font-bold text-[#151A17]">₹{totalAmount.toFixed(0)}</span>
+            <p className="text-sm font-semibold text-ink mt-1">
+              Total: <span className="font-bold text-ink">₹{totalAmount.toFixed(0)}</span>
             </p>
-            <p className="text-xs text-[#6B716D] mt-1">
-              <FiCheck className="inline w-3 h-3 text-[#16834B] mr-1" />
+            <p className="text-xs text-muted mt-1">
+              <FiCheck className="inline w-3 h-3 text-success mr-1" />
               Full payment will be collected on delivery
             </p>
           </div>
@@ -768,20 +769,20 @@ const RetailerPlaceOrder = () => {
       </div>
 
       {/* Total & Place Order */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-6 sticky bottom-0">
+      <div className="bg-white rounded-xl border border-line p-6 sticky bottom-0">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-sm text-[#6B716D]">TOTAL</p>
-            <p className="text-sm text-[#6B716D]">
+            <p className="text-sm text-muted">TOTAL</p>
+            <p className="text-sm text-muted">
               {henCount > 0 && !weightMissing
                 ? `${henCount} hens · ${totalKg.toFixed(2)} kg × ₹${pricePerKg}${transportFeePerHen > 0 ? ` + ₹${transportFeePerHen}/hen transport` : ''}`
                 : `0 hens · 0 kg × ₹${pricePerKg}`}
             </p>
-            <p className="text-xs text-[#6B716D] mt-1">
+            <p className="text-xs text-muted mt-1">
               Payment: {selectedPayment === 'upi' ? 'UPI' : 'Credit'}
             </p>
           </div>
-          <p className="text-3xl font-bold text-[#111714]">
+          <p className="text-3xl font-bold text-brand">
             {henCount > 0 && !weightMissing
               ? `₹${totalAmount.toFixed(0)}`
               : '₹0'}
@@ -848,62 +849,62 @@ const RetailerPlaceOrder = () => {
         {orderData && (
           <div className="space-y-4">
             {/* Order Summary Card */}
-            <div className="bg-[#F8FAF9] rounded-xl p-4 border border-[#E5E8E6]">
+            <div className="bg-cream rounded-xl p-4 border border-line">
               <div className="flex items-center gap-2 mb-3">
-                <FiPackage className="w-5 h-5 text-[#111714]" />
-                <h4 className="font-semibold text-[#151A17]">Order Summary</h4>
+                <FiPackage className="w-5 h-5 text-brand" />
+                <h4 className="font-semibold text-ink">Order Summary</h4>
               </div>
               
               <div className="space-y-3">
-                <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
-                  <span className="text-sm text-[#6B716D]">📦 Quantity</span>
-                  <span className="font-medium text-[#151A17]">
+                <div className="flex items-center justify-between py-2 border-b border-line">
+                  <span className="text-sm text-muted">📦 Quantity</span>
+                  <span className="font-medium text-ink">
                     {orderData.hens} hens ({orderData.kg} kg)
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
-                  <span className="text-sm text-[#6B716D]">💰 Rate</span>
-                  <span className="font-medium text-[#151A17]">₹{orderData.rate_per_kg}/kg</span>
+                <div className="flex items-center justify-between py-2 border-b border-line">
+                  <span className="text-sm text-muted">💰 Rate</span>
+                  <span className="font-medium text-ink">₹{orderData.rate_per_kg}/kg</span>
                 </div>
 
-                <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
-                  <span className="text-sm text-[#6B716D]">💵 Chicken Amount</span>
-                  <span className="font-medium text-[#151A17]">
+                <div className="flex items-center justify-between py-2 border-b border-line">
+                  <span className="text-sm text-muted">💵 Chicken Amount</span>
+                  <span className="font-medium text-ink">
                     ₹{orderData.chickenAmount.toFixed(0)}
                   </span>
                 </div>
 
                 {orderData.transportFee > 0 && (
-                  <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
-                    <span className="text-sm text-[#6B716D]">🚚 Transport Fee ({orderData.hens} × ₹{orderData.transportFeePerHen})</span>
-                    <span className="font-medium text-[#151A17]">
+                  <div className="flex items-center justify-between py-2 border-b border-line">
+                    <span className="text-sm text-muted">🚚 Transport Fee ({orderData.hens} × ₹{orderData.transportFeePerHen})</span>
+                    <span className="font-medium text-ink">
                       ₹{orderData.transportFee.toFixed(0)}
                     </span>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
-                  <span className="text-sm text-[#6B716D]">💵 Total Amount</span>
-                  <span className="text-lg font-bold text-[#111714]">
+                <div className="flex items-center justify-between py-2 border-b border-line">
+                  <span className="text-sm text-muted">💵 Total Amount</span>
+                  <span className="text-lg font-bold text-brand">
                     ₹{orderData.totalAmount.toFixed(0)}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-2 border-b border-[#E5E8E6]">
+                <div className="flex items-center justify-between py-2 border-b border-line">
                   <div className="flex items-center gap-2">
-                    <FiCreditCard className="w-4 h-4 text-[#6B716D]" />
-                    <span className="text-sm text-[#6B716D]">Payment Method</span>
+                    <FiCreditCard className="w-4 h-4 text-muted" />
+                    <span className="text-sm text-muted">Payment Method</span>
                   </div>
-                  <span className="font-medium text-[#151A17]">{orderData.paymentMethod}</span>
+                  <span className="font-medium text-ink">{orderData.paymentMethod}</span>
                 </div>
 
-                <div className="flex items-start justify-between py-2 border-b border-[#E5E8E6]">
+                <div className="flex items-start justify-between py-2 border-b border-line">
                   <div className="flex items-center gap-2">
-                    <FiMapPin className="w-4 h-4 text-[#6B716D] mt-1" />
-                    <span className="text-sm text-[#6B716D]">Delivery Address</span>
+                    <FiMapPin className="w-4 h-4 text-muted mt-1" />
+                    <span className="text-sm text-muted">Delivery Address</span>
                   </div>
-                  <span className="font-medium text-[#151A17] text-right max-w-[60%]">
+                  <span className="font-medium text-ink text-right max-w-[60%]">
                     {orderData.deliveryAddress}
                   </span>
                 </div>
@@ -911,10 +912,10 @@ const RetailerPlaceOrder = () => {
                 {orderData.notes !== 'No notes' && (
                   <div className="flex items-start justify-between py-2">
                     <div className="flex items-center gap-2">
-                      <FiMessageSquare className="w-4 h-4 text-[#6B716D] mt-1" />
-                      <span className="text-sm text-[#6B716D]">Notes</span>
+                      <FiMessageSquare className="w-4 h-4 text-muted mt-1" />
+                      <span className="text-sm text-muted">Notes</span>
                     </div>
-                    <span className="font-medium text-[#151A17] text-right max-w-[60%]">
+                    <span className="font-medium text-ink text-right max-w-[60%]">
                       {orderData.notes}
                     </span>
                   </div>
@@ -925,7 +926,7 @@ const RetailerPlaceOrder = () => {
                     <p className="text-sm text-[#3B6FD8]">
                       💳 Partial Payment: ₹{orderData.customAmount.toFixed(0)} of ₹{orderData.totalAmount.toFixed(0)}
                     </p>
-                    <p className="text-xs text-[#6B716D] mt-1">
+                    <p className="text-xs text-muted mt-1">
                       Remaining balance: ₹{(orderData.totalAmount - orderData.customAmount).toFixed(0)}
                     </p>
                   </div>
@@ -934,11 +935,11 @@ const RetailerPlaceOrder = () => {
             </div>
 
             {/* Confirmation Message */}
-            <div className="bg-[#F6F7F6] rounded-lg p-3 text-center">
-              <p className="text-sm text-[#6B716D]">
+            <div className="bg-cream rounded-lg p-3 text-center">
+              <p className="text-sm text-muted">
                 By confirming, you agree to place this order
               </p>
-              <p className="text-xs text-[#6B716D] mt-1">
+              <p className="text-xs text-muted mt-1">
                 Order will be processed after confirmation
               </p>
             </div>

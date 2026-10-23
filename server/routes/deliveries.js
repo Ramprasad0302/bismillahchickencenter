@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const deliveryController = require('../controllers/deliveryController');
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 
 // All routes require authentication
-router.use(authMiddleware);
+router.use(authMiddleware, requireRole('admin'));
 
 // Get pending orders (unassigned)
 router.get('/pending', deliveryController.getPendingOrders);

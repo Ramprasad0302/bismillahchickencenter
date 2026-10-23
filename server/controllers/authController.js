@@ -6,11 +6,10 @@ const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/jwt');
 // Login user
 const login = async (req, res) => {
   try {
-    console.log('🔐 Login attempt for phone:', req.body?.phone);
     const { phone, password } = req.body;
     
     // Validate input
-    if (!phone || !password) {
+    if (!phone || !password || typeof phone !== 'string' || typeof password !== 'string' || password.length > 200) {
       return res.status(400).json({
         success: false,
         message: 'Phone number and password are required'

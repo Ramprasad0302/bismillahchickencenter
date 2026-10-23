@@ -15,7 +15,8 @@ import {
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import api from '../../services/api';
-import { startCheckout, redirectToGateway } from '../../services/paymentService';
+import { startCheckout, redirectToGateway } from '../../services/paymentService';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const RetailerOrderDetails = () => {
   // ✅ Now reading the Numeric ID (e.g., 4, 11, etc.)
@@ -169,8 +170,8 @@ const RetailerOrderDetails = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiLoader className="w-12 h-12 text-[#111714] animate-spin" />
-        <p className="mt-4 text-[#6B716D]">Loading order details...</p>
+        <BrandLoader />
+        <p className="mt-4 text-muted">Loading order details...</p>
       </div>
     );
   }
@@ -179,8 +180,8 @@ const RetailerOrderDetails = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#D14343]" />
-        <p className="mt-4 text-[#D14343] font-medium">{error}</p>
+        <FiAlertCircle className="w-12 h-12 text-danger" />
+        <p className="mt-4 text-danger font-medium">{error}</p>
         <Link to="/retailer/orders">
           <Button variant="outline" className="mt-4">
             <FiArrowLeft className="w-4 h-4 mr-2" />
@@ -195,8 +196,8 @@ const RetailerOrderDetails = () => {
   if (!order) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#6B716D]" />
-        <p className="mt-4 text-[#6B716D]">Order not found</p>
+        <FiAlertCircle className="w-12 h-12 text-muted" />
+        <p className="mt-4 text-muted">Order not found</p>
         <Link to="/retailer/orders">
           <Button variant="outline" className="mt-4">
             <FiArrowLeft className="w-4 h-4 mr-2" />
@@ -216,7 +217,7 @@ const RetailerOrderDetails = () => {
   return (
     <div>
       {/* Back Button */}
-      <Link to="/retailer/orders" className="inline-flex items-center gap-2 text-[#6B716D] hover:text-[#151A17] mb-6 transition">
+      <Link to="/retailer/orders" className="inline-flex items-center gap-2 text-muted hover:text-ink mb-6 transition">
         <FiArrowLeft className="w-4 h-4" />
         Back to Orders
       </Link>
@@ -224,8 +225,8 @@ const RetailerOrderDetails = () => {
       {/* Order Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Order #{order.order_number}</h1>
-          <p className="text-sm text-[#6B716D] mt-1">
+          <h1 className="text-2xl font-semibold text-ink">Order #{order.order_number}</h1>
+          <p className="text-sm text-muted mt-1">
             Placed on {formatDate(order.order_date)} at {formatTime(order.order_date)}
           </p>
         </div>
@@ -240,44 +241,44 @@ const RetailerOrderDetails = () => {
         {/* Left Column - Order Items & Timeline */}
         <div className="lg:col-span-2 space-y-6">
           {/* Order Summary */}
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-            <h3 className="font-semibold text-[#151A17] mb-4">Order Summary</h3>
+          <div className="bg-white rounded-xl border border-line p-6">
+            <h3 className="font-semibold text-ink mb-4">Order Summary</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-[#F6F7F6] rounded-lg p-3">
-                <p className="text-xs text-[#6B716D]">Total KG</p>
-                <p className="text-lg font-semibold text-[#151A17]">{order.kg_ordered} kg</p>
+              <div className="bg-cream rounded-lg p-3">
+                <p className="text-xs text-muted">Total KG</p>
+                <p className="text-lg font-semibold text-ink">{order.kg_ordered} kg</p>
               </div>
-              <div className="bg-[#F6F7F6] rounded-lg p-3">
-                <p className="text-xs text-[#6B716D]">Delivered KG</p>
-                <p className="text-lg font-semibold text-[#151A17]">{order.kg_delivered || 0} kg</p>
+              <div className="bg-cream rounded-lg p-3">
+                <p className="text-xs text-muted">Delivered KG</p>
+                <p className="text-lg font-semibold text-ink">{order.kg_delivered || 0} kg</p>
               </div>
-              <div className="bg-[#F6F7F6] rounded-lg p-3">
-                <p className="text-xs text-[#6B716D]">Rate per KG</p>
-                <p className="text-lg font-semibold text-[#151A17]">₹{order.rate_per_kg}</p>
+              <div className="bg-cream rounded-lg p-3">
+                <p className="text-xs text-muted">Rate per KG</p>
+                <p className="text-lg font-semibold text-ink">₹{order.rate_per_kg}</p>
               </div>
-              <div className="bg-[#F6F7F6] rounded-lg p-3">
-                <p className="text-xs text-[#6B716D]">Total Amount</p>
-                <p className="text-lg font-semibold text-[#151A17]">{formatCurrency(order.total_amount)}</p>
+              <div className="bg-cream rounded-lg p-3">
+                <p className="text-xs text-muted">Total Amount</p>
+                <p className="text-lg font-semibold text-ink">{formatCurrency(order.total_amount)}</p>
               </div>
             </div>
           </div>
 
           {/* Order Timeline */}
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-            <h3 className="font-semibold text-[#151A17] mb-4">Order Timeline</h3>
+          <div className="bg-white rounded-xl border border-line p-6">
+            <h3 className="font-semibold text-ink mb-4">Order Timeline</h3>
             <div className="space-y-4">
               {timeline.map((step, index) => (
                 <div key={index} className="flex items-start gap-3">
                   {step.completed ? (
-                    <FiCheckCircle className="w-5 h-5 text-[#16834B] mt-0.5" />
+                    <FiCheckCircle className="w-5 h-5 text-success mt-0.5" />
                   ) : (
-                    <FiCircle className="w-5 h-5 text-[#6B716D] mt-0.5" />
+                    <FiCircle className="w-5 h-5 text-muted mt-0.5" />
                   )}
                   <div>
-                    <p className={`text-sm font-medium ${step.completed ? 'text-[#151A17]' : 'text-[#6B716D]'}`}>
+                    <p className={`text-sm font-medium ${step.completed ? 'text-ink' : 'text-muted'}`}>
                       {step.status}
                     </p>
-                    <p className="text-xs text-[#6B716D]">{step.time}</p>
+                    <p className="text-xs text-muted">{step.time}</p>
                   </div>
                 </div>
               ))}
@@ -288,38 +289,38 @@ const RetailerOrderDetails = () => {
         {/* Right Column - Payment & Delivery */}
         <div className="space-y-6">
           {/* Payment Details */}
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-            <h3 className="font-semibold text-[#151A17] mb-4">Payment Details</h3>
+          <div className="bg-white rounded-xl border border-line p-6">
+            <h3 className="font-semibold text-ink mb-4">Payment Details</h3>
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-[#6B716D]">Total Amount</span>
+                <span className="text-muted">Total Amount</span>
                 <span className="font-medium">{formatCurrency(order.total_amount)}</span>
               </div>
               {parseFloat(order.transport_fee) > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#6B716D]">Transport Fee</span>
+                  <span className="text-muted">Transport Fee</span>
                   <span className="font-medium">{formatCurrency(order.transport_fee)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span className="text-[#6B716D]">Paid Amount</span>
-                <span className="font-medium text-[#16834B]">{formatCurrency(order.paid_amount)}</span>
+                <span className="text-muted">Paid Amount</span>
+                <span className="font-medium text-success">{formatCurrency(order.paid_amount)}</span>
               </div>
               <div className="flex justify-between text-sm font-semibold">
-                <span className="text-[#6B716D]">Balance</span>
-                <span className="text-[#D14343]">{formatCurrency(order.balance)}</span>
+                <span className="text-muted">Balance</span>
+                <span className="text-danger">{formatCurrency(order.balance)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[#6B716D]">Payment Method</span>
+                <span className="text-muted">Payment Method</span>
                 <span className="font-medium capitalize">{order.payment_method || 'N/A'}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[#6B716D]">Payment Status</span>
+                <span className="text-muted">Payment Status</span>
                 <Badge variant={paymentInfo.color}>{paymentInfo.label}</Badge>
               </div>
               {order.upi_transaction_id && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#6B716D]">UPI Transaction</span>
+                  <span className="text-muted">UPI Transaction</span>
                   <span className="font-medium text-xs">{order.upi_transaction_id}</span>
                 </div>
               )}
@@ -327,14 +328,14 @@ const RetailerOrderDetails = () => {
           </div>
 
           {/* Delivery Details */}
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-            <h3 className="font-semibold text-[#151A17] mb-4">Delivery Details</h3>
+          <div className="bg-white rounded-xl border border-line p-6">
+            <h3 className="font-semibold text-ink mb-4">Delivery Details</h3>
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <FiPackage className="w-4 h-4 text-[#6B716D] mt-0.5" />
+                <FiPackage className="w-4 h-4 text-muted mt-0.5" />
                 <div>
-                  <p className="text-sm text-[#6B716D]">Delivery Address</p>
-                  <p className="text-sm font-medium text-[#151A17]">
+                  <p className="text-sm text-muted">Delivery Address</p>
+                  <p className="text-sm font-medium text-ink">
                     {order.delivery_address || 'Not provided'}
                   </p>
                 </div>
@@ -342,10 +343,10 @@ const RetailerOrderDetails = () => {
               {/* ✅ Show delivered date if it exists */}
               {order.delivered_date && (
                 <div className="flex items-center gap-3">
-                  <FiCalendar className="w-4 h-4 text-[#16834B]" />
+                  <FiCalendar className="w-4 h-4 text-success" />
                   <div>
-                    <p className="text-sm text-[#6B716D]">Delivered On</p>
-                    <p className="text-sm font-medium text-[#151A17]">
+                    <p className="text-sm text-muted">Delivered On</p>
+                    <p className="text-sm font-medium text-ink">
                       {formatDate(order.delivered_date)}
                     </p>
                   </div>
@@ -353,10 +354,10 @@ const RetailerOrderDetails = () => {
               )}
               {order.notes && (
                 <div className="flex items-start gap-3">
-                  <FiClock className="w-4 h-4 text-[#6B716D] mt-0.5" />
+                  <FiClock className="w-4 h-4 text-muted mt-0.5" />
                   <div>
-                    <p className="text-sm text-[#6B716D]">Notes</p>
-                    <p className="text-sm font-medium text-[#151A17]">{order.notes}</p>
+                    <p className="text-sm text-muted">Notes</p>
+                    <p className="text-sm font-medium text-ink">{order.notes}</p>
                   </div>
                 </div>
               )}
@@ -364,13 +365,13 @@ const RetailerOrderDetails = () => {
           </div>
 
           {/* Actions */}
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-6">
-            <h3 className="font-semibold text-[#151A17] mb-4">Actions</h3>
+          <div className="bg-white rounded-xl border border-line p-6">
+            <h3 className="font-semibold text-ink mb-4">Actions</h3>
 
             {paymentError && (
-              <div className="mb-3 p-3 bg-[#FDEEEE] border border-[#D14343]/20 rounded-lg flex items-start gap-2">
-                <FiAlertCircle className="w-4 h-4 text-[#D14343] mt-0.5 shrink-0" />
-                <p className="text-xs text-[#D14343]">{paymentError}</p>
+              <div className="mb-3 p-3 bg-danger-soft border border-danger/20 rounded-lg flex items-start gap-2">
+                <FiAlertCircle className="w-4 h-4 text-danger mt-0.5 shrink-0" />
+                <p className="text-xs text-danger">{paymentError}</p>
               </div>
             )}
 
@@ -395,7 +396,7 @@ const RetailerOrderDetails = () => {
                   )}
                 </Button>
               ) : (
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#EAF6EF] text-[#16834B] rounded-lg text-sm font-medium">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-success-soft text-success rounded-lg text-sm font-medium">
                   <FiCheckCircle className="w-4 h-4" />
                   Fully paid
                 </div>

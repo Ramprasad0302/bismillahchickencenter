@@ -8,15 +8,15 @@ const FilterBar = ({
 }) => {
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      <FiFilter className="w-4 h-4 text-[#6B716D]" />
+      <FiFilter className="w-4 h-4 text-muted" />
       {filters.map((filter) => (
         <button
           key={filter.value}
           onClick={() => onFilterChange(filter.value)}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+          className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
             activeFilter === filter.value
-              ? 'bg-[#111714] text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-brand text-white shadow-md'
+              : 'bg-white border border-line text-muted hover:border-gold/40 hover:text-ink'
           }`}
         >
           {filter.label}

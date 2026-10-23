@@ -15,7 +15,7 @@ const currentMonth = () => new Date().toISOString().slice(0, 7);
 // ============================================
 exports.getSalarySummary = async (req, res) => {
     try {
-        const month = req.query.month || currentMonth();
+        const month = /^\d{4}-\d{2}$/.test(req.query.month || '') ? req.query.month : currentMonth();
 
         const [drivers] = await pool.query(
             `SELECT id, name, phone, daily_salary, status FROM drivers ORDER BY name`
@@ -29,83 +29,63 @@ exports.getSalarySummary = async (req, res) => {
              FROM staff WHERE role IN ('cleaner', 'helper') ORDER BY name`
         );
 
-        const employees = [];
+        // One grouped query per table instead of three queries per employee
+        // (the old per-row loop made this page slower with every hire).
+        // Date ranges instead of DATE_FORMAT(date) = ? so MySQL can use an
+        // index on the date column.
+        const [y, m] = month.split('-').map(Number);
+        const monthStart = `${month}-01`;
+        const monthEnd = new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10);
 
-        for (const d of drivers) {
-            const [[days]] = await pool.query(
-                `SELECT COUNT(DISTINCT date) AS c FROM trips
-                 WHERE driver_id = ? AND DATE_FORMAT(date, '%Y-%m') = ?`,
-                [d.id, month]
-            );
-            const [[tripsRow]] = await pool.query(
-                `SELECT COUNT(*) AS c FROM trips
-                 WHERE driver_id = ? AND DATE_FORMAT(date, '%Y-%m') = ?`,
-                [d.id, month]
-            );
-            const [[advanceRow]] = await pool.query(
-                `SELECT COALESCE(SUM(amount), 0) AS s FROM salary_advances
-                 WHERE staff_type = 'driver' AND staff_ref_id = ? AND DATE_FORMAT(date, '%Y-%m') = ?`,
-                [d.id, month]
-            );
+        const [driverTrips] = await pool.query(
+            `SELECT driver_id AS id, COUNT(DISTINCT DATE(date)) AS days, COUNT(*) AS trips
+             FROM trips WHERE date >= ? AND date < ? GROUP BY driver_id`,
+            [monthStart, monthEnd]
+        );
+        const [staffTrips] = await pool.query(
+            `SELECT staff_id AS id, COUNT(DISTINCT DATE(date)) AS days, COUNT(*) AS trips
+             FROM staff_trips WHERE date >= ? AND date < ? GROUP BY staff_id`,
+            [monthStart, monthEnd]
+        );
+        const [advances] = await pool.query(
+            `SELECT staff_type, staff_ref_id AS id, COALESCE(SUM(amount), 0) AS total
+             FROM salary_advances WHERE date >= ? AND date < ? GROUP BY staff_type, staff_ref_id`,
+            [monthStart, monthEnd]
+        );
 
-            const daysWorked = days.c;
-            const dailySalary = parseFloat(d.daily_salary) || 0;
+        const byId = (rows) => new Map(rows.map((r) => [r.id, r]));
+        const driverTripMap = byId(driverTrips);
+        const staffTripMap = byId(staffTrips);
+        const advanceMap = new Map(advances.map((a) => [`${a.staff_type}:${a.id}`, parseFloat(a.total) || 0]));
+
+        const toEmployee = (row, refType, role, tripMap) => {
+            const t = tripMap.get(row.id);
+            const daysWorked = t ? Number(t.days) : 0;
+            const dailySalary = parseFloat(row.daily_salary) || 0;
             const baseEarned = daysWorked * dailySalary;
-            const advancesTaken = parseFloat(advanceRow.s) || 0;
-
-            employees.push({
-                refType: 'driver',
-                refId: d.id,
-                name: d.name,
-                phone: d.phone,
-                role: 'Driver',
-                status: d.status,
+            const advancesTaken = advanceMap.get(`${refType}:${row.id}`) || 0;
+            return {
+                refType,
+                refId: row.id,
+                name: row.name,
+                phone: row.phone,
+                role,
+                status: row.status,
                 dailySalary,
                 daysWorked,
-                tripsCount: tripsRow.c,
+                tripsCount: t ? Number(t.trips) : 0,
                 baseEarned,
                 advancesTaken,
                 remaining: baseEarned - advancesTaken,
-            });
-        }
+            };
+        };
 
-        for (const s of staffRows) {
-            const [[days]] = await pool.query(
-                `SELECT COUNT(DISTINCT date) AS c FROM staff_trips
-                 WHERE staff_id = ? AND DATE_FORMAT(date, '%Y-%m') = ?`,
-                [s.id, month]
-            );
-            const [[tripsRow]] = await pool.query(
-                `SELECT COUNT(*) AS c FROM staff_trips
-                 WHERE staff_id = ? AND DATE_FORMAT(date, '%Y-%m') = ?`,
-                [s.id, month]
-            );
-            const [[advanceRow]] = await pool.query(
-                `SELECT COALESCE(SUM(amount), 0) AS s FROM salary_advances
-                 WHERE staff_type = 'staff' AND staff_ref_id = ? AND DATE_FORMAT(date, '%Y-%m') = ?`,
-                [s.id, month]
-            );
-
-            const daysWorked = days.c;
-            const dailySalary = parseFloat(s.daily_salary) || 0;
-            const baseEarned = daysWorked * dailySalary;
-            const advancesTaken = parseFloat(advanceRow.s) || 0;
-
-            employees.push({
-                refType: 'staff',
-                refId: s.id,
-                name: s.name,
-                phone: s.phone,
-                role: s.role.charAt(0).toUpperCase() + s.role.slice(1),
-                status: s.status,
-                dailySalary,
-                daysWorked,
-                tripsCount: tripsRow.c,
-                baseEarned,
-                advancesTaken,
-                remaining: baseEarned - advancesTaken,
-            });
-        }
+        const employees = [
+            ...drivers.map((d) => toEmployee(d, 'driver', 'Driver', driverTripMap)),
+            ...staffRows.map((s) =>
+                toEmployee(s, 'staff', s.role.charAt(0).toUpperCase() + s.role.slice(1), staffTripMap)
+            ),
+        ];
 
         employees.sort((a, b) => a.name.localeCompare(b.name));
 

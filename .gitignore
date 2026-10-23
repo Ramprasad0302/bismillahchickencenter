@@ -41,3 +41,6 @@ server/uploads/
 .vscode/
 node_modules/
 server.zip
+
+# Firebase service-account keys are secrets — never commit them
+*firebase-adminsdk*.json

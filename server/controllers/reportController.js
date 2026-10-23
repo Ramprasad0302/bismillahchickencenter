@@ -156,3 +156,197 @@ exports.exportReport = async (req, res) => {
         res.status(500).json({ success: false, message: `Export Error: ${error.message}` });
     }
 };
+
+// ============================================
+// 3. ADMIN DASHBOARD — every KPI and chart series in one round trip
+// ============================================
+// The dashboard used to download the ENTIRE orders table and add it up in
+// the browser, so it got slower with every order ever placed. These
+// aggregates run in MySQL (in parallel) and return a few KB no matter how
+// much history there is.
+const LIVE_ORDERS = `NOT (o.order_status = 'cancelled' AND o.payment_method = 'upi' AND o.paid_amount = 0)`;
+const EFFECTIVE_STATUS = `CASE WHEN EXISTS (
+        SELECT 1 FROM trip_orders tx WHERE tx.order_id = o.id AND tx.delivered_status = 'delivered'
+    ) THEN 'delivered' ELSE o.order_status END`;
+
+exports.getDashboard = async (req, res) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Access denied. Admin only.' });
+        }
+
+        const q = (sql, params = []) => pool.query(sql, params).then(([rows]) => rows);
+
+        const [
+            [totals],
+            [today],
+            [delivered],
+            [customers],
+            dailyRows,
+            monthlyRows,
+            methodRows,
+            statusRows,
+            paymentStatusRows,
+            topRetailers,
+            outstandingRetailers,
+            recentOrders,
+        ] = await Promise.all([
+            q(`SELECT
+                    COUNT(*) AS orders,
+                    COALESCE(SUM(o.total_amount), 0) AS revenue,
+                    COALESCE(SUM(o.kg_ordered), 0) AS kg_ordered,
+                    COALESCE(SUM(CASE WHEN o.order_status != 'cancelled' THEN o.balance ELSE 0 END), 0) AS outstanding,
+                    COALESCE(SUM(CASE WHEN o.payment_method = 'cash' THEN o.paid_amount ELSE 0 END), 0) AS cash_collected,
+                    COALESCE(SUM(CASE WHEN o.payment_method = 'upi' THEN o.paid_amount ELSE 0 END), 0) AS upi_collected,
+                    COALESCE(SUM(o.paid_amount), 0) AS collected
+               FROM orders o WHERE ${LIVE_ORDERS}`),
+            q(`SELECT COUNT(*) AS orders,
+                      COALESCE(SUM(o.total_amount), 0) AS revenue,
+                      COALESCE(SUM(o.kg_ordered), 0) AS kg
+                 FROM orders o
+                WHERE ${LIVE_ORDERS} AND o.created_at >= CURDATE() AND o.created_at < CURDATE() + INTERVAL 1 DAY`),
+            q(`SELECT COALESCE(SUM(COALESCE(t.kg, CASE WHEN o.order_status = 'delivered' THEN o.kg_ordered ELSE 0 END)), 0) AS kg_delivered
+                 FROM orders o
+                 LEFT JOIN (SELECT order_id, SUM(actual_delivered_kg) AS kg FROM trip_orders GROUP BY order_id) t
+                   ON t.order_id = o.id
+                WHERE ${LIVE_ORDERS}`),
+            q(`SELECT COUNT(DISTINCT o.retailer_id) AS active,
+                      (SELECT COUNT(*) FROM retailers) AS total
+                 FROM orders o WHERE ${LIVE_ORDERS}`),
+            q(`SELECT DATE(o.created_at) AS day,
+                      COUNT(*) AS orders,
+                      COALESCE(SUM(o.total_amount), 0) AS revenue,
+                      COALESCE(SUM(o.paid_amount), 0) AS collected,
+                      COALESCE(SUM(o.kg_ordered), 0) AS kg
+                 FROM orders o
+                WHERE ${LIVE_ORDERS} AND o.created_at >= CURDATE() - INTERVAL 13 DAY
+                GROUP BY DATE(o.created_at)`),
+            q(`SELECT DATE_FORMAT(o.created_at, '%Y-%m') AS month,
+                      COUNT(*) AS orders,
+                      COALESCE(SUM(o.total_amount), 0) AS revenue,
+                      COALESCE(SUM(o.paid_amount), 0) AS collected,
+                      COALESCE(SUM(o.kg_ordered), 0) AS kg
+                 FROM orders o
+                WHERE ${LIVE_ORDERS}
+                  AND o.created_at >= DATE_FORMAT(CURDATE() - INTERVAL 5 MONTH, '%Y-%m-01')
+                GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')`),
+            q(`SELECT COALESCE(o.payment_method, 'other') AS method,
+                      COUNT(*) AS orders,
+                      COALESCE(SUM(o.paid_amount), 0) AS collected,
+                      COALESCE(SUM(o.total_amount), 0) AS amount
+                 FROM orders o WHERE ${LIVE_ORDERS}
+                GROUP BY COALESCE(o.payment_method, 'other')`),
+            q(`SELECT ${EFFECTIVE_STATUS} AS status, COUNT(*) AS orders
+                 FROM orders o WHERE ${LIVE_ORDERS}
+                GROUP BY status`),
+            q(`SELECT o.payment_status AS status, COUNT(*) AS orders,
+                      COALESCE(SUM(o.total_amount), 0) AS amount,
+                      COALESCE(SUM(o.balance), 0) AS balance
+                 FROM orders o WHERE ${LIVE_ORDERS}
+                GROUP BY o.payment_status`),
+            q(`SELECT r.id, r.shop_name, r.owner_name,
+                      COUNT(*) AS orders,
+                      COALESCE(SUM(o.total_amount), 0) AS revenue,
+                      COALESCE(SUM(o.kg_ordered), 0) AS kg
+                 FROM orders o JOIN retailers r ON r.id = o.retailer_id
+                WHERE ${LIVE_ORDERS} AND o.created_at >= CURDATE() - INTERVAL 29 DAY
+                GROUP BY r.id, r.shop_name, r.owner_name
+                ORDER BY revenue DESC LIMIT 6`),
+            q(`SELECT id, shop_name, owner_name, phone, outstanding
+                 FROM retailers WHERE outstanding > 0
+                ORDER BY outstanding DESC LIMIT 6`),
+            q(`SELECT o.id, o.order_number, o.retailer_id, o.kg_ordered, o.total_amount, o.paid_amount,
+                      o.balance, o.payment_method, o.payment_status, o.created_at,
+                      ${EFFECTIVE_STATUS} AS order_status,
+                      r.shop_name, r.phone AS retailer_phone
+                 FROM orders o JOIN retailers r ON r.id = o.retailer_id
+                WHERE ${LIVE_ORDERS}
+                ORDER BY o.created_at DESC LIMIT 6`),
+        ]);
+
+        const num = (v) => parseFloat(v) || 0;
+        const ymd = (d) => {
+            const x = new Date(d);
+            return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+        };
+
+        // Fill gaps so the charts always show a continuous axis.
+        const dailyMap = new Map(dailyRows.map((r) => [ymd(r.day), r]));
+        const daily = [];
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const r = dailyMap.get(ymd(d));
+            daily.push({
+                date: ymd(d),
+                orders: r ? Number(r.orders) : 0,
+                revenue: r ? num(r.revenue) : 0,
+                collected: r ? num(r.collected) : 0,
+                kg: r ? num(r.kg) : 0,
+            });
+        }
+
+        const monthlyMap = new Map(monthlyRows.map((r) => [r.month, r]));
+        const monthly = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(1);
+            d.setMonth(d.getMonth() - i);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const r = monthlyMap.get(key);
+            monthly.push({
+                month: key,
+                orders: r ? Number(r.orders) : 0,
+                revenue: r ? num(r.revenue) : 0,
+                collected: r ? num(r.collected) : 0,
+                kg: r ? num(r.kg) : 0,
+            });
+        }
+
+        const statusCount = (s) => Number(statusRows.find((r) => r.status === s)?.orders || 0);
+
+        res.json({
+            success: true,
+            data: {
+                kpis: {
+                    todayOrders: Number(today.orders),
+                    todayRevenue: num(today.revenue),
+                    todayKg: num(today.kg),
+                    totalOrders: Number(totals.orders),
+                    totalRevenue: num(totals.revenue),
+                    kgOrdered: num(totals.kg_ordered),
+                    kgDelivered: num(delivered.kg_delivered),
+                    activeCustomers: Number(customers.active),
+                    totalCustomers: Number(customers.total),
+                    cashCollection: num(totals.cash_collected),
+                    upiCollection: num(totals.upi_collected),
+                    collected: num(totals.collected),
+                    outstanding: num(totals.outstanding),
+                    pendingDeliveries: statusCount('pending') + statusCount('out_for_delivery') + statusCount('confirmed') + statusCount('processing'),
+                    completedDeliveries: statusCount('delivered'),
+                },
+                daily,
+                monthly,
+                paymentMethods: methodRows.map((r) => ({
+                    method: r.method,
+                    orders: Number(r.orders),
+                    collected: num(r.collected),
+                    amount: num(r.amount),
+                })),
+                orderStatus: statusRows.map((r) => ({ status: r.status, orders: Number(r.orders) })),
+                paymentStatus: paymentStatusRows.map((r) => ({
+                    status: r.status,
+                    orders: Number(r.orders),
+                    amount: num(r.amount),
+                    balance: num(r.balance),
+                })),
+                topRetailers: topRetailers.map((r) => ({ ...r, orders: Number(r.orders), revenue: num(r.revenue), kg: num(r.kg) })),
+                outstandingRetailers: outstandingRetailers.map((r) => ({ ...r, outstanding: num(r.outstanding) })),
+                recentOrders,
+            },
+        });
+    } catch (error) {
+        console.error('❌ Error building dashboard:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to load dashboard data' });
+    }
+};

@@ -23,7 +23,8 @@ import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import SearchInput from '../../components/common/SearchInput';
 import EmptyState from '../../components/common/EmptyState';
-import api from '../../services/api';
+import api from '../../services/api';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 // YYYY-MM-DD in the browser's local timezone, matching what <input type=date>
 // and <input type=month> read/write -- avoids the UTC-shift bug where a
@@ -490,8 +491,8 @@ const Ledgers = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiLoader className="w-12 h-12 text-[#111714] animate-spin" />
-        <p className="mt-4 text-[#6B716D]">Loading ledgers...</p>
+        <BrandLoader />
+        <p className="mt-4 text-muted">Loading ledgers...</p>
       </div>
     );
   }
@@ -500,8 +501,8 @@ const Ledgers = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#D14343]" />
-        <p className="mt-4 text-[#D14343] font-medium">{error}</p>
+        <FiAlertCircle className="w-12 h-12 text-danger" />
+        <p className="mt-4 text-danger font-medium">{error}</p>
         <Button 
           variant="outline" 
           className="mt-4"
@@ -518,8 +519,8 @@ const Ledgers = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Ledgers</h1>
-          <p className="text-sm text-[#6B716D] mt-1">Manage retailer accounts and payments</p>
+          <h1 className="text-2xl font-semibold text-ink">Ledgers</h1>
+          <p className="text-sm text-muted mt-1">Manage retailer accounts and payments</p>
         </div>
         <Button 
           variant="outline" 
@@ -532,7 +533,7 @@ const Ledgers = () => {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <SearchInput
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -542,38 +543,38 @@ const Ledgers = () => {
       </div>
 
       {/* Retailers Table */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] overflow-hidden">
+      <div className="bg-white rounded-xl border border-line overflow-hidden">
         {filteredRetailers.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#F6F7F6]">
+              <thead className="bg-cream">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Retailer</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Total Purchase</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Total Paid</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Remaining Balance</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Action</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Retailer</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Total Purchase</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Total Paid</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">Remaining Balance</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-muted uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E8E6]">
+              <tbody className="divide-y divide-line">
                 {filteredRetailers.map((retailer) => (
-                  <tr key={retailer.id} className="hover:bg-[#F6F7F6] transition">
+                  <tr key={retailer.id} className="hover:bg-cream transition">
                     <td className="px-6 py-4">
                       <div>
-                        <p className="text-sm font-medium text-[#151A17]">{retailer.shop}</p>
-                        <p className="text-xs text-[#6B716D]">{retailer.phone}</p>
-                        <p className="text-xs text-[#6B716D]">Owner: {retailer.owner}</p>
+                        <p className="text-sm font-medium text-ink">{retailer.shop}</p>
+                        <p className="text-xs text-muted">{retailer.phone}</p>
+                        <p className="text-xs text-muted">Owner: {retailer.owner}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-[#151A17]">
+                    <td className="px-6 py-4 text-sm font-medium text-ink">
                       {formatCurrency(retailer.totalPurchase)}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-[#16834B]">
+                    <td className="px-6 py-4 text-sm font-medium text-success">
                       {formatCurrency(retailer.totalPaid)}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`text-sm font-medium ${
-                        retailer.balance > 0 ? 'text-[#D14343]' : 'text-[#16834B]'
+                        retailer.balance > 0 ? 'text-danger' : 'text-success'
                       }`}>
                         {formatCurrency(retailer.balance)}
                       </span>
@@ -582,7 +583,7 @@ const Ledgers = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openRetailerLedger(retailer)}
-                          className="px-4 py-2 bg-[#111714] text-white rounded-lg text-sm hover:bg-[#29312d] transition"
+                          className="px-4 py-2 bg-brand text-white rounded-lg text-sm hover:bg-brand-dark transition"
                         >
                           <FiEye className="w-4 h-4 inline mr-1" />
                           View Ledger
@@ -626,22 +627,22 @@ const Ledgers = () => {
           <div className="space-y-6">
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-[#F6F7F6] rounded-lg p-4 text-center">
-                <p className="text-xs text-[#6B716D]">Total Purchase</p>
-                <p className="text-xl font-semibold text-[#151A17]">
+              <div className="bg-cream rounded-lg p-4 text-center">
+                <p className="text-xs text-muted">Total Purchase</p>
+                <p className="text-xl font-semibold text-ink">
                   {formatCurrency(selectedRetailer.totalPurchase)}
                 </p>
               </div>
-              <div className="bg-[#F6F7F6] rounded-lg p-4 text-center">
-                <p className="text-xs text-[#6B716D]">Total Paid</p>
-                <p className="text-xl font-semibold text-[#16834B]">
+              <div className="bg-cream rounded-lg p-4 text-center">
+                <p className="text-xs text-muted">Total Paid</p>
+                <p className="text-xl font-semibold text-success">
                   {formatCurrency(selectedRetailer.totalPaid)}
                 </p>
               </div>
-              <div className="bg-[#F6F7F6] rounded-lg p-4 text-center">
-                <p className="text-xs text-[#6B716D]">Remaining Balance</p>
+              <div className="bg-cream rounded-lg p-4 text-center">
+                <p className="text-xs text-muted">Remaining Balance</p>
                 <p className={`text-xl font-semibold ${
-                  selectedRetailer.balance > 0 ? 'text-[#D14343]' : 'text-[#16834B]'
+                  selectedRetailer.balance > 0 ? 'text-danger' : 'text-success'
                 }`}>
                   {formatCurrency(selectedRetailer.balance)}
                 </p>
@@ -652,7 +653,7 @@ const Ledgers = () => {
             {selectedRetailer.openingBalanceRemaining > 0 && (
               <div className="p-3 bg-[#FFF8E6] border border-[#E0A32E] rounded-lg flex items-center gap-2">
                 <FiAlertCircle className="w-4 h-4 text-[#E0A32E] shrink-0" />
-                <p className="text-sm text-[#151A17]">
+                <p className="text-sm text-ink">
                   Includes an opening balance of{' '}
                   <span className="font-semibold">{formatCurrency(selectedRetailer.openingBalanceRemaining)}</span>{' '}
                   carried over from before this shop joined the system. It's paid off first, ahead of any bill below.
@@ -663,32 +664,32 @@ const Ledgers = () => {
             {/* Unpaid Bills */}
             {getUnpaidBills().length > 0 && (
               <div>
-                <h4 className="font-medium text-[#151A17] mb-3">Unpaid Bills (Oldest First)</h4>
-                <div className="border border-[#E5E8E6] rounded-lg overflow-hidden">
+                <h4 className="font-medium text-ink mb-3">Unpaid Bills (Oldest First)</h4>
+                <div className="border border-line rounded-lg overflow-hidden">
                   <table className="w-full">
-                    <thead className="bg-[#F6F7F6]">
+                    <thead className="bg-cream">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Bill ID</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Description</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Date</th>
-                        <th className="px-4 py-2 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Total</th>
-                        <th className="px-4 py-2 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Balance</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Bill ID</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Description</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-muted uppercase tracking-wider">Total</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-muted uppercase tracking-wider">Balance</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E5E8E6]">
+                    <tbody className="divide-y divide-line">
                       {getUnpaidBills().map((bill) => (
-                        <tr key={bill.billId} className={`hover:bg-[#F6F7F6] transition ${bill.billId === 'OPENING' ? 'bg-[#FFF8E6]/50' : ''}`}>
-                          <td className="px-4 py-2 text-sm text-[#6B716D]">
+                        <tr key={bill.billId} className={`hover:bg-cream transition ${bill.billId === 'OPENING' ? 'bg-[#FFF8E6]/50' : ''}`}>
+                          <td className="px-4 py-2 text-sm text-muted">
                             {bill.billId === 'OPENING' ? (
                               <span className="font-medium text-[#B25E00]">Opening Balance</span>
                             ) : bill.billId}
                           </td>
-                          <td className="px-4 py-2 text-sm text-[#151A17]">{bill.description}</td>
-                          <td className="px-4 py-2 text-sm text-[#6B716D]">{bill.date}</td>
-                          <td className="px-4 py-2 text-right text-sm font-medium text-[#151A17]">
+                          <td className="px-4 py-2 text-sm text-ink">{bill.description}</td>
+                          <td className="px-4 py-2 text-sm text-muted">{bill.date}</td>
+                          <td className="px-4 py-2 text-right text-sm font-medium text-ink">
                             {formatCurrency(bill.amount)}
                           </td>
-                          <td className="px-4 py-2 text-right text-sm font-medium text-[#D14343]">
+                          <td className="px-4 py-2 text-right text-sm font-medium text-danger">
                             {formatCurrency(bill.balance)}
                           </td>
                         </tr>
@@ -702,20 +703,20 @@ const Ledgers = () => {
             {/* Transaction History */}
             <div>
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <h4 className="font-medium text-[#151A17]">Transaction History</h4>
+                <h4 className="font-medium text-ink">Transaction History</h4>
                 <Button variant="outline" size="sm" icon={FiDownload} onClick={exportLedgerCsv}>
                   Export CSV
                 </Button>
               </div>
 
               {/* Filters */}
-              <div className="flex flex-wrap items-end gap-3 mb-3 p-3 bg-[#F6F7F6] rounded-lg">
+              <div className="flex flex-wrap items-end gap-3 mb-3 p-3 bg-cream rounded-lg">
                 <div>
-                  <label className="block text-xs font-medium text-[#6B716D] mb-1">Type</label>
+                  <label className="block text-xs font-medium text-muted mb-1">Type</label>
                   <select
                     value={historyTypeFilter}
                     onChange={(e) => setHistoryTypeFilter(e.target.value)}
-                    className="px-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[140px]"
+                    className="px-3 py-1.5 border border-line rounded-lg text-sm bg-white focus:ring-2 focus:ring-gold outline-none transition min-w-[140px]"
                   >
                     {TYPE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -724,11 +725,11 @@ const Ledgers = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#6B716D] mb-1">Date</label>
+                  <label className="block text-xs font-medium text-muted mb-1">Date</label>
                   <select
                     value={historyDateMode}
                     onChange={(e) => setHistoryDateMode(e.target.value)}
-                    className="px-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition min-w-[130px]"
+                    className="px-3 py-1.5 border border-line rounded-lg text-sm bg-white focus:ring-2 focus:ring-gold outline-none transition min-w-[130px]"
                   >
                     {DATE_MODE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -738,14 +739,14 @@ const Ledgers = () => {
 
                 {historyDateMode === 'day' && (
                   <div>
-                    <label className="block text-xs font-medium text-[#6B716D] mb-1">Pick a date</label>
+                    <label className="block text-xs font-medium text-muted mb-1">Pick a date</label>
                     <div className="relative">
-                      <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B716D] pointer-events-none" />
+                      <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
                       <input
                         type="date"
                         value={historySingleDate}
                         onChange={(e) => setHistorySingleDate(e.target.value)}
-                        className="pl-9 pr-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition"
+                        className="pl-9 pr-3 py-1.5 border border-line rounded-lg text-sm bg-white focus:ring-2 focus:ring-gold outline-none transition"
                       />
                     </div>
                   </div>
@@ -753,14 +754,14 @@ const Ledgers = () => {
 
                 {historyDateMode === 'month' && (
                   <div>
-                    <label className="block text-xs font-medium text-[#6B716D] mb-1">Pick a month</label>
+                    <label className="block text-xs font-medium text-muted mb-1">Pick a month</label>
                     <div className="relative">
-                      <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B716D] pointer-events-none" />
+                      <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
                       <input
                         type="month"
                         value={historyMonth}
                         onChange={(e) => setHistoryMonth(e.target.value)}
-                        className="pl-9 pr-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition"
+                        className="pl-9 pr-3 py-1.5 border border-line rounded-lg text-sm bg-white focus:ring-2 focus:ring-gold outline-none transition"
                       />
                     </div>
                   </div>
@@ -769,21 +770,21 @@ const Ledgers = () => {
                 {historyDateMode === 'range' && (
                   <>
                     <div>
-                      <label className="block text-xs font-medium text-[#6B716D] mb-1">From</label>
+                      <label className="block text-xs font-medium text-muted mb-1">From</label>
                       <input
                         type="date"
                         value={historyRangeFrom}
                         onChange={(e) => setHistoryRangeFrom(e.target.value)}
-                        className="px-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition"
+                        className="px-3 py-1.5 border border-line rounded-lg text-sm bg-white focus:ring-2 focus:ring-gold outline-none transition"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-[#6B716D] mb-1">To</label>
+                      <label className="block text-xs font-medium text-muted mb-1">To</label>
                       <input
                         type="date"
                         value={historyRangeTo}
                         onChange={(e) => setHistoryRangeTo(e.target.value)}
-                        className="px-3 py-1.5 border border-[#E5E8E6] rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#111714] outline-none transition"
+                        className="px-3 py-1.5 border border-line rounded-lg text-sm bg-white focus:ring-2 focus:ring-gold outline-none transition"
                       />
                     </div>
                   </>
@@ -792,50 +793,50 @@ const Ledgers = () => {
                 {hasHistoryFilters && (
                   <button
                     onClick={clearHistoryFilters}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#6B716D] hover:text-[#D14343] transition"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted hover:text-danger transition"
                   >
                     <FiX className="w-4 h-4" /> Clear
                   </button>
                 )}
               </div>
 
-              <div className="border border-[#E5E8E6] rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+              <div className="border border-line rounded-lg overflow-hidden max-h-60 overflow-y-auto">
                 <table className="w-full">
-                  <thead className="bg-[#F6F7F6] sticky top-0">
+                  <thead className="bg-cream sticky top-0">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Bill ID</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Description</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Date</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Debit</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Credit</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Balance</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Bill ID</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Description</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-muted uppercase tracking-wider">Debit</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-muted uppercase tracking-wider">Credit</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-muted uppercase tracking-wider">Balance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E5E8E6]">
+                  <tbody className="divide-y divide-line">
                     {filteredTransactions.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-6 text-center text-sm text-[#6B716D]">
+                        <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted">
                           No transactions match these filters.
                         </td>
                       </tr>
                     ) : (
                       filteredTransactions.map((transaction) => (
-                        <tr key={transaction.id} className="hover:bg-[#F6F7F6] transition">
-                          <td className="px-4 py-2 text-sm text-[#6B716D]">
+                        <tr key={transaction.id} className="hover:bg-cream transition">
+                          <td className="px-4 py-2 text-sm text-muted">
                             {transaction.billId === 'OPENING' ? (
                               <span className="font-medium text-[#B25E00]">Opening</span>
                             ) : (transaction.billId || '-')}
                           </td>
-                          <td className="px-4 py-2 text-sm text-[#151A17]">
+                          <td className="px-4 py-2 text-sm text-ink">
                             {transaction.description}
                           </td>
-                          <td className="px-4 py-2 text-sm text-[#6B716D]">
+                          <td className="px-4 py-2 text-sm text-muted">
                             {transaction.date}
                           </td>
-                          <td className="px-4 py-2 text-right text-sm font-medium text-[#D14343]">
+                          <td className="px-4 py-2 text-right text-sm font-medium text-danger">
                             {transaction.type === 'debit' ? formatCurrency(transaction.amount) : '-'}
                           </td>
-                          <td className="px-4 py-2 text-right text-sm font-medium text-[#16834B]">
+                          <td className="px-4 py-2 text-right text-sm font-medium text-success">
                             {transaction.type === 'credit' ? formatCurrency(transaction.amount) : '-'}
                           </td>
                           <td className="px-4 py-2 text-right text-sm font-medium">
@@ -892,22 +893,22 @@ const Ledgers = () => {
         <div className="space-y-4">
           {/* Payment Amount */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Amount <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Amount <span className="text-danger">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B716D]">₹</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted">₹</span>
               <input
                 type="number"
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
                 placeholder="Enter amount"
-                className="w-full pl-8 pr-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+                className="w-full pl-8 pr-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
                 min="0"
                 step="1"
               />
             </div>
-            <p className="mt-1 text-xs text-[#6B716D]">
+            <p className="mt-1 text-xs text-muted">
               Total Outstanding: {formatCurrency(getTotalOutstanding())}
               {selectedRetailer?.openingBalanceRemaining > 0 && (
                 <> (includes {formatCurrency(selectedRetailer.openingBalanceRemaining)} opening balance, paid first)</>
@@ -917,13 +918,13 @@ const Ledgers = () => {
 
           {/* Payment Method */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-1.5">
-              Payment Method <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-1.5">
+              Payment Method <span className="text-danger">*</span>
             </label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[#E5E8E6] rounded-lg focus:ring-2 focus:ring-[#111714] focus:border-transparent outline-none transition"
+              className="w-full px-4 py-2.5 border border-line rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent outline-none transition"
             >
               <option value="Cash">Cash</option>
               <option value="UPI">UPI</option>
@@ -935,44 +936,44 @@ const Ledgers = () => {
           {/* Automatic Allocation Summary */}
           {paymentAmount && parseFloat(paymentAmount) > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-[#151A17] mb-2">Payment Allocation</h4>
-              <div className="border border-[#E5E8E6] rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+              <h4 className="text-sm font-medium text-ink mb-2">Payment Allocation</h4>
+              <div className="border border-line rounded-lg overflow-hidden max-h-48 overflow-y-auto">
                 <table className="w-full">
-                  <thead className="bg-[#F6F7F6] sticky top-0">
+                  <thead className="bg-cream sticky top-0">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Bill</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Date</th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Bill Balance</th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Paying</th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-[#6B716D] uppercase tracking-wider">Remaining</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Bill</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wider">Date</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-muted uppercase tracking-wider">Bill Balance</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-muted uppercase tracking-wider">Paying</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-muted uppercase tracking-wider">Remaining</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E5E8E6]">
+                  <tbody className="divide-y divide-line">
                     {paymentAllocation.map((alloc, index) => (
-                      <tr key={index} className="hover:bg-[#F6F7F6] transition">
+                      <tr key={index} className="hover:bg-cream transition">
                         <td className="px-3 py-2 text-sm">
                           {alloc.billId === 'EXCESS' ? (
-                            <span className="text-[#D14343] font-medium">⚠️ {alloc.description}</span>
+                            <span className="text-danger font-medium">⚠️ {alloc.description}</span>
                           ) : alloc.billId === 'OPENING' ? (
                             <span className="font-medium text-[#B25E00]">Opening Balance</span>
                           ) : (
-                            <span className="font-medium text-[#151A17]">{alloc.billId}</span>
+                            <span className="font-medium text-ink">{alloc.billId}</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-sm text-[#6B716D]">
+                        <td className="px-3 py-2 text-sm text-muted">
                           {alloc.billId !== 'EXCESS' ? alloc.date : '-'}
                         </td>
-                        <td className="px-3 py-2 text-right text-sm text-[#6B716D]">
+                        <td className="px-3 py-2 text-right text-sm text-muted">
                           {alloc.billId !== 'EXCESS' ? formatCurrency(alloc.billBalance) : '-'}
                         </td>
-                        <td className="px-3 py-2 text-right text-sm font-medium text-[#16834B]">
+                        <td className="px-3 py-2 text-right text-sm font-medium text-success">
                           {formatCurrency(alloc.amountToPay)}
                         </td>
                         <td className="px-3 py-2 text-right text-sm font-medium">
                           {alloc.billId === 'EXCESS' ? (
-                            <span className="text-[#D14343]">Not enough bills</span>
+                            <span className="text-danger">Not enough bills</span>
                           ) : (
-                            <span className={alloc.remainingAfterPayment > 0 ? 'text-[#D14343]' : 'text-[#16834B]'}>
+                            <span className={alloc.remainingAfterPayment > 0 ? 'text-danger' : 'text-success'}>
                               {formatCurrency(alloc.remainingAfterPayment)}
                             </span>
                           )}
@@ -986,34 +987,34 @@ const Ledgers = () => {
           )}
 
           {/* Summary */}
-          <div className="p-4 bg-[#F6F7F6] rounded-lg">
+          <div className="p-4 bg-cream rounded-lg">
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-[#6B716D]">Customer</span>
-                <span className="font-medium text-[#151A17]">{selectedRetailer?.name || selectedRetailer?.shop}</span>
+                <span className="text-muted">Customer</span>
+                <span className="font-medium text-ink">{selectedRetailer?.name || selectedRetailer?.shop}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#6B716D]">Total Purchase</span>
-                <span className="font-medium text-[#151A17]">
+                <span className="text-muted">Total Purchase</span>
+                <span className="font-medium text-ink">
                   {formatCurrency(selectedRetailer?.totalPurchase || 0)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#6B716D]">Total Paid</span>
-                <span className="font-medium text-[#16834B]">
+                <span className="text-muted">Total Paid</span>
+                <span className="font-medium text-success">
                   {formatCurrency(selectedRetailer?.totalPaid || 0)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#6B716D]">Remaining Balance</span>
-                <span className="font-medium text-[#D14343]">
+                <span className="text-muted">Remaining Balance</span>
+                <span className="font-medium text-danger">
                   {formatCurrency(selectedRetailer?.outstanding || 0)}
                 </span>
               </div>
               {paymentAmount && parseFloat(paymentAmount) > 0 && (
-                <div className="flex justify-between border-t border-[#16834B]/30 pt-1 mt-1">
-                  <span className="text-[#6B716D] font-medium">New Balance</span>
-                  <span className="font-medium text-[#16834B]">
+                <div className="flex justify-between border-t border-success/30 pt-1 mt-1">
+                  <span className="text-muted font-medium">New Balance</span>
+                  <span className="font-medium text-success">
                     {formatCurrency(Math.max(0, (selectedRetailer?.outstanding || 0) - parseFloat(paymentAmount)))}
                   </span>
                 </div>

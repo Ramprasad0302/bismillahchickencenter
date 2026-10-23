@@ -19,7 +19,8 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import SearchInput from '../../components/common/SearchInput';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
+import BrandLoader from '../../components/brand/BrandLoader';
 
 const Deliveries = () => {
   const { user } = useAuth();
@@ -216,8 +217,8 @@ const Deliveries = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiLoader className="w-12 h-12 text-[#111714] animate-spin" />
-        <p className="mt-4 text-[#6B716D]">Loading deliveries...</p>
+        <BrandLoader />
+        <p className="mt-4 text-muted">Loading deliveries...</p>
       </div>
     );
   }
@@ -225,8 +226,8 @@ const Deliveries = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <FiAlertCircle className="w-12 h-12 text-[#D14343]" />
-        <p className="mt-4 text-[#D14343] font-medium">{error}</p>
+        <FiAlertCircle className="w-12 h-12 text-danger" />
+        <p className="mt-4 text-danger font-medium">{error}</p>
         <Button 
           variant="outline" 
           className="mt-4"
@@ -243,8 +244,8 @@ const Deliveries = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#151A17]">Deliveries</h1>
-          <p className="text-sm text-[#6B716D] mt-1">Assign drivers and vehicles to pending orders</p>
+          <h1 className="text-2xl font-semibold text-ink">Deliveries</h1>
+          <p className="text-sm text-muted mt-1">Assign drivers and vehicles to pending orders</p>
         </div>
         <Button onClick={() => setIsAssignModalOpen(true)}>
           <FiPlus className="w-4 h-4 mr-2" />
@@ -253,7 +254,7 @@ const Deliveries = () => {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl border border-[#E5E8E6] p-4 mb-6">
+      <div className="bg-white rounded-xl border border-line p-4 mb-6">
         <SearchInput
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -265,23 +266,23 @@ const Deliveries = () => {
       {/* Unassigned Deliveries */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-[#151A17]">Unassigned</h2>
+          <h2 className="text-lg font-semibold text-ink">Unassigned</h2>
           <Badge variant="warning">{filteredUnassigned.length}</Badge>
         </div>
 
         {filteredUnassigned.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredUnassigned.map((order) => (
-              <div key={order.id} className="bg-white rounded-xl border border-[#E5E8E6] p-6 hover:shadow-md transition">
+              <div key={order.id} className="bg-white rounded-xl border border-line p-6 hover:shadow-md transition">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold text-[#151A17]">{order.shop_name}</h3>
-                    <p className="text-sm text-[#6B716D]">{order.order_number} • {order.kg_ordered} kg • {formatCurrency(order.total_amount)}</p>
+                    <h3 className="font-semibold text-ink">{order.shop_name}</h3>
+                    <p className="text-sm text-muted">{order.order_number} • {order.kg_ordered} kg • {formatCurrency(order.total_amount)}</p>
                   </div>
                   <Badge variant="warning">Pending</Badge>
                 </div>
                 {order.delivery_address && (
-                  <div className="flex items-center gap-2 text-sm text-[#6B716D]">
+                  <div className="flex items-center gap-2 text-sm text-muted">
                     <FiMapPin className="w-4 h-4 flex-shrink-0" />
                     <span>{order.delivery_address}</span>
                   </div>
@@ -290,9 +291,9 @@ const Deliveries = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-8 text-center">
-            <FiCheck className="w-12 h-12 mx-auto text-[#16834B] mb-3" />
-            <p className="text-[#6B716D]">All deliveries have been assigned</p>
+          <div className="bg-white rounded-xl border border-line p-8 text-center">
+            <FiCheck className="w-12 h-12 mx-auto text-success mb-3" />
+            <p className="text-muted">All deliveries have been assigned</p>
           </div>
         )}
       </div>
@@ -300,23 +301,23 @@ const Deliveries = () => {
       {/* In Progress Deliveries */}
       <div>
         <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-[#151A17]">In Progress</h2>
+          <h2 className="text-lg font-semibold text-ink">In Progress</h2>
           <Badge variant="info">{inProgressOrders.length}</Badge>
         </div>
 
         {inProgressOrders.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {inProgressOrders.map((order) => (
-              <div key={order.id} className="bg-white rounded-xl border border-[#E5E8E6] p-6 hover:shadow-md transition">
+              <div key={order.id} className="bg-white rounded-xl border border-line p-6 hover:shadow-md transition">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold text-[#151A17]">{order.shop_name}</h3>
-                    <p className="text-sm text-[#6B716D]">{order.order_number} • {order.kg_ordered} kg</p>
+                    <h3 className="font-semibold text-ink">{order.shop_name}</h3>
+                    <p className="text-sm text-muted">{order.order_number} • {order.kg_ordered} kg</p>
                   </div>
                   <Badge variant="info">Out for Delivery</Badge>
                 </div>
                 {order.delivery_address && (
-                  <div className="flex items-start gap-2 text-sm text-[#6B716D]">
+                  <div className="flex items-start gap-2 text-sm text-muted">
                     <FiMapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <span>{order.delivery_address}</span>
                   </div>
@@ -324,14 +325,14 @@ const Deliveries = () => {
                 <div className="mt-3 space-y-1 text-sm">
                   {order.driver_name && (
                     <div className="flex items-center gap-2">
-                      <FiUser className="w-4 h-4 text-[#6B716D]" />
+                      <FiUser className="w-4 h-4 text-muted" />
                       <span className="font-medium">Driver:</span>
                       <span>{order.driver_name}</span>
                     </div>
                   )}
                   {order.vehicle_reg && (
                     <div className="flex items-center gap-2">
-                      <FiTruck className="w-4 h-4 text-[#6B716D]" />
+                      <FiTruck className="w-4 h-4 text-muted" />
                       <span className="font-medium">Vehicle:</span>
                       <span>{order.vehicle_reg}</span>
                     </div>
@@ -341,9 +342,9 @@ const Deliveries = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E8E6] p-8 text-center">
-            <FiCheck className="w-12 h-12 mx-auto text-[#16834B] mb-3" />
-            <p className="text-[#6B716D]">No deliveries in progress</p>
+          <div className="bg-white rounded-xl border border-line p-8 text-center">
+            <FiCheck className="w-12 h-12 mx-auto text-success mb-3" />
+            <p className="text-muted">No deliveries in progress</p>
           </div>
         )}
       </div>
@@ -389,15 +390,15 @@ const Deliveries = () => {
         <div className="space-y-6 max-h-[60vh] overflow-y-auto">
           {/* Orders Selection */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-2">
-              Select Orders for Trip <span className="text-[#D14343]">*</span>
-              <span className="text-xs text-[#6B716D] ml-2">
+            <label className="block text-sm font-medium text-ink mb-2">
+              Select Orders for Trip <span className="text-danger">*</span>
+              <span className="text-xs text-muted ml-2">
                 ({selectedOrders.length} selected)
               </span>
             </label>
-            <div className="border border-[#E5E8E6] rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+            <div className="border border-line rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
               {pendingOrders.length === 0 ? (
-                <p className="text-sm text-[#6B716D] text-center py-4">No pending orders available</p>
+                <p className="text-sm text-muted text-center py-4">No pending orders available</p>
               ) : (
                 pendingOrders.map((order) => (
                   <button
@@ -405,8 +406,8 @@ const Deliveries = () => {
                     onClick={() => toggleOrderSelection(order.id)}
                     className={`w-full flex items-center justify-between p-3 rounded-lg text-sm transition ${
                       selectedOrders.includes(order.id)
-                        ? 'bg-[#111714] text-white'
-                        : 'bg-[#F6F7F6] text-[#151A17] hover:bg-gray-200'
+                        ? 'bg-brand text-white'
+                        : 'bg-cream text-ink hover:bg-gray-200'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -422,7 +423,7 @@ const Deliveries = () => {
               )}
             </div>
             {selectedOrders.length > 0 && (
-              <div className="mt-2 text-sm text-[#6B716D]">
+              <div className="mt-2 text-sm text-muted">
                 Selected: {summary.count} order(s) • {summary.totalKg} kg • {formatCurrency(summary.totalAmount)}
               </div>
             )}
@@ -430,21 +431,21 @@ const Deliveries = () => {
 
           {/* Driver Selection */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-2">
-              Driver <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-2">
+              Driver <span className="text-danger">*</span>
             </label>
             <div className="relative">
               <button
                 onClick={() => setIsDriverDropdownOpen(!isDriverDropdownOpen)}
-                className="w-full flex items-center justify-between px-4 py-2.5 border border-[#E5E8E6] rounded-lg bg-white hover:bg-gray-50 transition"
+                className="w-full flex items-center justify-between px-4 py-2.5 border border-line rounded-lg bg-white hover:bg-gray-50 transition"
               >
-                <span className={selectedDriver ? 'text-[#151A17]' : 'text-[#6B716D]'}>
+                <span className={selectedDriver ? 'text-ink' : 'text-muted'}>
                   {selectedDriver ? drivers.find(d => d.id === parseInt(selectedDriver))?.name || 'Select a driver...' : 'Select a driver...'}
                 </span>
                 {isDriverDropdownOpen ? <FiChevronUp className="w-4 h-4" /> : <FiChevronDown className="w-4 h-4" />}
               </button>
               {isDriverDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-[#E5E8E6] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-line rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {drivers.map((driver) => (
                     <button
                       key={driver.id}
@@ -452,12 +453,12 @@ const Deliveries = () => {
                         setSelectedDriver(driver.id);
                         setIsDriverDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2.5 hover:bg-[#F6F7F6] transition ${
-                        selectedDriver === driver.id ? 'bg-[#F6F7F6]' : ''
+                      className={`w-full text-left px-4 py-2.5 hover:bg-cream transition ${
+                        selectedDriver === driver.id ? 'bg-cream' : ''
                       }`}
                     >
                       <span className="text-sm">{driver.name}</span>
-                      <span className="text-xs text-[#6B716D] ml-2">{driver.vehicle_number || 'No vehicle'}</span>
+                      <span className="text-xs text-muted ml-2">{driver.vehicle_number || 'No vehicle'}</span>
                     </button>
                   ))}
                 </div>
@@ -467,21 +468,21 @@ const Deliveries = () => {
 
           {/* Vehicle Selection */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-2">
-              Vehicle <span className="text-[#D14343]">*</span>
+            <label className="block text-sm font-medium text-ink mb-2">
+              Vehicle <span className="text-danger">*</span>
             </label>
             <div className="relative">
               <button
                 onClick={() => setIsVehicleDropdownOpen(!isVehicleDropdownOpen)}
-                className="w-full flex items-center justify-between px-4 py-2.5 border border-[#E5E8E6] rounded-lg bg-white hover:bg-gray-50 transition"
+                className="w-full flex items-center justify-between px-4 py-2.5 border border-line rounded-lg bg-white hover:bg-gray-50 transition"
               >
-                <span className={selectedVehicle ? 'text-[#151A17]' : 'text-[#6B716D]'}>
+                <span className={selectedVehicle ? 'text-ink' : 'text-muted'}>
                   {selectedVehicle ? vehicles.find(v => v.id === parseInt(selectedVehicle))?.number || 'Select a vehicle...' : 'Select a vehicle...'}
                 </span>
                 {isVehicleDropdownOpen ? <FiChevronUp className="w-4 h-4" /> : <FiChevronDown className="w-4 h-4" />}
               </button>
               {isVehicleDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-[#E5E8E6] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-line rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {vehicles.map((vehicle) => (
                     <button
                       key={vehicle.id}
@@ -489,13 +490,13 @@ const Deliveries = () => {
                         setSelectedVehicle(vehicle.id);
                         setIsVehicleDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2.5 hover:bg-[#F6F7F6] transition ${
-                        selectedVehicle === vehicle.id ? 'bg-[#F6F7F6]' : ''
+                      className={`w-full text-left px-4 py-2.5 hover:bg-cream transition ${
+                        selectedVehicle === vehicle.id ? 'bg-cream' : ''
                       }`}
                     >
                       <div>
                         <span className="text-sm">{vehicle.number}</span>
-                        <span className="text-xs text-[#6B716D] ml-2">({vehicle.type})</span>
+                        <span className="text-xs text-muted ml-2">({vehicle.type})</span>
                       </div>
                     </button>
                   ))}
@@ -506,15 +507,15 @@ const Deliveries = () => {
 
           {/* Cleaners Selection */}
           <div>
-            <label className="block text-sm font-medium text-[#151A17] mb-2">
-              Cleaners <span className="text-xs text-[#6B716D] font-normal">(Optional - Select multiple)</span>
+            <label className="block text-sm font-medium text-ink mb-2">
+              Cleaners <span className="text-xs text-muted font-normal">(Optional - Select multiple)</span>
             </label>
             <div className="relative">
               <button
                 onClick={() => setIsCleanerDropdownOpen(!isCleanerDropdownOpen)}
-                className="w-full flex items-center justify-between px-4 py-2.5 border border-[#E5E8E6] rounded-lg bg-white hover:bg-gray-50 transition"
+                className="w-full flex items-center justify-between px-4 py-2.5 border border-line rounded-lg bg-white hover:bg-gray-50 transition"
               >
-                <span className={selectedCleaners.length > 0 ? 'text-[#151A17]' : 'text-[#6B716D]'}>
+                <span className={selectedCleaners.length > 0 ? 'text-ink' : 'text-muted'}>
                   {selectedCleaners.length > 0 
                     ? `${selectedCleaners.length} cleaner${selectedCleaners.length > 1 ? 's' : ''} selected`
                     : 'Select cleaners...'}
@@ -522,18 +523,18 @@ const Deliveries = () => {
                 {isCleanerDropdownOpen ? <FiChevronUp className="w-4 h-4" /> : <FiChevronDown className="w-4 h-4" />}
               </button>
               {isCleanerDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-[#E5E8E6] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white border border-line rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {cleaners.map((cleaner) => (
                     <button
                       key={cleaner.id}
                       onClick={() => toggleCleaner(cleaner.id)}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 hover:bg-[#F6F7F6] transition ${
-                        selectedCleaners.includes(cleaner.id) ? 'bg-[#F6F7F6]' : ''
+                      className={`w-full flex items-center justify-between px-4 py-2.5 hover:bg-cream transition ${
+                        selectedCleaners.includes(cleaner.id) ? 'bg-cream' : ''
                       }`}
                     >
                       <span className="text-sm">{cleaner.name}</span>
                       {selectedCleaners.includes(cleaner.id) && (
-                        <FiCheck className="w-4 h-4 text-[#16834B]" />
+                        <FiCheck className="w-4 h-4 text-success" />
                       )}
                     </button>
                   ))}

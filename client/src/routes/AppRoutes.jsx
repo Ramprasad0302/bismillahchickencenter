@@ -1,52 +1,52 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import Login from '../pages/Login';
 import ProtectedRoute from './ProtectedRoute';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import RetailerLayout from '../components/layout/RetailerLayout';
 import DriverLayout from '../components/layout/DriverLayout';
+import BrandLoader from '../components/brand/BrandLoader';
 
-// Admin Pages
-import AdminDashboard from '../pages/admin/AdminDashboard';
-import Pricing from '../pages/admin/Pricing';
-import Customers from '../pages/admin/Customers';
-import Orders from '../pages/admin/Orders';
-import OrderDetail from '../pages/admin/OrderDetail';
-import Deliveries from '../pages/admin/Deliveries';
-import Vehicles from '../pages/admin/Vehicles';
-import Ledgers from '../pages/admin/Ledgers';
-import Payments from '../pages/admin/Payments';
-import Reports from '../pages/admin/Reports';
-import Users from '../pages/admin/Users';
-import Staff from '../pages/admin/Staff';
-import Settings from '../pages/admin/Settings';
-import CashVerification from '../pages/admin/CashVerification';
-import Expenses from '../pages/admin/Expenses';
-import Salaries from '../pages/admin/Salaries';
-import TripOverview from '../pages/admin/TripOverview';
-
-// Retailer Pages
-import RetailerDashboard from '../pages/retailer/RetailerDashboard';
-import RetailerPlaceOrder from '../pages/retailer/RetailerPlaceOrder';
-import RetailerOrders from '../pages/retailer/RetailerOrders';
-import RetailerOrderDetails from '../pages/retailer/RetailerOrderDetails';
-import RetailerPayments from '../pages/retailer/RetailerPayments';
-import PaymentResult from '../pages/retailer/PaymentResult';
-import RetailerProfile from '../pages/retailer/RetailerProfile';
-
-// Driver Pages
-import DriverDashboard from '../pages/driver/DriverDashboard';
-import DriverDeliveries from '../pages/driver/DriverDeliveries';
-import DriverCollections from '../pages/driver/DriverCollections';
-import DriverHistory from '../pages/driver/DriverHistory';
-import DriverProfile from '../pages/driver/DriverProfile';
+// Pages are code-split: each one downloads only when it is first opened,
+// so the first screen loads a fraction of the app instead of all of it.
+const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'));
+const Pricing = lazy(() => import('../pages/admin/Pricing'));
+const Customers = lazy(() => import('../pages/admin/Customers'));
+const Orders = lazy(() => import('../pages/admin/Orders'));
+const OrderDetail = lazy(() => import('../pages/admin/OrderDetail'));
+const Deliveries = lazy(() => import('../pages/admin/Deliveries'));
+const Vehicles = lazy(() => import('../pages/admin/Vehicles'));
+const Ledgers = lazy(() => import('../pages/admin/Ledgers'));
+const Payments = lazy(() => import('../pages/admin/Payments'));
+const Reports = lazy(() => import('../pages/admin/Reports'));
+const Users = lazy(() => import('../pages/admin/Users'));
+const Staff = lazy(() => import('../pages/admin/Staff'));
+const Settings = lazy(() => import('../pages/admin/Settings'));
+const CashVerification = lazy(() => import('../pages/admin/CashVerification'));
+const Expenses = lazy(() => import('../pages/admin/Expenses'));
+const Salaries = lazy(() => import('../pages/admin/Salaries'));
+const TripOverview = lazy(() => import('../pages/admin/TripOverview'));
+const RetailerDashboard = lazy(() => import('../pages/retailer/RetailerDashboard'));
+const RetailerPlaceOrder = lazy(() => import('../pages/retailer/RetailerPlaceOrder'));
+const RetailerOrders = lazy(() => import('../pages/retailer/RetailerOrders'));
+const RetailerOrderDetails = lazy(() => import('../pages/retailer/RetailerOrderDetails'));
+const RetailerPayments = lazy(() => import('../pages/retailer/RetailerPayments'));
+const PaymentResult = lazy(() => import('../pages/retailer/PaymentResult'));
+const RetailerProfile = lazy(() => import('../pages/retailer/RetailerProfile'));
+const DriverDashboard = lazy(() => import('../pages/driver/DriverDashboard'));
+const DriverDeliveries = lazy(() => import('../pages/driver/DriverDeliveries'));
+const DriverCollections = lazy(() => import('../pages/driver/DriverCollections'));
+const DriverHistory = lazy(() => import('../pages/driver/DriverHistory'));
+const DriverProfile = lazy(() => import('../pages/driver/DriverProfile'));
 
 // Placeholder component for pages not yet implemented
 const ComingSoon = () => (
-  <div className="min-h-screen flex items-center justify-center">
+  <div className="min-h-[60vh] flex items-center justify-center">
     <div className="text-center">
-      <h1 className="text-3xl font-bold text-gray-700">Coming Soon</h1>
-      <p className="mt-2 text-gray-500">This page is under development</p>
+      <img src="/logo.png" alt="" className="w-24 h-24 mx-auto rounded-full shadow-[var(--shadow-gold)] animate-float" />
+      <h1 className="mt-6 font-display text-3xl font-semibold text-ink">Coming Soon</h1>
+      <p className="mt-2 text-muted">This page is under development</p>
     </div>
   </div>
 );
@@ -54,6 +54,7 @@ const ComingSoon = () => (
 const AppRoutes = () => {
   return (
     <AuthProvider>
+      <Suspense fallback={<BrandLoader fullScreen />}>
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
@@ -113,6 +114,7 @@ const AppRoutes = () => {
         {/* Catch all - 404 */}
         <Route path="*" element={<ComingSoon />} />
       </Routes>
+      </Suspense>
     </AuthProvider>
   );
 };
